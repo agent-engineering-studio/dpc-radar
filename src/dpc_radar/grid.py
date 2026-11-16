@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from datetime import datetime
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from affine import Affine
@@ -30,6 +30,9 @@ from rasterio.windows import from_bounds
 
 from dpc_radar.errors import DpcRadarError
 from dpc_radar.products import NODATA, Product, product
+
+if TYPE_CHECKING:
+    from dpc_radar.quality import Quality
 
 BBox = tuple[float, float, float, float]
 """west, south, east, north, in degrees (EPSG:4326)."""
@@ -125,9 +128,9 @@ class RainGrid:
 
         ``max_step`` is the caller's choice (Limen uses 150 mm for CUM
         frames 30 minutes apart). Measured on the benchmark of known cases, this
-        rule passes 17 of 18 checks and, on 96 pairs of whole frames, rejects
+        rule passes 26 of 30 checks and, on 96 pairs of whole frames, rejects
         the 44 corrupted ones and no clean one. It cannot see an artefact that
-        does not move between frames.
+        does not move between frames: :meth:`quality` adds the rules for that.
         """
         if previous.data.shape != self.data.shape or previous.transform != self.transform:
             return FrameCheck("not_comparable", self, 0)
@@ -143,6 +146,32 @@ class RainGrid:
         if float(np.median(diff[bad])) < 0:
             return FrameCheck("previous_wrong", self, jumps)
         return FrameCheck("rejected", None, jumps)
+
+    def quality(
+        self,
+        previous: RainGrid | None = None,
+        radar: RainGrid | None = None,
+        *,
+        max_step: float = 150.0,
+        min_pixels: int = 5,
+    ) -> Quality:
+        """What to trust in this frame, pixel by pixel, and why.
+
+        :meth:`check` and three more rules in one answer (see
+        :mod:`dpc_radar.quality`): values beyond the Italian record for the
+        window, pixels far above their neighbours and, in a «Merging» frame,
+        rain that the radar alone did not see where it sees well: a rain gauge
+        gone wrong.
+
+        ``previous`` is the frame one period before (``max_step`` and
+        ``min_pixels`` are for that comparison, as in :meth:`check`); ``radar``
+        is the radar-only rain over the same window, on its own grid
+        (:func:`dpc_radar.quality.radar_total` of the hourly SRT1 frames).
+        Both are optional: a rule without what it needs is skipped.
+        """
+        from dpc_radar.quality import quality  # it imports this module
+
+        return quality(self, previous, radar, max_step=max_step, min_pixels=min_pixels)
 
     def discard_inconsistent(self, previous: RainGrid, *, max_step: float) -> tuple[RainGrid, int]:
         """This frame without the pixels that moved more than ``max_step``.

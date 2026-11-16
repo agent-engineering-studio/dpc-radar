@@ -42,7 +42,7 @@ floods. The radar is part of the reason, and of the fix.
 ```mermaid
 flowchart LR
     B["Benchmark<br/>known cases"] --> P0["Phase 0<br/>reliability map<br/>climatology<br/>storm catalogue"]
-    P0 --> P1["Phase 1<br/>learned frame check"]
+    P0 --> P1["Phase 1<br/>frame quality check"]
     P1 --> P2["Phase 2<br/>nowcasting<br/>radar–gauge bias"]
     P2 --> P3["Phase 3<br/>MCP · llms.txt<br/>event reports"]
     P0 & P1 & P2 & P3 -.->|"one pin: dpc-radar~=x.y"| L["Limen<br/>measured on its 72 h goal"]
@@ -82,8 +82,8 @@ band of rain at sea that looked like clutter, and three hours of radar only
 (`SRT1`). Limen's rule today passes **14 of 30** checks: it has no frame-level
 decision, lets the edges of the corrupted bell through (88 mm where the truth
 is 9), throws away good pixels after a corrupted frame, and cannot see steady
-artefacts or blind spots. The library passes 28: the stuck gauge is what is
-left, and it is the target of #6. No case is *suspect* any more: the two that
+artefacts or blind spots. The library passes all 30 since the frame quality
+check (#6), which removes the stuck gauge. No case is *suspect* any more: the two that
 were have been settled on the hourly radar frames (one was not rain, one was).
 Still missing: a check against the rain gauges themselves, which the DPC does
 not publish.
@@ -137,29 +137,41 @@ calibration also needs. **Check:** new verified events per month of archive.
 
 ## Phase 1 · now that `grid` and `client` are here
 
-### Learned frame check · [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) · effort M
+### Frame quality check · [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) · ✅ first version, rules not a model
 
-**First step done: `jump-sign`** in the [benchmark](benchmark.md). Where two
-frames 30 minutes apart differ by more than half an hour of rain, the one that
-jumps up is rejected whole. It passes 17 of 19 confirmed checks (Limen today:
-8) and, on 96 pairs of whole frames, rejects the 44 corrupted :30 frames and
-no :00 frame. What is left for the learned check: artefacts that do not move.
+[`RainGrid.quality`](api/quality.md) gives a score per frame, a mask per pixel
+and the reason for each masked pixel. Four rules, each with a threshold
+measured on the frames kept from June to November 2026:
 
-A score per frame and a mask per pixel, from explainable features: the jump
-from the frame before (today's rule, kept), symmetry around each radar site,
-rain over the sea against the land nearby, agreement between SRI, SRT1 and
-«Merging», local outliers. Gradient boosting, trained on frames labelled by
-hand, starting from the benchmark. **For Limen:** fewer false triggers, fewer
-pixels "not measured" for no reason, one rule for flood, wildfire and the
-trigger. **Check:** every quality case of the benchmark passes; calm days stay
-clean.
+- **jump**: where two frames 30 minutes apart differ by more than half an hour
+  of rain, the one that jumps up is rejected whole (`jump-sign`). On 96 pairs
+  of whole frames it rejects the 44 corrupted :30 frames and no :00 frame;
+- **beyond the record**: more than the most rain ever measured in Italy over
+  the window. It needs no frame before;
+- **outlier**: a pixel far above the 5×5 around it;
+- **gauge only**: «Merging» rain that the radar alone did not see, where the
+  radar sees well. It removes the stuck gauge, and on 1,270 three-hour frames
+  it finds the same fault in 154, mostly at seven places that come back.
+
+**Check:** the benchmark, 30 of 30 (Limen today: 14); the calm days lose 0.02 %
+of their pixels, and those are two more faulty gauges.
+
+**What is not there.** A trained model: fourteen labelled cases are too few,
+and the rules are the features it would use. Symmetry around a radar site and
+rain over the sea against the land nearby: the one case we had for them turned
+out to be rain. A check against the gauges themselves, which the DPC does not
+publish: that a gauge is faulty is the radar's word, confirmed by hand once.
+A faulty gauge where the radar is blind is kept. The `agreement` part of the
+reliability map was built before this check and still counts those gauges as
+rain the radar missed. Limen does not use `quality` yet. **For Limen:** fewer
+false triggers and one rule for flood, wildfire and the trigger.
 
 ### Foundations: the code that comes from Limen
 
 | Module | What it does | Status |
 |---|---|---|
 | `products` | the six products, the API requests and answers, `is_expired` | ✅ done |
-| `grid` | `RainGrid`: read a frame, sample a point with the **3×3 median**, peak, crop, and `check` against the frame before (`jump-sign`) | ✅ done |
+| `grid` | `RainGrid`: read a frame, sample a point with the **3×3 median**, peak, crop, `check` against the frame before (`jump-sign`) and `quality` | ✅ done |
 | `client` | `RadarClient.latest(product)`, `.at(product, time)` → a grid or `ABSENT`; injectable `httpx` client, retries, `send=` hook | ✅ done |
 | `archive` | `archive()` and `MergingArchive`: save the «Merging» before the DPC deletes it; hourly rain, SRT1 rescaled to CUM3 | ✅ done |
 | `history` | `SriHistory`: the IT-DPC-SRI archive (2010–2025) with no zarr or xarray | ✅ done, extra `[history]` |
@@ -227,7 +239,7 @@ as structured data instead of prose
 | one national rain threshold | rain judged against the climate of each cell | #4 | fewer municipality-days on alert |
 | 8 verified events | candidate events from the storm catalogue, checked in the news | #5 | a denominator worth measuring |
 | radar zero read as dry where the radar is blind | a reliability map | #3 | fewer missed events |
-| a fixed 150 mm rule for bad frames | a learned score per frame and pixel | #6 | fewer false alarms |
+| a fixed 150 mm rule for bad frames | a score per frame and pixel, with the reason | #6 | fewer false alarms |
 | a trigger on rain already fallen | a trigger on rain that is coming (0–2 h) | #7 | more events anticipated |
 | a radar-only history that under-estimates | a corrected history | #8 | backtests worth trusting |
 | facts written into prose | facts as data, for agents and reports | #9 | — |

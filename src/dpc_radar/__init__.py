@@ -22,6 +22,7 @@ from dpc_radar.products import (
     parse_last_product,
     product,
 )
+from dpc_radar.quality import Quality, radar_total
 from dpc_radar.reliability import (
     SITES,
     RadarSite,
@@ -50,6 +51,7 @@ __all__ = [
     "FrameCheck",
     "LastProduct",
     "Product",
+    "Quality",
     "RadarClient",
     "RadarSite",
     "RainGrid",
@@ -60,6 +62,7 @@ __all__ = [
     "parse_download",
     "parse_last_product",
     "product",
+    "radar_total",
     "reliability",
     "reliability_map",
 ]

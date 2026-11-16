@@ -106,6 +106,7 @@ this library does, and these are the benefits.
 | **Rain at a place** | open a GeoTIFF, handle two map projections and the «no data» value | `rain.sample([(lon, lat)])` |
 | **A place nobody measured** | usually read as zero: «dry» | `None`: «not measured» |
 | **A faulty frame** | a false alarm of 7,000 mm | `frame.check(previous)` says `rejected` |
+| **A faulty rain gauge** | 126 mm every three hours under a dry sky | `frame.quality(radar=...)` masks it and says `gauge_only` |
 | **Data older than five months** | gone | your own archive, one line a night |
 | **Rain per hour, corrected with gauges** | not published | `MergingArchive.hourly(...)` |
 | **The official alert** | a web page and a PDF | `bulletin.zone_at(lon, lat).colour` |
@@ -443,6 +444,43 @@ print(check.verdict, check.jumps)
 A frame older than about five months is gone: `radar.at(...)` returns
 `ABSENT` instead of raising, and never retries it.
 
+`check` only sees what moves between two frames. `quality` asks more, and says
+why it does not trust a pixel:
+
+```python
+from datetime import timedelta
+
+from dpc_radar import ABSENT, radar_total
+
+async with RadarClient() as radar:
+    cum3 = await radar.latest("CUM3")
+    hours = [await radar.at("SRT1", cum3.time - timedelta(hours=h)) for h in range(3)]
+
+# the radar alone over the same three hours; with an hour missing, no comparison
+seen = None if any(h is ABSENT for h in hours) else radar_total(hours)
+q = cum3.quality(radar=seen)
+print(q.score, q.reasons)
+rain = q.grid  # the frame without the pixels not trusted; None if the frame is rejected
+```
+
+On the frame of 7 October 2026, 06 UTC, it prints
+`0.996 {'jump': 0, 'beyond_record': 0, 'outlier': 0, 'gauge_only': 356}`:
+356 pixels of rain from a gauge that was stuck.
+
+| Reason | The rule | It needs |
+|---|---|---|
+| `jump` | `check` against the frame before: the only rule that rejects a whole frame | `previous` |
+| `beyond_record` | more than the most rain ever measured in Italy over the window (948 mm in 24 h, 181 mm in 1 h), plus 25 % | nothing |
+| `outlier` | a pixel at least 50 mm above the 5×5 pixels around it, and ten times their spread | nothing |
+| `gauge_only` | a «Merging» frame with 30 mm or more where the radar alone saw less than 5 % of it within 2 km, at a place the radar sees well | `radar` |
+
+These are rules, not a trained model: there are too few labelled cases to
+train one. Each has a threshold measured on the 2,550 frames kept from June to
+November 2026. In those months the last rule found rain gauges reporting rain
+under a dry sky in 154 of 1,270 three-hour frames, mostly at the same seven
+places. Where the radar is blind, as on Lipari, a gauge is all there is and
+its rain is kept.
+
 ### 5. Look at it
 
 With `pip install matplotlib`:
@@ -665,15 +703,15 @@ the others are here so you don't have to find them yourself.
 | **Two grids** | `SRI`/`SRT1` are 1 km in a Transverse Mercator projection; `CUM*` are 0.01° in EPSG:4326 | never mix the arrays: reproject one onto the other |
 | **A corrupted series** | in October 2026 every CUM24 frame at :30 carried a smooth bell of up to 20,584 mm over Abruzzo, for days (the :00 frames were right) | never trust one frame alone: compare it with its neighbours, and read a place with the median of the 3×3 pixels around it |
 | **Not every echo is rain** | sea clutter or a radar with a problem can paint rain where there is none. But a round edge alone proves nothing: it is where a radar's range ends | look at the hourly frames: rain moves, clutter stays |
-| **A gauge can be wrong too** | on 6–8 October 2026 one gauge of the «Merging» was stuck: 126.6 mm every 3 hours for 33 hours on a dry night, 1,152 mm in `CUM24` | a jump between frames does not catch it; the radar alone (`SRT1`) read 0: see the [benchmark](https://agentengineering.it/dpc-radar/benchmark/) |
+| **A gauge can be wrong too** | on 6–8 October 2026 one gauge of the «Merging» was stuck: 126.6 mm every 3 hours for 33 hours on a dry night, 1,152 mm in `CUM24` | a jump between frames does not catch it; the radar alone (`SRT1`) read 0: `frame.quality(radar=...)` masks it |
 | **Radar alone is not the truth** | the radar-only history read between 10 % and 80 % of the gauges in Apulia in 2016 | use the «Merging» when you can; compare on your area |
 | **Times are in UTC, in milliseconds** | the API speaks epoch milliseconds | `to_epoch_ms` / `from_epoch_ms`, and always aware datetimes |
 | **The `origin` header** | the API once refused requests without it; in November 2026 it no longer does | `products.HEADERS` sends it anyway |
 
 Every trap above is a case in the **[benchmark](https://agentengineering.it/dpc-radar/benchmark/)**:
 real frames where we know the answer, and how each cleaning rule scores on
-them. Limen's rule today passes 8 of 19 checks; a first frame-level check
-(`jump-sign`) passes 17, and all 19 with the reliability map.
+them. Limen's rule today passes 14 of 30 checks; a frame-level check
+(`jump-sign`) passes 26, 28 with the reliability map, and `quality` all 30.
 
 ---
 
@@ -689,6 +727,8 @@ them. Limen's rule today passes 8 of 19 checks; a first frame-level check
 | `grid.sample(points)` | the value at lon/lat points: median of the 3×3 pixels, `None` if not measured |
 | `grid.peak(bbox, threshold=)` / `grid.crop(bbox)` | highest value and pixels above a threshold in a box / the box as a grid |
 | `grid.check(previous, max_step=)` | `FrameCheck(verdict, grid, jumps)`: whether to trust a frame, given the one before |
+| `grid.quality(previous=None, radar=None)` | `Quality(grid, mask, reasons, score, verdict)`: what to trust pixel by pixel, and why |
+| `radar_total(frames)` | the radar-only rain over a window: the sum of its hourly `SRT1` frames |
 | `ABSENT` | a frame the DPC no longer keeps |
 | `archive(folder, radar, start=, end=, limit=)` | download the CUM3 and SRT1 frames the archive lacks; an `ArchiveReport` |
 | `MergingArchive(folder).hourly(points, start, end)` | hourly rain per point from the archive: SRT1 rescaled to the CUM3 |
@@ -723,7 +763,7 @@ municipality-days on alert.
 ```mermaid
 flowchart LR
     B["Benchmark<br/>known cases"] --> P0["Phase 0<br/>reliability map<br/>climatology<br/>storm catalogue"]
-    P0 --> P1["Phase 1<br/>learned frame check"]
+    P0 --> P1["Phase 1<br/>frame quality check"]
     P1 --> P2["Phase 2<br/>nowcasting<br/>radar–gauge bias"]
     P2 --> P3["Phase 3<br/>MCP · llms.txt<br/>event reports"]
     P0 & P1 & P2 & P3 -.-> L["Limen<br/>fewer false alarms ·<br/>more events anticipated"]
@@ -735,7 +775,7 @@ flowchart LR
 | **Reliability map** | where the radar sees well, and where it is blind | a blind spot is no longer read as "dry" | [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) |
 | **Rain climatology** | how rare is this rain *here*, from 15 years of radar | alerts on unusual rain, not on one national threshold | [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) |
 | **Storm catalogue** | every storm as an object, and the extreme ones as events to check in the news | many more verified events to measure against | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
-| **Learned frame check** | a model that tells a real storm from a broken frame or clutter | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
+| **Frame quality check** ✅ | rules that tell a real storm from a broken frame or a faulty gauge, and say why | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
 | **Nowcasting** | the rain field moved forward along its motion, 0–2 hours | a trigger on rain that is *coming* | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
 | **Radar–gauge bias** | learn how wrong the radar alone is, and correct it | a history worth backtesting on | [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) |
 | **AI for agents** | an MCP server, `llms.txt`, reports that cite their frames | the same facts for Limen's assistant | [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) |
@@ -767,12 +807,13 @@ real API.
 dpc-radar/
 ├── src/dpc_radar/
 │   ├── products.py   # products, requests, parsers, is_expired: pure functions
-│   ├── grid.py       # RainGrid: read a frame, sample, peak, crop, check
+│   ├── grid.py       # RainGrid: read a frame, sample, peak, crop, check, quality
 │   ├── client.py     # RadarClient: latest, at, download, ABSENT
 │   ├── archive.py    # archive the «Merging», hourly rain from it
 │   ├── history.py    # IT-DPC-SRI 2010-2025 (extra [history])
 │   ├── bulletins.py  # the official criticality bulletin (extra [bulletins])
 │   ├── reliability.py  # where the radar can be trusted: a map and its parts
+│   ├── quality.py    # what to trust in a frame, pixel by pixel, and why
 │   └── errors.py     # DpcRadarError
 ├── tests/            # offline: synthetic GeoTIFFs and a fake API
 │   └── live/         # the same on the real API: uv run pytest -m live

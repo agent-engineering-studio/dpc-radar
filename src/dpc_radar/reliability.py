@@ -56,6 +56,7 @@ MAP_FILE: Final = "reliability.tif"
 #: The bands of the file, in order. Bytes: 0-100 are hundredths (``beam_height``:
 #: units of 50 m), 255 is "not known".
 BANDS: Final = ("score", "visibility", "coverage", "agreement", "beam_height")
+Part = Literal["score", "visibility", "coverage", "agreement", "beam_height"]
 _NODATA = 255
 _BEAM_STEP_M = 50.0
 
@@ -169,11 +170,15 @@ class ReliabilityMap:
             distance,
         )
 
-    def like(self, grid: RainGrid) -> np.ndarray:
-        """The score on the pixels of ``grid`` (any product: 1 km or 0.01°), NaN where not known."""
+    def like(self, grid: RainGrid, part: Part = "score") -> np.ndarray:
+        """The score (or another ``part`` of the map) on the pixels of ``grid``.
+
+        Any product: 1 km or 0.01°. NaN where not known.
+        """
         out = np.full(grid.data.shape, np.nan, dtype="float32")
+        source: np.ndarray = getattr(self, part)
         reproject(
-            self.score.astype("float32"),
+            source.astype("float32"),
             out,
             src_transform=self.transform,
             src_crs=self.crs,

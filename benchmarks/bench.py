@@ -1,7 +1,8 @@
 """The benchmark: known cases of the DPC radar data, and how a method scores on them.
 
-A *method* is anything that decides what to trust in a frame. It gets the frame
-and the one before it and answers three questions:
+A *method* is anything that decides what to trust in a frame. It gets the frame,
+the one before it and, for the cases that have it, the radar-only rain over the
+same window (``radar``), and answers three questions:
 
 * ``frame_ok``: is the frame usable at all? (``None``: the method does not say)
 * ``clean``: the frame with the pixels it does not trust set to NaN;
@@ -43,13 +44,14 @@ class Frame:
     data: np.ndarray
     transform: Affine
     crs: CRS
+    product: str = "CUM24"
 
     @classmethod
-    def read(cls, path: Path) -> Frame:
+    def read(cls, path: Path, product: str = "CUM24") -> Frame:
         with rasterio.open(path) as src:
             data = src.read(1).astype("float64")
             data[data < 0] = np.nan  # -9999: no data
-            return cls(data, src.transform, src.crs)
+            return cls(data, src.transform, src.crs, product)
 
     def index(self, lon: float, lat: float) -> tuple[int, int]:
         xs, ys = warp_points("EPSG:4326", self.crs, [lon], [lat])  # SRT1 is in metres
@@ -89,6 +91,8 @@ class Case:
     bbox: tuple[float, float, float, float]
     source: str
     checks: list[Check] = field(default_factory=list)
+    #: Keep the radar-only rain over the same window next to the frame.
+    radar: bool = False
 
     @property
     def previous_time(self) -> datetime:
@@ -97,6 +101,10 @@ class Case:
     def paths(self) -> tuple[Path, Path]:
         folder = FRAMES / self.id
         return folder / "frame.tif", folder / "previous.tif"
+
+    @property
+    def radar_path(self) -> Path:
+        return FRAMES / self.id / "radar.tif"
 
 
 def load_cases(path: Path = CASES) -> list[Case]:
@@ -114,6 +122,7 @@ def load_cases(path: Path = CASES) -> list[Case]:
                 bbox=tuple(c["bbox"]),
                 source=c["source"],
                 checks=checks,
+                radar=c.get("radar", False),
             )
         )
     ids = [c.id for c in cases]
@@ -128,9 +137,9 @@ class Method(Protocol):
     name: str
     description: str
 
-    def frame_ok(self, frame: Frame, previous: Frame) -> bool | None: ...
+    def frame_ok(self, frame: Frame, previous: Frame, radar: Frame | None) -> bool | None: ...
 
-    def clean(self, frame: Frame, previous: Frame) -> np.ndarray: ...
+    def clean(self, frame: Frame, previous: Frame, radar: Frame | None) -> np.ndarray: ...
 
     def reliable(self, lon: float, lat: float) -> bool | None: ...
 
@@ -151,10 +160,17 @@ class Result:
     got: str
 
 
-def score(check: Check, method: Method, frame: Frame, previous: Frame, cleaned: np.ndarray):
+def score(
+    check: Check,
+    method: Method,
+    frame: Frame,
+    previous: Frame,
+    radar: Frame | None,
+    cleaned: np.ndarray,
+) -> tuple[Outcome, str]:
     """One check: its outcome and what the method answered, in words."""
     if check.kind == "frame":
-        ok = method.frame_ok(frame, previous)
+        ok = method.frame_ok(frame, previous, radar)
         if ok is None:
             return "none", "no frame decision"
         return ("pass" if ok == check.expect else "fail"), ("usable" if ok else "rejected")
@@ -180,9 +196,11 @@ def run(method: Method, cases: list[Case] | None = None) -> list[Result]:
     results = []
     for case in cases if cases is not None else load_cases():
         frame_path, previous_path = case.paths()
-        frame, previous = Frame.read(frame_path), Frame.read(previous_path)
-        cleaned = method.clean(frame, previous)
+        frame = Frame.read(frame_path, case.product)
+        previous = Frame.read(previous_path, case.product)
+        radar = Frame.read(case.radar_path, "SRT1") if case.radar else None
+        cleaned = method.clean(frame, previous, radar)
         for check in case.checks:
-            outcome, got = score(check, method, frame, previous, cleaned)
+            outcome, got = score(check, method, frame, previous, radar, cleaned)
             results.append(Result(case, check, outcome, got))
     return results

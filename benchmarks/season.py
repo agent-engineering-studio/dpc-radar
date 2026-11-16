@@ -41,7 +41,7 @@ def main() -> None:
             continue
         pairs += 1
         frame, previous = Frame.read(files[t]), Frame.read(files[before])
-        ok = method.frame_ok(frame, previous)
+        ok = method.frame_ok(frame, previous, None)
         valid = np.isfinite(frame.data) & np.isfinite(previous.data)
         corr = float(np.corrcoef(frame.data[valid], previous.data[valid])[0, 1])
         if ok is False:

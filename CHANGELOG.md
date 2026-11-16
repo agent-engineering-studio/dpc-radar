@@ -16,6 +16,19 @@ All notable changes to this project are documented here. The format follows
   pixels of any frame, `SITES` the 24 radars of the mosaic. Lipari, where the
   radar missed the cloudburst of 10 October 2026, scores 0.42; the benchmark
   method `jump-sign-map` passes 19/19 confirmed checks (#3).
+- `RainGrid.quality(previous=None, radar=None)`: what to trust in a frame,
+  pixel by pixel, and why. A `Quality` with the cleaned grid, a mask, a score
+  and the pixels named by each rule: `jump` (the frame before, as `check`),
+  `beyond_record` (more than the Italian record for the window), `outlier` (a
+  pixel far above its neighbours) and `gauge_only` (in a «Merging» frame, rain
+  the radar alone did not see where it sees well: a rain gauge gone wrong).
+  `radar_total(frames)` sums the hourly `SRT1` frames for the last rule. Rules
+  with measured thresholds, not a trained model. On the benchmark it passes
+  30/30 checks; on 1,270 `CUM3` frames it finds faulty gauges in 154 (#6).
+- `reliability_map().like(grid, part)` gives any part of the map on the pixels
+  of a frame, not only the score.
+- Benchmark: a case with `radar = true` also carries the radar-only rain of
+  its window, and a method receives it.
 - Benchmark: four new cases, three of them on the radar-only `SRT1`, and the
   two suspect cases settled on the hourly frames: the steady 1,152 mm bump is
   a stuck rain gauge (not rain), the "disks" west of Sardinia are a band of

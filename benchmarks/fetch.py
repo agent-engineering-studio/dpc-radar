@@ -5,8 +5,10 @@
 For each case: the frame at ``time`` and the one before it, downloaded with
 dpc-radar's own requests, cropped to ``bbox`` and written to
 ``frames/<id>/frame.tif`` and ``previous.tif`` (float32, -9999 as no data,
-deflate). Full frames are kept in the cache (default ``.cache/dpc-radar``), so
-a second run is offline. Cases already on disk are skipped unless ``--force``.
+deflate). A case with ``radar = true`` also gets ``radar.tif``: the radar-only
+rain over the same window, the sum of its hourly SRT1 frames. Full frames are
+kept in the cache (default ``.cache/dpc-radar``), so a second run is offline.
+Cases already on disk are skipped unless ``--force``.
 
 The DPC keeps frames for about five months: a case added later than that can no
 longer be fetched. That is why the cropped frames are committed.
@@ -16,10 +18,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import httpx
+import numpy as np
 import rasterio
 from rasterio.warp import transform_bounds
 from rasterio.windows import from_bounds
@@ -80,19 +83,45 @@ def crop(src_path: Path, bbox: tuple[float, float, float, float], out: Path) -> 
         dst.update_tags(SOURCE="Dipartimento della Protezione Civile, CC BY-SA 4.0")
 
 
+def total(paths: list[Path], out: Path) -> Path:
+    """The sum of whole frames on one grid, no data where any of them has none."""
+    with rasterio.open(paths[0]) as src:
+        profile = src.profile
+    frames = []
+    for p in paths:
+        with rasterio.open(p) as src:
+            frames.append(src.read(1).astype("float32"))
+    stack = np.stack(frames)
+    data = np.where((stack < 0).any(axis=0), -9999.0, stack.sum(axis=0))
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with rasterio.open(out, "w", **profile) as dst:
+        dst.write(data.astype(profile["dtype"]), 1)
+    return out
+
+
 async def fetch(cases: list[Case], cache: Path, force: bool) -> None:
     async with httpx.AsyncClient(timeout=60) as client:
         for case in cases:
             frame_out, previous_out = case.paths()
-            if frame_out.exists() and previous_out.exists() and not force:
-                continue
-            for at, out in ((case.time, frame_out), (case.previous_time, previous_out)):
-                full = await download(client, case.product, at, cache)
-                crop(full, case.bbox, out)
-            print(
-                f"{case.id}: {frame_out.stat().st_size // 1024} + "
-                f"{previous_out.stat().st_size // 1024} KB"
-            )
+            if not (frame_out.exists() and previous_out.exists()) or force:
+                for at, out in ((case.time, frame_out), (case.previous_time, previous_out)):
+                    full = await download(client, case.product, at, cache)
+                    crop(full, case.bbox, out)
+                print(
+                    f"{case.id}: {frame_out.stat().st_size // 1024} + "
+                    f"{previous_out.stat().st_size // 1024} KB"
+                )
+            if case.radar and (not case.radar_path.exists() or force):
+                hours = product(case.product).hours or 1
+                hourly = [
+                    await download(client, "SRT1", case.time - timedelta(hours=k), cache)
+                    for k in range(hours)
+                ]
+                whole = total(hourly, cache / "radar" / f"{case.id}.tif")
+                crop(whole, case.bbox, case.radar_path)
+                print(
+                    f"{case.id}: radar over {hours} h, {case.radar_path.stat().st_size // 1024} KB"
+                )
 
 
 def main() -> None:

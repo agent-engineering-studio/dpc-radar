@@ -11,6 +11,10 @@
 #   kind = "masked"   share of the valid pixels the method throws away    max (0-1)
 #   kind = "reliable" can the radar be trusted at this point?    expect = true | false
 #
+# radar = true: the radar-only rain over the same window (the sum of the hourly
+# SRT1 frames) is kept next to the frame, as radar.tif, for the methods that
+# compare the «Merging» with the radar alone.
+#
 # status = "confirmed": the answer is known (from Limen, the gauges, the DPC series,
 #                       or the radar-only frames of the same hours).
 # status = "suspect":   our best reading, not confirmed yet; scored apart.
@@ -21,6 +25,7 @@
 
 [[case]]
 id = "melito-2026-10-10T06"
+radar = true
 title = "The Reggio Calabria storm, morning of 10 October 2026"
 status = "confirmed"
 product = "CUM24"
@@ -68,6 +73,7 @@ expect = false
 
 [[case]]
 id = "melito-2026-10-11T00"
+radar = true
 title = "The whole day of 10 October 2026 at Melito"
 status = "confirmed"
 product = "CUM24"
@@ -183,6 +189,7 @@ masked_ok = true
 
 [[case]]
 id = "calm-2026-10-04T06"
+radar = true
 title = "A calm day: 4 October 2026"
 status = "confirmed"
 product = "CUM24"
@@ -200,6 +207,7 @@ max = 0.001
 
 [[case]]
 id = "calm-2026-10-06T06"
+radar = true
 title = "A calm day: 6 October 2026"
 status = "confirmed"
 product = "CUM24"
@@ -219,6 +227,7 @@ max = 0.001
 
 [[case]]
 id = "steady-bump-2026-10-07T12"
+radar = true
 title = "A stuck rain gauge on the Lazio-Abruzzo border, 6-8 October 2026"
 status = "confirmed"
 product = "CUM24"
@@ -236,6 +245,7 @@ masked_ok = true
 
 [[case]]
 id = "stuck-gauge-cum3-2026-10-07T06"
+radar = true
 title = "The same stuck gauge in a 3-hour frame"
 status = "confirmed"
 product = "CUM3"
@@ -313,6 +323,7 @@ masked_ok = false
 
 [[case]]
 id = "sardinia-disks-2026-10-21T00"
+radar = true
 title = "Rain over the sea west of Sardinia, 20 October 2026 (once read as 'disks')"
 status = "confirmed"
 product = "CUM24"

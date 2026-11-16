@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 import numpy as np
 
 from benchmarks.bench import Frame, Method
-from dpc_radar import CUM24, FrameCheck, RainGrid, reliability
+from dpc_radar import FrameCheck, Quality, RainGrid, product, reliability
 
 
 @dataclass(frozen=True)
@@ -22,10 +22,10 @@ class AcceptAll:
     name: str = "accept-all"
     description: str = "trust everything (no cleaning)"
 
-    def frame_ok(self, frame: Frame, previous: Frame) -> bool | None:
+    def frame_ok(self, frame: Frame, previous: Frame, radar: Frame | None) -> bool | None:
         return True
 
-    def clean(self, frame: Frame, previous: Frame) -> np.ndarray:
+    def clean(self, frame: Frame, previous: Frame, radar: Frame | None) -> np.ndarray:
         return frame.data
 
     def reliable(self, lon: float, lat: float) -> bool | None:
@@ -44,10 +44,10 @@ class LimenMaxStep:
     name: str = "limen-max-step"
     description: str = "Limen today: mask pixels that jump > 150 mm in 30 min (limen#235)"
 
-    def frame_ok(self, frame: Frame, previous: Frame) -> bool | None:
+    def frame_ok(self, frame: Frame, previous: Frame, radar: Frame | None) -> bool | None:
         return None
 
-    def clean(self, frame: Frame, previous: Frame) -> np.ndarray:
+    def clean(self, frame: Frame, previous: Frame, radar: Frame | None) -> np.ndarray:
         a, b = frame.data, previous.data
         bad = np.isfinite(a) & np.isfinite(b) & (np.abs(a - b) > self.max_step)
         out = a.copy()
@@ -83,10 +83,10 @@ class JumpSign:
         now, before = _grid(frame), _grid(previous)
         return now.check(before, max_step=self.max_step, min_pixels=self.min_pixels)
 
-    def frame_ok(self, frame: Frame, previous: Frame) -> bool | None:
+    def frame_ok(self, frame: Frame, previous: Frame, radar: Frame | None) -> bool | None:
         return self._check(frame, previous).usable
 
-    def clean(self, frame: Frame, previous: Frame) -> np.ndarray:
+    def clean(self, frame: Frame, previous: Frame, radar: Frame | None) -> np.ndarray:
         result = self._check(frame, previous)
         if result.grid is None:
             return np.full_like(frame.data, np.nan)  # rejected: nothing measured
@@ -98,8 +98,8 @@ class JumpSign:
 
 @dataclass(frozen=True)
 class JumpSignMap(JumpSign):
-    """The library today: :class:`JumpSign` on the frames, and the reliability
-    map (#3) on the question "can the radar be trusted here?".
+    """:class:`JumpSign` on the frames, and the reliability map (#3) on the
+    question "can the radar be trusted here?".
 
     The map is static: it knows where the beam passes high, where a radar is
     often off and where the radar alone reads far from the «Merging». It does
@@ -113,11 +113,49 @@ class JumpSignMap(JumpSign):
         return reliability(lon, lat).reliable
 
 
+@dataclass(frozen=True)
+class QualityCheck(JumpSignMap):
+    """The library today: :meth:`dpc_radar.RainGrid.quality` on the frames (#6)
+    and the reliability map on the places.
+
+    On top of the jump rule: values beyond the Italian record, pixels far above
+    their neighbours and, where the case keeps the radar-only rain of the same
+    window, «Merging» rain the radar did not see where it sees well (a rain
+    gauge gone wrong).
+    """
+
+    name: str = "quality"
+    description: str = "RainGrid.quality: jump, record, outlier, gauge the radar denies (#6)"
+
+    def _quality(self, frame: Frame, previous: Frame, radar: Frame | None) -> Quality:
+        return _grid(frame).quality(
+            _grid(previous),
+            None if radar is None else _grid(radar),
+            max_step=self.max_step,
+            min_pixels=self.min_pixels,
+        )
+
+    def frame_ok(self, frame: Frame, previous: Frame, radar: Frame | None) -> bool | None:
+        return self._quality(frame, previous, radar).usable
+
+    def clean(self, frame: Frame, previous: Frame, radar: Frame | None) -> np.ndarray:
+        result = self._quality(frame, previous, radar)
+        if result.grid is None:
+            return np.full_like(frame.data, np.nan)
+        return result.grid.data
+
+
 def _grid(frame: Frame) -> RainGrid:
-    """A benchmark frame as the library's grid (product and time do not matter here)."""
-    return RainGrid(CUM24, datetime.min.replace(tzinfo=UTC), frame.data, frame.transform, frame.crs)
+    """A benchmark frame as the library's grid (the time does not matter here)."""
+    return RainGrid(
+        product(frame.product),
+        datetime.min.replace(tzinfo=UTC),
+        frame.data.astype("float32"),
+        frame.transform,
+        frame.crs,
+    )
 
 
 METHODS: dict[str, Method] = {
-    m.name: m for m in (AcceptAll(), LimenMaxStep(), JumpSign(), JumpSignMap())
+    m.name: m for m in (AcceptAll(), LimenMaxStep(), JumpSign(), JumpSignMap(), QualityCheck())
 }

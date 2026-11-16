@@ -21,6 +21,7 @@ from pathlib import Path
 
 import httpx
 import rasterio
+from rasterio.warp import transform_bounds
 from rasterio.windows import from_bounds
 
 from benchmarks.bench import Case, load_cases
@@ -56,7 +57,9 @@ async def download(client: httpx.AsyncClient, name: str, at: datetime, cache: Pa
 
 def crop(src_path: Path, bbox: tuple[float, float, float, float], out: Path) -> None:
     with rasterio.open(src_path) as src:
-        window = from_bounds(*bbox, transform=src.transform).round_offsets().round_lengths()
+        # the «Merging» is in degrees, the radar-only products in metres
+        bounds = transform_bounds("EPSG:4326", src.crs, *bbox)
+        window = from_bounds(*bounds, transform=src.transform).round_offsets().round_lengths()
         data = src.read(1, window=window)
         profile = {
             "driver": "GTiff",

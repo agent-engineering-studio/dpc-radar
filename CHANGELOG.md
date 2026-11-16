@@ -16,6 +16,10 @@ All notable changes to this project are documented here. The format follows
   pixels of any frame, `SITES` the 24 radars of the mosaic. Lipari, where the
   radar missed the cloudburst of 10 October 2026, scores 0.42; the benchmark
   method `jump-sign-map` passes 19/19 confirmed checks (#3).
+- Benchmark: four new cases, three of them on the radar-only `SRT1`, and the
+  two suspect cases settled on the hourly frames: the steady 1,152 mm bump is
+  a stuck rain gauge (not rain), the "disks" west of Sardinia are a band of
+  rain (the case now asks to keep it). 30 checks; the library passes 28 (#2).
 - `tools/build_reliability.py` builds the map again from a local archive and
   open terrain tiles.
 - Five notebooks in `notebooks/`, saved with their results and runnable in

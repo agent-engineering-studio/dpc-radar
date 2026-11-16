@@ -25,6 +25,7 @@ import numpy as np
 import rasterio
 from affine import Affine
 from rasterio.crs import CRS
+from rasterio.warp import transform as warp_points
 
 from dpc_radar import product
 
@@ -51,8 +52,9 @@ class Frame:
             return cls(data, src.transform, src.crs)
 
     def index(self, lon: float, lat: float) -> tuple[int, int]:
-        col, row = ~self.transform * (lon, lat)
-        return math.floor(row), math.floor(col)
+        xs, ys = warp_points("EPSG:4326", self.crs, [lon], [lat])  # SRT1 is in metres
+        inv = ~self.transform
+        return math.floor(inv.e * ys[0] + inv.f), math.floor(inv.a * xs[0] + inv.c)
 
 
 @dataclass(frozen=True)

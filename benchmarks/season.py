@@ -5,7 +5,7 @@
 DIR holds full CUM24 frames named ``CUM24_YYYYMMDDHHMM.tif`` (the cache of
 ``benchmarks.fetch`` or ``docs/make_images.py``). For every frame whose
 previous one (30 minutes earlier) is also there, it prints what the method
-decides on the whole of Italy, so a rule tuned on ten cases is checked on
+decides on the whole of Italy, so a rule tuned on a few cases is checked on
 weeks of frames. A rejected frame at :00 is printed apart: in October 2026
 only the :30 series was corrupted.
 """

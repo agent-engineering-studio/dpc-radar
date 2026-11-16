@@ -1,4 +1,4 @@
-.PHONY: check lint format typecheck test build docs
+.PHONY: check lint format typecheck test build docs notebooks diagrams
 
 check: lint typecheck test
 
@@ -21,3 +21,11 @@ build:
 
 docs:
 	uv run --group docs zensical build --clean --strict
+
+# Run every notebook again and save the results. Needs the network: 02, 04
+# and 05 read frames the DPC keeps for about five months.
+notebooks:
+	cd notebooks && uv run --group examples jupyter nbconvert --to notebook --execute --inplace *.ipynb
+
+diagrams:
+	uv run --group examples python docs/make_diagrams.py

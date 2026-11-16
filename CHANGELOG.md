@@ -6,6 +6,18 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Five notebooks in `notebooks/`, saved with their results and runnable in
+  Colab: the first rain map, the anatomy of a storm, the frame check, the
+  hourly archive, the official alert next to the radar.
+- Four example programs in `examples/`: the rain at a place, a storm watch,
+  a nightly archive and a Streamlit dashboard. `uv sync --group examples`
+  installs what they need.
+- The README explains in plain words how a radar measures rain and where it
+  fails, the open data behind the library, its benefits and what can be built
+  with it.
+
 ### Changed
 
 - The documentation site is built with Zensical (`zensical.toml`) instead of

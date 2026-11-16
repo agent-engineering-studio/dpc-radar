@@ -9,6 +9,7 @@ copyright = "Code Apache-2.0. Radar data © Dipartimento della Protezione Civile
 
 nav = [
   { "Home" = "index.md" },
+  { "Notebooks and examples" = "examples.md" },
   { "API reference" = [
     { "Client" = "api/client.md" },
     { "Rain grid" = "api/grid.md" },

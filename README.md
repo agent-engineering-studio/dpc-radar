@@ -23,7 +23,7 @@ it, and how to read the API's answers, including its surprises.
 ```python
 async with RadarClient() as radar:
     rain = await radar.latest("CUM24")  # the last 24 hours of rain, all of Italy
-print(rain.sample([(15.78, 37.92)]))  # mm at Melito di Porto Salvo (184.9 on 10 October 2026)
+print(rain.sample([(15.78, 37.92)]))  # mm at Melito di Porto Salvo (192 on 10 October 2026)
 ```
 
 > **Work in progress.** dpc-radar is being extracted from
@@ -32,14 +32,23 @@ print(rain.sample([(15.78, 37.92)]))  # mm at Melito di Porto Salvo (184.9 on 10
 > 2010–2025 history and the criticality bulletins. Next: the ideas on the
 > [roadmap](https://agentengineering.it/dpc-radar/roadmap/).
 
+**Try it now, nothing to install:** open the
+[first notebook in Colab](https://colab.research.google.com/github/agent-engineering-studio/dpc-radar/blob/main/notebooks/01_first_rain_map.ipynb)
+and draw today's rain map of Italy in five minutes. Four more notebooks and
+four small apps are [below](#notebooks-and-example-apps).
+
 ---
 
 ## Contents
 
 - [The radar of Italy, in 30 seconds](#the-radar-of-italy-in-30-seconds)
+- [Why it matters](#why-it-matters)
 - [What a storm looks like](#what-a-storm-looks-like)
+- [How a radar measures rain, in plain words](#how-a-radar-measures-rain-in-plain-words)
 - [The products](#the-products)
-- [Who is it for](#who-is-it-for)
+- [The open data behind it](#the-open-data-behind-it)
+- [Who is it for, and what you can build](#who-is-it-for-and-what-you-can-build)
+- [Notebooks and example apps](#notebooks-and-example-apps)
 - [Quick start](#quick-start)
 - [Keep the «Merging», read fifteen years of history](#keep-the-merging-read-fifteen-years-of-history)
 - [The official alert, as data](#the-official-alert-as-data)
@@ -78,6 +87,38 @@ What you can do with it, for example:
 - feed **flood and landslide models** with rain that was measured, not forecast;
 - keep your own **archive**: the DPC keeps only about five months.
 
+## Why it matters
+
+Italy is a country of short, steep valleys. A storm can pour a month of rain
+on one of them in a few hours, and leave the next one dry. A **forecast**
+says what will probably happen over a wide area. A **measurement** says what
+is happening, here, now. On 10 October 2026 the forecast for Melito di Porto
+Salvo was 20 mm; the measurement was 192.
+
+The measurement exists, it is public, and it is free. What is missing is the
+last step: getting it into a program without a week of work. That is what
+this library does, and these are the benefits.
+
+| | Without dpc-radar | With dpc-radar |
+|---|---|---|
+| **Getting a frame** | read the web viewer's traffic to find two undocumented calls, a required header and a signed link | `await radar.latest("CUM24")` |
+| **Rain at a place** | open a GeoTIFF, handle two map projections and the «no data» value | `rain.sample([(lon, lat)])` |
+| **A place nobody measured** | usually read as zero: «dry» | `None`: «not measured» |
+| **A faulty frame** | a false alarm of 7,000 mm | `frame.check(previous)` says `rejected` |
+| **Data older than five months** | gone | your own archive, one line a night |
+| **Rain per hour, corrected with gauges** | not published | `MergingArchive.hourly(...)` |
+| **The official alert** | a web page and a PDF | `bulletin.zone_at(lon, lat).colour` |
+
+Three things we care about, beyond the code:
+
+- **Honest numbers.** The library never invents a value. Where the radar
+  did not look, it says so.
+- **Measured claims.** Every cleaning rule runs on a
+  [benchmark of known cases](https://agentengineering.it/dpc-radar/benchmark/)
+  before it ships; the failures are published with the successes.
+- **Public money, public data, public code.** The radars are paid by
+  everyone. The more people can read their data, the more it is worth.
+
 ## What a storm looks like
 
 On **10 October 2026** a storm hit the area around Reggio Calabria, in the
@@ -109,8 +150,8 @@ UTC, with up to **21 mm in a single hour**:
 </p>
 
 Radar alone, or radar corrected with the gauges? At Melito the gauges
-(«Merging») measured **185 mm** in the day, and the radar alone saw only
-**115 mm**. Over the whole box, though, the radar read about **12 % more**
+(«Merging») measured **192 mm** in the day, and the radar alone saw only
+**115 mm**, 60 % of it. Over the whole box, though, the radar read about **12 % more**
 than the gauges. The radar is wrong in both directions, depending on the
 place. That is why the «Merging» exists: it keeps the radar's picture and
 corrects it to what the gauges collected.
@@ -130,7 +171,111 @@ devastates one valley can be a small bar on a national chart.
 
 Every image above is made from real DPC frames by
 [`docs/make_images.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/docs/make_images.py),
-with the functions of this library.
+with the functions of this library. The
+[second notebook](https://github.com/agent-engineering-studio/dpc-radar/blob/main/notebooks/02_anatomy_of_a_storm.ipynb)
+rebuilds this storm step by step.
+
+## How a radar measures rain, in plain words
+
+You do not need this section to use the library. You need it to know **how
+far to trust the numbers**.
+
+### 1. A radar listens to echoes
+
+A weather radar is a dish that turns. It sends a short pulse of microwaves,
+a few centimetres long, and listens. If the pulse meets raindrops, a tiny
+part of it bounces back.
+
+- **How long** the echo takes to come back says how far the rain is.
+- **How strong** it is says how much water is up there. This strength is
+  called *reflectivity*.
+
+The dish turns all the way round, tilts up a little, and turns again. In a
+few minutes it has scanned the sky for 200 km around. That is why a new map
+comes out every five minutes.
+
+### 2. From echo to millimetres: an estimate, not a measurement
+
+Here is the weak point. The echo does not depend only on *how much* water
+there is, but very strongly on *how big* the drops are: one 4 mm drop sends
+back as much echo as about four thousand 1 mm drops. The radar cannot count
+drops. It uses a formula built on the average rain, and the classic one
+(Marshall and Palmer, 1948) gives these rates:
+
+| Echo strength | Rain rate | It feels like |
+|---|---|---|
+| 20 dBZ | about 0.6 mm/h | drizzle |
+| 30 dBZ | about 3 mm/h | steady rain |
+| 40 dBZ | about 12 mm/h | heavy rain |
+| 50 dBZ | about 50 mm/h | a cloudburst |
+
+If today's drops are larger or smaller than average, the rain is wrong, even
+with a perfect radar. Hail is the extreme case: a few stones echo like a
+flood.
+
+### 3. The radar looks high above your head
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/how-radar-sees.png" alt="Diagram of a radar beam that climbs with distance: 1.5 km above the radar at 100 km and 4 km at 200 km, a mountain that hides half of it, the melting layer, and low rain that falls under the beam onto a rain gauge" width="100%">
+</p>
+
+The beam leaves almost flat, but the Earth curves away under it. ① At
+100 km the beam is 1.5 km above the radar; ② at 200 km it is 4 km up. What
+the radar sees there is not what reaches the ground:
+
+- ③ **Mountains block the beam.** Behind a ridge the radar sees less, or
+  nothing. Italy is mostly mountains.
+- ④ **Melting snow looks like a downpour.** High up, rain is often snow. As
+  it melts it gets a coat of water and echoes much more than the rain it
+  becomes. On the map it is a ring of false heavy rain.
+- ⑤ **Rain can form under the beam.** Against a slope, moist air rises and
+  the drops grow in the last kilometre before the ground. The radar, looking
+  higher, misses that water. This is the likely story of Melito, where it saw
+  115 mm of 192.
+- **Heavy rain hides what is behind it.** The pulse loses strength crossing
+  a storm, so a second storm further away looks weaker than it is.
+- **Not every echo is rain.** Hills, the sea, wind farms, and on some days
+  the air itself, which bends the beam down to the ground. These are the
+  arcs and disks that appear on the map where no cloud is.
+
+### 4. The rain gauge: true, but only where it stands
+
+A rain gauge is a funnel on a pole that collects the rain and weighs or
+counts it. It measures the water that really reached the ground. But it
+samples a patch as wide as a dinner plate, and the next gauge may be ten
+kilometres away. A summer storm can pass between two gauges and leave both
+dry. The cloudburst over Lipari on the same 10 October was like that, and
+there even the radar missed it.
+
+### 5. The «Merging»: the best of both
+
+So each instrument has what the other lacks:
+
+| | Radar | Rain gauge |
+|---|---|---|
+| **Where** it rained | everywhere, every kilometre | only where a gauge stands |
+| **How much** it rained | an estimate, sometimes far off | a real measurement |
+| **How fast** it arrives | every 5 minutes | minutes to hours |
+
+The DPC combines them: the radar gives the **shape** of the rain, the gauges
+fix the **amount**. The result is the «Merging», published as `CUM3`,
+`CUM6`, `CUM12` and `CUM24`. It is the closest thing to «how much it really
+rained, everywhere» that Italy has, and it is open.
+
+### 6. What this means when you use the data
+
+- For **totals** (how many millimetres), use a «Merging». Use the radar-only
+  products (`SRI`, `SRT1`) for **timing**: is it raining now, when did it
+  start, where is the storm going.
+- A **`None`** is information: nobody measured there. Never turn it into
+  zero.
+- Rain **far from every radar** and **behind mountains** is less sure than
+  rain on a plain near a radar.
+- A value that is **absurd** (thousands of millimetres) or a shape that is
+  **too regular** (a ring, a disk, a smooth bell) is a fault, not weather.
+  [`check`](#4-check-a-frame-before-you-trust-it) catches the first kind.
+- A map of measured rain is **not a forecast** and **not an alert**. It tells
+  what fell, not what will.
 
 ## The products
 
@@ -150,18 +295,90 @@ with the functions of this library.
 - *How much rain fell in the last hour?* → `SRT1`.
 - *How much rain fell in the last day?* → `CUM24` (or `CUM3`–`CUM12` for shorter windows). The gauges make it the most accurate, but it arrives every 30 minutes, not every 5.
 
-## Who is it for
+## The open data behind it
+
+Everything this library reads is published by a public body, free, with no
+account and no key.
+
+| Data | What it is | Published by | How fresh | Kept for | Licence |
+|---|---|---|---|---|---|
+| **Radar mosaic** `SRI`, `SRT1` | rain rate now and rain of the last hour, radar only, 1 km | Dipartimento della Protezione Civile | every 5 min | about 5 months | CC BY-SA 4.0 |
+| **«Merging»** `CUM3`–`CUM24` | rain of the last 3–24 hours, radar corrected with the rain gauges, 0.01° | Dipartimento della Protezione Civile | every 30 min | about 5 months | CC BY-SA 4.0 |
+| **Criticality bulletin** | the official alert, zone by zone, for today and tomorrow | Dipartimento della Protezione Civile, on GitHub | every afternoon | since 2020 | CC BY 4.0 |
+| **IT-DPC-SRI** | fifteen years of the radar mosaic, 2010–2025, in one 50 GB file | Fondazione Bruno Kessler, on Zenodo | fixed | permanent (DOI) | CC BY-SA 4.0 |
+
+What the licences ask of you, in one line: **say where the data comes from**
+(«Dipartimento della Protezione Civile»), and if you publish something made
+from the radar data, **share it under the same licence**.
+
+Two limits to know before you plan a project:
+
+- **The API has a short memory.** A frame older than about five months is
+  gone. If you will need last winter's rain next year, start
+  [your archive](#keep-the-merging-read-fifteen-years-of-history) today.
+- **The fifteen-year history is radar only.** It has no gauge correction, so
+  it under-estimates: use it to learn *patterns*, not to quote totals.
+
+## Who is it for, and what you can build
 
 - **Researchers and students** in hydrology, meteorology and geology who
-  want measured rain in a notebook or a pipeline.
+  want measured rain in a notebook or a pipeline: the rain behind a
+  landslide, a year of storms over a catchment, a training set for a model.
 - **Civil protection, utilities and engineers** who watch rivers, slopes,
-  roads or drains and need rain totals that are repeatable.
-- **Data journalists and developers** who want to show what fell during a
-  storm, with a source anyone can check.
+  roads or drains: a message when a violent shower enters your area, the
+  rain of the last six hours on every pumping station, a report after each
+  event that can be repeated and checked.
+- **Farmers and insurers**: how much really fell on a field, not at the
+  nearest weather station twenty kilometres away.
+- **Data journalists and civic developers** who want to show what fell
+  during a storm, with a source anyone can check, next to the alert that had
+  been issued.
+- **Teachers**: five notebooks that turn a storm in the news into a lesson
+  on measurement, error and open data.
 
 It started inside [Limen](https://github.com/agent-engineering-studio/limen),
 where the radar decides *when* to re-run the risk model (heavy rain on the
 radar starts a run at once) and the «Merging» totals feed the flood score.
+
+## Notebooks and example apps
+
+Five notebooks, from the first map to the official alert. Each one is saved
+**with its results**, so you can read it on GitHub like an article, or open
+it in Colab and run it on today's rain.
+
+| | Notebook | You learn | Run it |
+|---|---|---|---|
+| 1 | [Your first rain map of Italy](https://github.com/agent-engineering-studio/dpc-radar/blob/main/notebooks/01_first_rain_map.ipynb) | the latest frame, the rain on your city, why «no data» is not «no rain» | [Colab](https://colab.research.google.com/github/agent-engineering-studio/dpc-radar/blob/main/notebooks/01_first_rain_map.ipynb) |
+| 2 | [Anatomy of a storm](https://github.com/agent-engineering-studio/dpc-radar/blob/main/notebooks/02_anatomy_of_a_storm.ipynb) | the Melito flood hour by hour; what the radar alone lost | [Colab](https://colab.research.google.com/github/agent-engineering-studio/dpc-radar/blob/main/notebooks/02_anatomy_of_a_storm.ipynb) |
+| 3 | [Trust, but verify](https://github.com/agent-engineering-studio/dpc-radar/blob/main/notebooks/03_trust_but_verify.ipynb) | a frame with 7,348 mm of false rain, and the check that rejects it (offline) | [Colab](https://colab.research.google.com/github/agent-engineering-studio/dpc-radar/blob/main/notebooks/03_trust_but_verify.ipynb) |
+| 4 | [Hourly rain from your own archive](https://github.com/agent-engineering-studio/dpc-radar/blob/main/notebooks/04_hourly_rain_archive.ipynb) | save the frames; rain per hour corrected with the gauges | [Colab](https://colab.research.google.com/github/agent-engineering-studio/dpc-radar/blob/main/notebooks/04_hourly_rain_archive.ipynb) |
+| 5 | [The official alert, next to the radar](https://github.com/agent-engineering-studio/dpc-radar/blob/main/notebooks/05_alert_vs_radar.ipynb) | what was announced and what fell, zone by zone | [Colab](https://colab.research.google.com/github/agent-engineering-studio/dpc-radar/blob/main/notebooks/05_alert_vs_radar.ipynb) |
+
+Two results from them. The same hours at Melito, radar alone and corrected
+with the gauges: the worst hour goes from 21 to 63 mm, and passes the 30 mm
+that count as a flash-flood signal (notebook 4). And the alert issued the
+day before, next to the rain that fell (notebook 5):
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/nb-hourly.png" alt="Bar chart of the hourly rain at Melito di Porto Salvo on 10 October 2026: radar alone and corrected with the gauges" width="100%">
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/nb-alert-vs-rain.png" alt="Two maps of southern Italy on 10 October 2026: the official alert zones in yellow and orange, and the rain measured in 24 hours" width="100%">
+</p>
+
+And four small programs in [`examples/`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples), each one file:
+
+| Program | What it does | Run it |
+|---|---|---|
+| [`rain_at.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/rain_at.py) | the rain at a place: now, last 3–24 hours, official alert | `uv run python examples/rain_at.py 12.50 41.90 --name Roma` |
+| [`storm_watch.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/storm_watch.py) | watches an area and tells you when a violent shower enters it | `uv run python examples/storm_watch.py --rate 30` |
+| [`nightly_archive.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/nightly_archive.py) | keeps your archive up to date; made for cron | `uv run python examples/nightly_archive.py ~/radar-archive` |
+| [`app.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/app.py) | a rain dashboard for any town, in the browser | `uv run --group examples streamlit run examples/app.py` |
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/dashboard.png" alt="The example dashboard: rain now and in the last 3 to 24 hours in Rome, the map, the official alert and the result of the frame check" width="100%">
+</p>
 
 ---
 
@@ -526,6 +743,8 @@ dpc-radar/
 Good first issues: a notebook with a storm you remember, a recipe for your
 favourite HTTP library, a check of the radar against a rain gauge near you.
 See [CONTRIBUTING.md](https://github.com/agent-engineering-studio/dpc-radar/blob/main/CONTRIBUTING.md).
+Questions, ideas and maps you made go in the organisation's
+[discussions](https://github.com/orgs/agent-engineering-studio/discussions).
 
 ---
 
@@ -536,7 +755,7 @@ See [CONTRIBUTING.md](https://github.com/agent-engineering-studio/dpc-radar/blob
   [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Credit the
   DPC and share data you derive from it under the same licence.
 - **Criticality bulletins**: DPC, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-- **IT-DPC-SRI** (the 2010–2025 history, coming in the `history` module):
+- **IT-DPC-SRI** (the 2010–2025 history, read by the `history` module):
   Fondazione Bruno Kessler on DPC data, CC BY-SA 4.0,
   [doi:10.5281/zenodo.18637608](https://doi.org/10.5281/zenodo.18637608).
 - **Country borders** in the images: [Natural Earth](https://www.naturalearthdata.com/), public domain.

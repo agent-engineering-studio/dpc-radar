@@ -74,14 +74,19 @@ so there is no date to wait for.
 
 ### Benchmark of known cases · [#2](https://github.com/agent-engineering-studio/dpc-radar/issues/2) · ✅ first version
 
-Ten real cases in [`benchmarks/`](benchmark.md): the Melito storm and the
+Fourteen real cases in [`benchmarks/`](benchmark.md): the Melito storm and the
 Lipari miss of 10 October 2026, the corrupted :30 CUM24 series (found on
 30/09–02/10, 08–11/10 and 21/10–03/11), the clean frame right after a corrupted
-one, two calm days, and two suspect artefacts (a steady 1,000 mm bump, disks
-over the sea). Limen's rule today passes **8 of 19** confirmed checks: it has
-no frame-level decision, lets the edges of the corrupted bell through (88 mm
-where the truth is 9), throws away good pixels after a corrupted frame, and
-cannot see steady artefacts or blind spots. Those are the targets of #3 and #6.
+one, two calm days, a stuck rain gauge (1,152 mm in CUM24 on a dry night), a
+band of rain at sea that looked like clutter, and three hours of radar only
+(`SRT1`). Limen's rule today passes **14 of 30** checks: it has no frame-level
+decision, lets the edges of the corrupted bell through (88 mm where the truth
+is 9), throws away good pixels after a corrupted frame, and cannot see steady
+artefacts or blind spots. The library passes 28: the stuck gauge is what is
+left, and it is the target of #6. No case is *suspect* any more: the two that
+were have been settled on the hourly radar frames (one was not rain, one was).
+Still missing: a check against the rain gauges themselves, which the DPC does
+not publish.
 
 ### Radar reliability map · [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) · ✅ first version
 

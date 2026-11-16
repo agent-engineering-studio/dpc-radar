@@ -664,7 +664,8 @@ the others are here so you don't have to find them yourself.
 | **The «Merging» disappears** | the DPC keeps about five months, and there is no public archive of it | `dpc_radar.archive`: save them every night, oldest first |
 | **Two grids** | `SRI`/`SRT1` are 1 km in a Transverse Mercator projection; `CUM*` are 0.01° in EPSG:4326 | never mix the arrays: reproject one onto the other |
 | **A corrupted series** | in October 2026 every CUM24 frame at :30 carried a smooth bell of up to 20,584 mm over Abruzzo, for days (the :00 frames were right) | never trust one frame alone: compare it with its neighbours, and read a place with the median of the 3×3 pixels around it |
-| **Not every echo is rain** | sea clutter or a radar with a problem can paint rain where there is none, often as a disk around one radar, and it can stay still for hours | a jump between frames does not catch it: see the [benchmark](https://agentengineering.it/dpc-radar/benchmark/) |
+| **Not every echo is rain** | sea clutter or a radar with a problem can paint rain where there is none. But a round edge alone proves nothing: it is where a radar's range ends | look at the hourly frames: rain moves, clutter stays |
+| **A gauge can be wrong too** | on 6–8 October 2026 one gauge of the «Merging» was stuck: 126.6 mm every 3 hours for 33 hours on a dry night, 1,152 mm in `CUM24` | a jump between frames does not catch it; the radar alone (`SRT1`) read 0: see the [benchmark](https://agentengineering.it/dpc-radar/benchmark/) |
 | **Radar alone is not the truth** | the radar-only history read between 10 % and 80 % of the gauges in Apulia in 2016 | use the «Merging» when you can; compare on your area |
 | **Times are in UTC, in milliseconds** | the API speaks epoch milliseconds | `to_epoch_ms` / `from_epoch_ms`, and always aware datetimes |
 | **The `origin` header** | the API once refused requests without it; in November 2026 it no longer does | `products.HEADERS` sends it anyway |

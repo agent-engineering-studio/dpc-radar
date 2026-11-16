@@ -70,7 +70,7 @@ class JumpSign:
     intact. Fewer jumps: just those pixels are masked.
 
     Limits: it needs the frame before; it cannot see artefacts that do not
-    move between frames (sea clutter, a steady bump); in this benchmark it
+    move between frames (a stuck rain gauge); in this benchmark it
     decides on the case's area, not on the whole of Italy.
     """
 

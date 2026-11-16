@@ -16,10 +16,14 @@ improvement is an opinion. Tracked in
 | **The corrupted :30 series** | a smooth bell of up to 20,584 mm over Abruzzo in every CUM24 frame at :30, on 30/09–02/10, 08–11/10 and 21/10–03/11 ([limen#235](https://github.com/agent-engineering-studio/limen/issues/235)) | reject the frame, or at least every wrong pixel |
 | **The clean frame after it** | the :00 frame is right, but differs from the corrupted one before it | keep its pixels |
 | **Calm days, 4 and 6 October** | nothing | change nothing |
-| **A steady bump, 7 October** *(suspect)* | 940–1,152 mm on 3×3 km on the Lazio–Abruzzo border, the same in both series, all day | probably not rain: to confirm |
-| **Disks west of Sardinia, 20 October** *(suspect)* | circular fields at sea, identical from frame to frame | probably sea clutter: to confirm |
+| **A stuck rain gauge, 6–8 October** | 126.6 mm in every 3-hour frame for 33 hours on the Lazio–Abruzzo border (1,152 mm in CUM24), on a night the radar alone reads 0 | remove it: it is not rain |
+| **The same night, radar only (SRT1)** | nothing | change nothing |
+| **Melito, radar only (SRT1)** | one hour of the storm: 21 mm at Melito | keep it |
+| **Rain west of Sardinia, 20 October** | 59 mm at sea in round fields that do not move: it looked like sea clutter, it is a band of rain | keep it |
+| **The same band, radar only (SRT1)** | 21 mm in the hour it passes | keep it |
 
-Each case is one frame and the one 30 minutes before it, cropped to its area
+Each case is one frame and the one before it (30 minutes for the «Merging»,
+5 for the radar-only `SRT1`), cropped to its area
 and committed in [`frames/`](frames/) (CC BY-SA 4.0, © Dipartimento della
 Protezione Civile). The DPC deletes frames after about five months: once
 committed, a case keeps working.
@@ -59,9 +63,18 @@ answer "can the radar be trusted here?": it is what the library does today.
 | `calm-2026-10-04T06` | at most 0.1% of pixels masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked |
 | `calm-2026-10-06T06` | frame usable | ✅ usable | — no frame decision | ✅ usable | ✅ usable |
 | `calm-2026-10-06T06` | at most 0.1% of pixels masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked |
-| `steady-bump-2026-10-07T12` *(suspect)* | the bump (1,152 mm): 0-300 mm or not measured | ❌ 999.9 mm | ❌ 999.9 mm | ❌ 999.9 mm | ❌ 999.9 mm |
-| `sardinia-disks-2026-10-21T00` *(suspect)* | inside the disks, at sea (59 mm): 0-5 mm or not measured | ❌ 56.2 mm | ❌ 56.2 mm | ❌ 56.2 mm | ❌ 56.2 mm |
-| **Score** | confirmed · suspect | confirmed: 10/19 · suspect: 0/2 | confirmed: 8/19 · suspect: 0/2 | confirmed: 17/19 · suspect: 0/2 | confirmed: 19/19 · suspect: 0/2 |
+| `steady-bump-2026-10-07T12` | the bump (1,152 mm): 0-300 mm or not measured | ❌ 999.9 mm | ❌ 999.9 mm | ❌ 999.9 mm | ❌ 999.9 mm |
+| `stuck-gauge-cum3-2026-10-07T06` | the stuck gauge (126.6 mm in 3 h, radar 0): 0-20 mm or not measured | ❌ 126.6 mm | ❌ 126.6 mm | ❌ 126.6 mm | ❌ 126.6 mm |
+| `stuck-gauge-srt1-2026-10-07T06` | frame usable | ✅ usable | — no frame decision | ✅ usable | ✅ usable |
+| `stuck-gauge-srt1-2026-10-07T06` | over the stuck gauge: dry: 0-1 mm | ✅ 0.0 mm | ✅ 0.0 mm | ✅ 0.0 mm | ✅ 0.0 mm |
+| `stuck-gauge-srt1-2026-10-07T06` | at most 0.1% of pixels masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked |
+| `melito-srt1-2026-10-10T02` | frame usable | ✅ usable | — no frame decision | ✅ usable | ✅ usable |
+| `melito-srt1-2026-10-10T02` | Melito di Porto Salvo, one hour: 10-100 mm | ✅ 21.2 mm | ✅ 21.2 mm | ✅ 21.2 mm | ✅ 21.2 mm |
+| `melito-srt1-2026-10-10T02` | Bagaladi, one hour: 10-100 mm | ✅ 24.5 mm | ✅ 24.5 mm | ✅ 24.5 mm | ✅ 24.5 mm |
+| `sardinia-disks-2026-10-21T00` | at sea, inside the 'disks' (59 mm): 20-120 mm | ✅ 56.2 mm | ✅ 56.2 mm | ✅ 56.2 mm | ✅ 56.2 mm |
+| `sardinia-band-srt1-2026-10-20T13` | frame usable | ✅ usable | — no frame decision | ✅ usable | ✅ usable |
+| `sardinia-band-srt1-2026-10-20T13` | at sea, under the band: 10-60 mm | ✅ 21.5 mm | ✅ 21.5 mm | ✅ 21.5 mm | ✅ 21.5 mm |
+| **Score** | confirmed · suspect | confirmed: 19/30 | confirmed: 14/30 | confirmed: 26/30 | confirmed: 28/30 |
 
 "—" means the method does not decide; it counts as not passed.
 
@@ -76,8 +89,11 @@ answer "can the radar be trusted here?": it is what the library does today.
 - **Nothing decides on the whole frame.** A corrupted :30 frame correlates
   0.04–0.33 with the :00 one beside it; a frame-level check would drop it
   whole, and keep the clean one.
-- **Steady artefacts are invisible to a jump rule**: the 1,000 mm bump and the
-  Sardinia disks do not move between frames.
+- **A stuck gauge is invisible to a jump rule**: it does not move between
+  frames. Nothing here removes it: these are the two checks nobody passes.
+- **The radar-only frames are clean.** No method breaks the three `SRT1`
+  cases, and in 3,838 hourly frames from June to November 2026 the highest
+  value is 204 mm in an hour, in a summer storm: nothing like the bell.
 - **The 7,348 mm "isolated pixel"** that Limen's 3×3 median was meant to
   remove is the peak of the corrupted bell: its 3×3 neighbours have a median
   of 6,381 mm. The median does not remove it; the 150 mm rule does.
@@ -89,7 +105,7 @@ answer "can the radar be trusted here?": it is what the library does today.
 
 ### Checked on whole frames, not only on the cases
 
-Ten cases are few, and they are cropped. `benchmarks.season` runs a method on
+Fourteen cases are few, and they are cropped. `benchmarks.season` runs a method on
 every pair of whole frames in a folder. On the 96 pairs of CUM24 frames kept
 from 25 September to 4 November 2026, `jump-sign` rejects **44 frames, all at
 :30, all on the days the :30 series is known to be corrupted**, and **no frame
@@ -105,10 +121,28 @@ uv run --group bench python -m benchmarks.season .cache/dpc-radar/CUM24 jump-sig
 a corruption that removes it would be read the wrong way round. A real
 cloudburst of more than 150 mm in 30 minutes on five pixels would be rejected
 (that is near the Italian records for 30 minutes). And it cannot see what does
-not move between frames: the steady bump and the Sardinia disks are still
-there, waiting for a learned check
-([#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6)): the
-reliability map says where the radar sees badly, not that a frame is wrong.
+not move between frames: the stuck gauge is still there, waiting for a learned
+check ([#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6)):
+the reliability map says where the radar sees badly, not that a frame is wrong.
+
+### Two cases we had read wrong
+
+Both were *suspect* until November 2026. The hourly radar frames (`SRT1`) and
+the 3-hour «Merging» (`CUM3`) of the same days, kept in a local archive,
+settled them without a rain gauge.
+
+- **The steady bump is a stuck rain gauge.** `CUM3` reads 126.6 mm at the same
+  point in every window from 6 October 12 UTC to 7 October 09 UTC (126.62,
+  126.63, 126.63, 126.79 in the last four) and 114–143 mm until 21 UTC: about
+  1,400 mm in 33 hours. The radar alone reads 0.0 in all those hours, and on
+  8 October the point is back to 0. The «Merging» spread that gauge over more
+  than 350 km². So the gauges can be wrong too, not only the radar.
+- **The Sardinia disks are rain.** We took the round fields at sea for sea
+  clutter. Hour by hour the radar shows a band of rain crossing from west to
+  east between 10 and 15 UTC: 19, 22 and 2 mm at the point of the case, 0
+  before and after. The circles are the edges of the radars' range, where the
+  mosaic ends. The case now asks the opposite: a method must **keep** that
+  rain. Over the sea there is no gauge, so the amount is the radar's own.
 
 ## Run it
 
@@ -155,7 +189,8 @@ Points are read as Limen reads them: the median of the valid 3×3 pixels.
 
 1. Add a `[[case]]` to [`cases.toml`](cases.toml): the product, the frame
    time, the area, where the truth comes from, and its checks. Mark it
-   `suspect` until the answer is confirmed (rain gauges, the news, the DPC).
+   `suspect` until the answer is confirmed (rain gauges, the news, the DPC,
+   the radar-only frames of the same hours).
 2. `uv run --group bench python -m benchmarks.fetch` downloads and crops it
    (only frames younger than about five months still exist).
 3. Run the benchmark, check the outcomes, `--record`, commit.

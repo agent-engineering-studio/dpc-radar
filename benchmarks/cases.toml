@@ -1,6 +1,7 @@
 # Known cases of the DPC radar data, with the answer we expect.
 #
-# Every case is one frame and the frame before it (30 minutes earlier), cropped
+# Every case is one frame and the frame before it (30 minutes earlier for the
+# «Merging», 5 for the radar-only products), cropped
 # to `bbox` (west, south, east, north, degrees) and saved under frames/<id>/ by
 # fetch.py. Each check asks one question a method must answer:
 #
@@ -10,7 +11,8 @@
 #   kind = "masked"   share of the valid pixels the method throws away    max (0-1)
 #   kind = "reliable" can the radar be trusted at this point?    expect = true | false
 #
-# status = "confirmed": the answer is known (from Limen, the gauges, the DPC series).
+# status = "confirmed": the answer is known (from Limen, the gauges, the DPC series,
+#                       or the radar-only frames of the same hours).
 # status = "suspect":   our best reading, not confirmed yet; scored apart.
 #
 # Radar data © Dipartimento della Protezione Civile, CC BY-SA 4.0.
@@ -213,16 +215,16 @@ expect = true
 kind = "masked"
 max = 0.001
 
-# --- Suspect: probably not rain, not confirmed yet --------------------------------
+# --- A stuck rain gauge: steady, so a jump rule cannot see it ---------------------
 
 [[case]]
 id = "steady-bump-2026-10-07T12"
-title = "A steady 1,000 mm bump on the Lazio-Abruzzo border, 7 October 2026"
-status = "suspect"
+title = "A stuck rain gauge on the Lazio-Abruzzo border, 6-8 October 2026"
+status = "confirmed"
 product = "CUM24"
 time = 2026-10-07T12:00:00Z
 bbox = [13.2, 41.4, 14.4, 42.2]
-source = "found while building this benchmark: a 3x3 km bump of 940-1,152 mm, the same in the :00 and :30 series and exactly 1,152.0 mm at 06, 12 and 18 UTC. A jump rule cannot see it, a 3x3 median keeps it. To confirm against the rain gauges"
+source = "found while building this benchmark: a 3x3 km bump of 940-1,152 mm, the same in the :00 and :30 series. Confirmed on the 3-hour frames: CUM3 reads 126.6 mm here in every window from 6 October 12 UTC to 7 October 09 UTC (126.62, 126.63, 126.63, 126.79) and 114-143 mm until 21 UTC, about 1,400 mm in 33 hours, while the radar alone (SRT1) reads 0.0 in all those hours; at 03 UTC of the 8th it is back to 0. No rain does that: one gauge of the «Merging» was stuck"
 
 [[case.check]]
 kind = "value"
@@ -233,18 +235,118 @@ max = 300.0
 masked_ok = true
 
 [[case]]
-id = "sardinia-disks-2026-10-21T00"
-title = "Disks of 'rain' over the sea west of Sardinia, 20 October 2026"
-status = "suspect"
-product = "CUM24"
-time = 2026-10-21T00:00:00Z
-bbox = [6.0, 38.5, 10.0, 41.6]
-source = "found while building this benchmark: circular fields over the sea, identical from one frame to the next (59.1 and 59.0 mm), so a jump rule cannot see them. Probably sea clutter; to confirm"
+id = "stuck-gauge-cum3-2026-10-07T06"
+title = "The same stuck gauge in a 3-hour frame"
+status = "confirmed"
+product = "CUM3"
+time = 2026-10-07T06:00:00Z
+bbox = [13.2, 41.4, 14.4, 42.2]
+source = "126.6 mm in 3 hours at the gauge, more than 30 mm on 356 km² around it, on a night the radar alone reads 0.0 on the whole area (next case)"
 
 [[case.check]]
 kind = "value"
-name = "inside the disks, at sea (59 mm)"
+name = "the stuck gauge (126.6 mm in 3 h, radar 0)"
+lon = 13.795
+lat = 41.805
+max = 20.0
+masked_ok = true
+
+# --- Radar only (SRT1): the hourly frames ---------------------------------------
+
+[[case]]
+id = "stuck-gauge-srt1-2026-10-07T06"
+title = "The radar alone over the stuck gauge: a dry night"
+status = "confirmed"
+product = "SRT1"
+time = 2026-10-07T06:00:00Z
+bbox = [13.2, 41.4, 14.4, 42.2]
+source = "SRT1 reads 0.0 mm on the whole area, at this hour and in the 20 hours around it: the truth the «Merging» frames of the two cases above get wrong"
+
+[[case.check]]
+kind = "frame"
+expect = true
+
+[[case.check]]
+kind = "value"
+name = "over the stuck gauge: dry"
+lon = 13.795
+lat = 41.805
+max = 1.0
+masked_ok = false
+
+[[case.check]]
+kind = "masked"
+max = 0.001
+
+[[case]]
+id = "melito-srt1-2026-10-10T02"
+title = "The Reggio Calabria storm seen by the radar alone"
+status = "confirmed"
+product = "SRT1"
+time = 2026-10-10T02:00:00Z
+bbox = [14.5, 37.6, 17.3, 39.5]
+source = "the same storm as the first case, one hour of radar only: 21 mm at Melito, 25 at Bagaladi. The radar alone saw the storm but not its size: 45 mm at Melito from 00 to 03 UTC, where the «Merging» (CUM3) has 135"
+
+[[case.check]]
+kind = "frame"
+expect = true
+
+[[case.check]]
+kind = "value"
+name = "Melito di Porto Salvo, one hour"
+lon = 15.78
+lat = 37.92
+min = 10.0
+max = 100.0
+masked_ok = false
+
+[[case.check]]
+kind = "value"
+name = "Bagaladi, one hour"
+lon = 15.81
+lat = 38.05
+min = 10.0
+max = 100.0
+masked_ok = false
+
+# --- Real rain that looked wrong: a cleaning rule must keep it -------------------
+
+[[case]]
+id = "sardinia-disks-2026-10-21T00"
+title = "Rain over the sea west of Sardinia, 20 October 2026 (once read as 'disks')"
+status = "confirmed"
+product = "CUM24"
+time = 2026-10-21T00:00:00Z
+bbox = [6.0, 38.5, 10.0, 41.6]
+source = "found while building this benchmark and first read as sea clutter: circular fields over the sea, identical from one frame to the next (59.1 and 59.0 mm). The hourly radar frames say otherwise: a band of rain crosses the sea from west to east between 10 and 15 UTC (next case) and leaves 19 + 22 + 2 mm here. The rain is real; the circles are the edges of the radars' range, where the mosaic ends. Over the sea there is no gauge: the amount is the radar's own"
+
+[[case.check]]
+kind = "value"
+name = "at sea, inside the 'disks' (59 mm)"
 lon = 7.81
 lat = 40.42
-max = 5.0
-masked_ok = true
+min = 20.0
+max = 120.0
+masked_ok = false
+
+[[case]]
+id = "sardinia-band-srt1-2026-10-20T13"
+title = "The band of rain west of Sardinia, one hour of radar"
+status = "confirmed"
+product = "SRT1"
+time = 2026-10-20T13:00:00Z
+bbox = [6.0, 38.5, 10.0, 41.6]
+source = "SRT1 at 12, 13 and 14 UTC reads 18.8, 21.5 and 2.3 mm at the point of the case above, 0 before and after: a band that moves, not clutter that stays"
+
+[[case.check]]
+kind = "frame"
+expect = true
+
+[[case.check]]
+kind = "value"
+name = "at sea, under the band"
+lon = 7.81
+lat = 40.42
+min = 10.0
+max = 60.0
+masked_ok = false

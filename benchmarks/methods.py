@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 import numpy as np
 
 from benchmarks.bench import Frame, Method
-from dpc_radar import CUM24, FrameCheck, RainGrid
+from dpc_radar import CUM24, FrameCheck, RainGrid, reliability
 
 
 @dataclass(frozen=True)
@@ -96,9 +96,28 @@ class JumpSign:
         return None
 
 
+@dataclass(frozen=True)
+class JumpSignMap(JumpSign):
+    """The library today: :class:`JumpSign` on the frames, and the reliability
+    map (#3) on the question "can the radar be trusted here?".
+
+    The map is static: it knows where the beam passes high, where a radar is
+    often off and where the radar alone reads far from the «Merging». It does
+    not know that a radar was off on that very day.
+    """
+
+    name: str = "jump-sign-map"
+    description: str = "jump-sign plus dpc_radar.reliability, the static map (#3)"
+
+    def reliable(self, lon: float, lat: float) -> bool | None:
+        return reliability(lon, lat).reliable
+
+
 def _grid(frame: Frame) -> RainGrid:
     """A benchmark frame as the library's grid (product and time do not matter here)."""
     return RainGrid(CUM24, datetime.min.replace(tzinfo=UTC), frame.data, frame.transform, frame.crs)
 
 
-METHODS: dict[str, Method] = {m.name: m for m in (AcceptAll(), LimenMaxStep(), JumpSign())}
+METHODS: dict[str, Method] = {
+    m.name: m for m in (AcceptAll(), LimenMaxStep(), JumpSign(), JumpSignMap())
+}

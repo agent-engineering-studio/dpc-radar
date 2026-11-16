@@ -8,6 +8,16 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- `dpc_radar.reliability(lon, lat)`: how much to trust the radar at a point, as
+  a score between 0 and 1 and its parts (`visibility`: the height of the lowest
+  beam that clears the mountains; `coverage`: how often the mosaic has data;
+  `agreement`: radar alone against the «Merging»). The map ships with the
+  package (720 kB, 1 km); `reliability_map().like(grid)` gives the score on the
+  pixels of any frame, `SITES` the 24 radars of the mosaic. Lipari, where the
+  radar missed the cloudburst of 10 October 2026, scores 0.42; the benchmark
+  method `jump-sign-map` passes 19/19 confirmed checks (#3).
+- `tools/build_reliability.py` builds the map again from a local archive and
+  open terrain tiles.
 - Five notebooks in `notebooks/`, saved with their results and runnable in
   Colab: the first rain map, the anatomy of a storm, the frame check, the
   hourly archive, the official alert next to the radar.

@@ -22,6 +22,14 @@ from dpc_radar.products import (
     parse_last_product,
     product,
 )
+from dpc_radar.reliability import (
+    SITES,
+    RadarSite,
+    Reliability,
+    ReliabilityMap,
+    reliability,
+    reliability_map,
+)
 
 __version__ = version("dpc-radar")
 logging.getLogger("dpc_radar").addHandler(logging.NullHandler())
@@ -34,6 +42,7 @@ __all__ = [
     "CUM12",
     "CUM24",
     "PRODUCTS",
+    "SITES",
     "SRI",
     "SRT1",
     "Absent",
@@ -42,10 +51,15 @@ __all__ = [
     "LastProduct",
     "Product",
     "RadarClient",
+    "RadarSite",
     "RainGrid",
+    "Reliability",
+    "ReliabilityMap",
     "__version__",
     "is_expired",
     "parse_download",
     "parse_last_product",
     "product",
+    "reliability",
+    "reliability_map",
 ]

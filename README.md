@@ -52,6 +52,7 @@ four small apps are [below](#notebooks-and-example-apps).
 - [Quick start](#quick-start)
 - [Keep the «Merging», read fifteen years of history](#keep-the-merging-read-fifteen-years-of-history)
 - [Where the radar can be trusted](#where-the-radar-can-be-trusted)
+- [How far the radar alone is from the «Merging»](#how-far-the-radar-alone-is-from-the-merging)
 - [The official alert, as data](#the-official-alert-as-data)
 - [How it works](#how-it-works)
 - [The traps we already fell into](#the-traps-we-already-fell-into)
@@ -107,6 +108,7 @@ this library does, and these are the benefits.
 | **A place nobody measured** | usually read as zero: «dry» | `None`: «not measured» |
 | **A faulty frame** | a false alarm of 7,000 mm | `frame.check(previous)` says `rejected` |
 | **A faulty rain gauge** | 126 mm every three hours under a dry sky | `frame.quality(radar=...)` masks it and says `gauge_only` |
+| **Radar-only rain** | 20 % more than the «Merging», and 70 % more often above 30 mm | `correct(frame)`: the frame times a factor measured place by place |
 | **Data older than five months** | gone | your own archive, one line a night |
 | **Rain per hour, corrected with gauges** | not published | `MergingArchive.hourly(...)` |
 | **The official alert** | a web page and a PDF | `bulletin.zone_at(lon, lat).colour` |
@@ -593,6 +595,51 @@ positions come from the DPC's own table; the others were found by fitting
 their range circles on the mosaic. `coverage` and `agreement` describe the five
 months the map was built on.
 
+## How far the radar alone is from the «Merging»
+
+The radar-only products (`SRI`, `SRT1`) come every 5 minutes, the «Merging»
+every 30. So it is tempting to use the radar alone. From June to November 2026
+it read **20 % more rain** than the «Merging» (33 % more on land) and passed
+30 mm in three hours **70 % more often**. Not everywhere in the same direction:
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/bias.png" alt="Map of Italy with the factor between the Merging and the radar alone: red over most of the land, where the radar reads too much, blue in the west of Sicily, where it reads too little" width="70%">
+</p>
+
+```python
+from dpc_radar import correct, radar_factor
+
+radar_factor(12.5, 41.9)  # 0.64  Rome: the radar reads 1.6 times the «Merging»
+radar_factor(13.36, 38.12)  # 2.0  Palermo: it reads less than half
+radar_factor(13.0, 40.5)  # 1.0  open sea: no gauges, nothing to correct with
+
+srt1 = await radar.latest("SRT1")
+closer = correct(srt1)  # the same frame, times the factor of every pixel
+```
+
+The factor is the rain of `CUM3` over the rain of the three `SRT1` hours of the
+same window, summed over five months and over 9 km. Measured by correcting
+every month with the map of the other months:
+
+| Three-hour rain against the «Merging» | Mean error | Total | Passes 30 mm | Passes 50 mm |
+|---|---|---|---|---|
+| radar alone | 1.91 mm | 1.20 | 1.70 times as often | 1.81 |
+| one factor for the whole of Italy | 1.94 mm | 0.99 | 0.94 | 0.87 |
+| **the factor map** | **1.55 mm** | **1.00** | **0.89** | **0.84** |
+
+**What it is not.** It cannot find rain the radar did not see: zero times a
+factor is zero. It corrects how much, not where. It **lowers heavy rain**:
+where the «Merging» has 30 mm or more, the radar alone reads 0.91 of it and
+the corrected radar 0.75, and in July and August it passes 30 mm half to two
+thirds as often as the «Merging». Use it for totals and for how often a
+threshold is passed over a season, not for the peak of one storm. In Sicily it
+helps little. It was measured on three-hour windows of 2026, and it is **not
+applied to the 2010–2025 history**: there is no «Merging» of those years to
+test it on. A model with more inputs (gradient boosting) was tried and
+dropped: about the same mean error, but it almost never reached 100 mm. The
+[full table](https://agentengineering.it/dpc-radar/api/bias/), by region, by
+intensity and by month, is in the reference.
+
 ## The official alert, as data
 
 Every day by 16:00 the DPC publishes the **criticality bulletin**: the
@@ -704,7 +751,7 @@ the others are here so you don't have to find them yourself.
 | **A corrupted series** | in October 2026 every CUM24 frame at :30 carried a smooth bell of up to 20,584 mm over Abruzzo, for days (the :00 frames were right) | never trust one frame alone: compare it with its neighbours, and read a place with the median of the 3×3 pixels around it |
 | **Not every echo is rain** | sea clutter or a radar with a problem can paint rain where there is none. But a round edge alone proves nothing: it is where a radar's range ends | look at the hourly frames: rain moves, clutter stays |
 | **A gauge can be wrong too** | on 6–8 October 2026 one gauge of the «Merging» was stuck: 126.6 mm every 3 hours for 33 hours on a dry night, 1,152 mm in `CUM24` | a jump between frames does not catch it; the radar alone (`SRT1`) read 0: `frame.quality(radar=...)` masks it |
-| **Radar alone is not the truth** | the radar-only history read between 10 % and 80 % of the gauges in Apulia in 2016 | use the «Merging» when you can; compare on your area |
+| **Radar alone is not the truth** | the radar-only history read between 10 % and 80 % of the gauges in Apulia in 2016; in 2026 the radar alone read 20 % *more* than the «Merging», and up to 1.7 times in Milan and Genoa | use the «Merging» when you can; `correct(frame)` for the radar alone of 2026; compare on your area |
 | **Times are in UTC, in milliseconds** | the API speaks epoch milliseconds | `to_epoch_ms` / `from_epoch_ms`, and always aware datetimes |
 | **The `origin` header** | the API once refused requests without it; in November 2026 it no longer does | `products.HEADERS` sends it anyway |
 
@@ -735,6 +782,7 @@ them. Limen's rule today passes 14 of 30 checks; a frame-level check
 | `SriHistory(zarr).hourly(points, start, end)` | the same from IT-DPC-SRI, 2010–2025, radar only (extra `history`) |
 | `reliability(lon, lat)` / `reliability_map()` | how much to trust the radar at a point: `score`, `visibility`, `coverage`, `agreement`, `beam_height`, `reliable` / the whole map, `.like(grid)` on the pixels of a frame |
 | `SITES` | the 24 radars of the mosaic: position, altitude, band, range |
+| `correct(grid)` / `radar_factor(lon, lat)` / `bias_map()` | a radar-only frame times the factor «Merging» / radar of every pixel / the factor at a point (1.0: no correction) / the whole map, `.like(grid)` |
 | `bulletins.latest()` / `bulletins.fetch(name)` | the official criticality bulletin: `Bulletin.zones`, `.alerts()`, `.zone_at(lon, lat)` (extra `bulletins`) |
 | `SRI`, `SRT1`, `CUM3`, `CUM6`, `CUM12`, `CUM24` | the products: `name`, `hours` (`None` for an intensity), `merging`, `description` |
 | `PRODUCTS`, `product(name)` | every product by name; `product("cum24")` → `CUM24` |
@@ -777,7 +825,7 @@ flowchart LR
 | **Storm catalogue** | every storm as an object, and the extreme ones as events to check in the news | many more verified events to measure against | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
 | **Frame quality check** ✅ | rules that tell a real storm from a broken frame or a faulty gauge, and say why | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
 | **Nowcasting** | the rain field moved forward along its motion, 0–2 hours | a trigger on rain that is *coming* | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
-| **Radar–gauge bias** | learn how wrong the radar alone is, and correct it | a history worth backtesting on | [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) |
+| **Radar–gauge bias** ✅ | how far the radar alone is from the «Merging», place by place, and a factor for it | radar-only rain closer to the «Merging» between two frames; the history is still open | [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) |
 | **AI for agents** | an MCP server, `llms.txt`, reports that cite their frames | the same facts for Limen's assistant | [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) |
 
 One rule holds for every AI feature: **the numbers come from the frames**,
@@ -814,11 +862,12 @@ dpc-radar/
 │   ├── bulletins.py  # the official criticality bulletin (extra [bulletins])
 │   ├── reliability.py  # where the radar can be trusted: a map and its parts
 │   ├── quality.py    # what to trust in a frame, pixel by pixel, and why
+│   ├── bias.py       # how far the radar alone is from the «Merging», and a factor
 │   └── errors.py     # DpcRadarError
 ├── tests/            # offline: synthetic GeoTIFFs and a fake API
 │   └── live/         # the same on the real API: uv run pytest -m live
 ├── benchmarks/       # known cases, and how each cleaning rule scores
-├── tools/            # build_reliability.py: the map, from an archive and a terrain model
+├── tools/            # build_reliability.py, build_bias.py: the maps, from an archive
 └── docs/
     ├── make_images.py  # the images of this README, from real frames
     └── roadmap.md      # what comes next, and where AI helps
@@ -848,6 +897,8 @@ Questions, ideas and maps you made go in the organisation's
   of Mapzen on AWS Open Data (SRTM, EU-DEM and other open sources; see their
   [attribution](https://github.com/tilezen/joerd/blob/master/docs/attribution.md)).
   Radar positions: DPC, *Rete Radar Nazionale*, technical annex.
+- **The bias map** (`src/dpc_radar/data/bias.tif`) is derived from the DPC
+  radar data too: CC BY-SA 4.0.
 - **Country borders** in the images: [Natural Earth](https://www.naturalearthdata.com/), public domain.
 
 This library is not affiliated with the DPC. It is not an alert system:

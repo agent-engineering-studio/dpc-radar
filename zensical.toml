@@ -17,6 +17,7 @@ nav = [
     { "History (IT-DPC-SRI)" = "api/history.md" },
     { "Reliability map" = "api/reliability.md" },
     { "Frame quality" = "api/quality.md" },
+    { "Radar bias" = "api/bias.md" },
     { "Criticality bulletins" = "api/bulletins.md" },
     { "Products and API" = "api/products.md" },
     { "Errors" = "api/errors.md" },

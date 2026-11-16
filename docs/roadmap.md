@@ -191,13 +191,52 @@ fires on rain that is coming, and the first two hours of the flood window use
 it instead of a ~9 km model that does not see thunderstorms. **Check:** CSI at
 30, 60, 120 minutes on the storm catalogue, then limen#345.
 
-### Radar–gauge bias model · [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) · effort M
+### Radar–gauge bias model · [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) · ✅ first version: a map, not a model, and not for the history
 
-Learn how much the radar alone under- or over-estimates («Merging» against the
-sum of SRT1), by hour, season, distance from the radar, altitude and
-reliability, on Limen's local archive (~51 GB). Apply it every 5 minutes and to
-the 2010–2025 history. **For Limen:** credible backtests and a better
-climatology. **Check:** error against CUM3 on held-out months, by region.
+[`dpc_radar.correct(frame)`](api/bias.md) multiplies a radar-only frame by a
+factor measured place by place: the rain of the «Merging» (CUM3) over the rain
+of the radar alone (three SRT1 hours) from June to November 2026, over 9 km,
+on land. The map ships with the package (110 kB).
+
+What the archive says first: the radar alone read **20 % more** rain than the
+«Merging» (33 % more on land) and passed 30 mm in three hours 1.70 times as
+often. Around Milan, Genoa and Rome it read 1.6–1.7 times the «Merging»;
+around Palermo less than half.
+
+**Check:** every month corrected with the map of the other months, against
+CUM3. Mean error from 1.91 to 1.55 mm; total from 1.20 to 1.00; 30 mm passed
+0.89 times as often as the «Merging» instead of 1.70. One factor for the whole
+of Italy leaves the error where it was (1.94 mm): the bias is local. The
+[full table](api/bias.md#the-measure-in-full) is by region, intensity and month.
+
+**What was tried and dropped.** The hour of the day: the ratio stays within
+1.18–1.23. The season: it moves (1.11–1.33 by month), but five months are not
+a season to learn from. A model on place, beam height, hour and month
+(gradient boosting): about the same mean error, but it passed 50 mm 0.40 times
+as often as the «Merging» and almost never 100 mm.
+
+**What is not there.**
+
+- **The corrected history.** The factor describes 2026. In 2016 the radar-only
+  history read *less* than the gauges in Apulia, in 2026 the radar reads
+  *more* than the «Merging» almost everywhere: the bias changed, and there is
+  no «Merging» of 2010–2025 to test a correction on. `SriHistory` is left as
+  it is. Closing this needs rain gauges of those years (the regional networks),
+  not more radar.
+- **Heavy rain.** Where the «Merging» has 30 mm or more, the corrected radar
+  reads 0.75 of it (the radar alone 0.91); in July and August it passes 30 mm
+  half to two thirds as often. For the peak of a storm the radar alone, or the
+  next «Merging», is better.
+- **One hour and five minutes.** The factor was measured on three hours; on
+  SRT1 and SRI it is an assumption.
+- **Sicily**, where it helps little, and wherever the radar is blind.
+- **An independent truth.** The «Merging» contains the radar, and the DPC does
+  not publish the gauges.
+
+Found on the way: rain gauges that report 1–6 mm every three hours under a dry
+radar for weeks (near Foggia, in 504 of 573 wet windows). They are too small
+for the `gauge_only` rule of `quality` (30 mm); the map leaves 2,660 km²
+around such gauges without a factor. Limen does not use `correct` yet.
 
 ---
 
@@ -241,5 +280,5 @@ as structured data instead of prose
 | radar zero read as dry where the radar is blind | a reliability map | #3 | fewer missed events |
 | a fixed 150 mm rule for bad frames | a score per frame and pixel, with the reason | #6 | fewer false alarms |
 | a trigger on rain already fallen | a trigger on rain that is coming (0–2 h) | #7 | more events anticipated |
-| a radar-only history that under-estimates | a corrected history | #8 | backtests worth trusting |
+| a radar-only history that under-estimates | a factor for the radar alone of 2026 (done); the history needs gauges of those years (open) | #8 | radar-only rain closer to the «Merging»; backtests still on biased rain |
 | facts written into prose | facts as data, for agents and reports | #9 | — |

@@ -3,6 +3,7 @@
 import logging
 from importlib.metadata import version
 
+from dpc_radar.bias import BiasMap, bias_map, correct, radar_factor
 from dpc_radar.client import ABSENT, Absent, RadarClient
 from dpc_radar.errors import DpcRadarError
 from dpc_radar.grid import FrameCheck, RainGrid
@@ -47,6 +48,7 @@ __all__ = [
     "SRI",
     "SRT1",
     "Absent",
+    "BiasMap",
     "DpcRadarError",
     "FrameCheck",
     "LastProduct",
@@ -58,10 +60,13 @@ __all__ = [
     "Reliability",
     "ReliabilityMap",
     "__version__",
+    "bias_map",
+    "correct",
     "is_expired",
     "parse_download",
     "parse_last_product",
     "product",
+    "radar_factor",
     "radar_total",
     "reliability",
     "reliability_map",

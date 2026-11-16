@@ -100,7 +100,10 @@ class RainGrid:
         if r0 >= r1 or c0 >= c1:
             raise DpcRadarError(f"bbox {bbox} is outside the frame")
         data = self.data[r0:r1, c0:c1]
-        return replace(self, data=data, transform=self.transform @ Affine.translation(c0, r0))
+        # Written out: affine 2 has no ``@`` and affine 3 deprecates ``*``.
+        t = self.transform
+        origin = Affine(t.a, t.b, t.c + t.a * c0 + t.b * r0, t.d, t.e, t.f + t.d * c0 + t.e * r0)
+        return replace(self, data=data, transform=origin)
 
     def check(self, previous: RainGrid, *, max_step: float, min_pixels: int = 5) -> FrameCheck:
         """Whether to trust this frame, given the one before it.

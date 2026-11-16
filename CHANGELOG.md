@@ -23,6 +23,12 @@ All notable changes to this project are documented here. The format follows
 - The documentation site is built with Zensical (`zensical.toml`) instead of
   MkDocs Material (`mkdocs.yml`); pages and URLs are unchanged.
 
+### Fixed
+
+- `RainGrid.crop` raised `TypeError` with affine 2 (the version rasterio 1.4
+  installs by default), which has no `@` operator. It now works with affine 2
+  and 3.
+
 ## [0.2.1] - 2026-11-05
 
 ### Added

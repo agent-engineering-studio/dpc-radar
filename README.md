@@ -51,6 +51,7 @@ four small apps are [below](#notebooks-and-example-apps).
 - [Notebooks and example apps](#notebooks-and-example-apps)
 - [Quick start](#quick-start)
 - [Keep the «Merging», read fifteen years of history](#keep-the-merging-read-fifteen-years-of-history)
+- [Where the radar can be trusted](#where-the-radar-can-be-trusted)
 - [The official alert, as data](#the-official-alert-as-data)
 - [How it works](#how-it-works)
 - [The traps we already fell into](#the-traps-we-already-fell-into)
@@ -517,6 +518,43 @@ compare it with the «Merging».
 
 ---
 
+## Where the radar can be trusted
+
+A radar that reads zero is not always a dry sky. On 10 October 2026 a
+cloudburst hit Lipari and the mosaic showed almost nothing: the nearest beams
+pass 3,500 m above the island. `reliability` says so before the storm:
+
+```python
+from dpc_radar import reliability
+
+r = reliability(14.95, 38.47)  # Lipari
+r.score  # 0.42: below 0.5, do not read a radar zero as "dry"
+r.visibility  # 0.42  the lowest beam is high above the ground...
+r.beam_height  # 3550.0 metres
+r.coverage  # 0.88  ...the radars that reach it were on 88 % of the time
+r.agreement  # None  no gauges at sea to compare with
+r.nearest_site  # 'Catania Fontanarossa', 112 km away (r.distance_km)
+```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/reliability.png" alt="Four maps of Italy: the reliability score and its parts, visibility with the 24 radar sites, coverage and agreement between the radar alone and the Merging" width="100%">
+</p>
+
+The score is the lowest of three parts, each between 0 and 1:
+
+| Part | What it measures | Where it is low |
+|---|---|---|
+| `visibility` | the height of the lowest beam that reaches the point without being cut by a mountain (1 up to 1,500 m, 0 from 5,000 m) | far from every radar, behind the Alps and Etna, the islands |
+| `coverage` | the share of the hourly frames in which the mosaic has data there | Calabria and Apulia (radars on about half of the time, June–November 2026); the west of Sicily, never covered: score 0 |
+| `agreement` | the rain of the radar alone (SRT1) against the «Merging» (CUM3), as the smaller of the two ratios | around Palermo the radar read 11 % of the gauge-corrected rain |
+
+`reliability_map().like(grid)` gives the score on the pixels of any frame, and
+`SITES` lists the 24 radars. The map is an estimate made from outside: the DPC
+publishes neither a quality map nor the gauges of the «Merging». Seven radar
+positions come from the DPC's own table; the others were found by fitting
+their range circles on the mosaic. `coverage` and `agreement` describe the five
+months the map was built on.
+
 ## The official alert, as data
 
 Every day by 16:00 the DPC publishes the **criticality bulletin**: the
@@ -633,8 +671,8 @@ the others are here so you don't have to find them yourself.
 
 Every trap above is a case in the **[benchmark](https://agentengineering.it/dpc-radar/benchmark/)**:
 real frames where we know the answer, and how each cleaning rule scores on
-them. Limen's rule today passes 8 of 18 checks; a first frame-level check
-(`jump-sign`) passes 17.
+them. Limen's rule today passes 8 of 19 checks; a first frame-level check
+(`jump-sign`) passes 17, and all 19 with the reliability map.
 
 ---
 
@@ -654,6 +692,8 @@ them. Limen's rule today passes 8 of 18 checks; a first frame-level check
 | `archive(folder, radar, start=, end=, limit=)` | download the CUM3 and SRT1 frames the archive lacks; an `ArchiveReport` |
 | `MergingArchive(folder).hourly(points, start, end)` | hourly rain per point from the archive: SRT1 rescaled to the CUM3 |
 | `SriHistory(zarr).hourly(points, start, end)` | the same from IT-DPC-SRI, 2010–2025, radar only (extra `history`) |
+| `reliability(lon, lat)` / `reliability_map()` | how much to trust the radar at a point: `score`, `visibility`, `coverage`, `agreement`, `beam_height`, `reliable` / the whole map, `.like(grid)` on the pixels of a frame |
+| `SITES` | the 24 radars of the mosaic: position, altitude, band, range |
 | `bulletins.latest()` / `bulletins.fetch(name)` | the official criticality bulletin: `Bulletin.zones`, `.alerts()`, `.zone_at(lon, lat)` (extra `bulletins`) |
 | `SRI`, `SRT1`, `CUM3`, `CUM6`, `CUM12`, `CUM24` | the products: `name`, `hours` (`None` for an intensity), `merging`, `description` |
 | `PRODUCTS`, `product(name)` | every product by name; `product("cum24")` → `CUM24` |
@@ -731,10 +771,12 @@ dpc-radar/
 │   ├── archive.py    # archive the «Merging», hourly rain from it
 │   ├── history.py    # IT-DPC-SRI 2010-2025 (extra [history])
 │   ├── bulletins.py  # the official criticality bulletin (extra [bulletins])
+│   ├── reliability.py  # where the radar can be trusted: a map and its parts
 │   └── errors.py     # DpcRadarError
 ├── tests/            # offline: synthetic GeoTIFFs and a fake API
 │   └── live/         # the same on the real API: uv run pytest -m live
 ├── benchmarks/       # known cases, and how each cleaning rule scores
+├── tools/            # build_reliability.py: the map, from an archive and a terrain model
 └── docs/
     ├── make_images.py  # the images of this README, from real frames
     └── roadmap.md      # what comes next, and where AI helps
@@ -758,6 +800,12 @@ Questions, ideas and maps you made go in the organisation's
 - **IT-DPC-SRI** (the 2010–2025 history, read by the `history` module):
   Fondazione Bruno Kessler on DPC data, CC BY-SA 4.0,
   [doi:10.5281/zenodo.18637608](https://doi.org/10.5281/zenodo.18637608).
+- **The reliability map** (`src/dpc_radar/data/reliability.tif`) is derived
+  from the DPC radar data and so is under CC BY-SA 4.0, not Apache-2.0. Its
+  terrain comes from the [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/)
+  of Mapzen on AWS Open Data (SRTM, EU-DEM and other open sources; see their
+  [attribution](https://github.com/tilezen/joerd/blob/master/docs/attribution.md)).
+  Radar positions: DPC, *Rete Radar Nazionale*, technical annex.
 - **Country borders** in the images: [Natural Earth](https://www.naturalearthdata.com/), public domain.
 
 This library is not affiliated with the DPC. It is not an alert system:

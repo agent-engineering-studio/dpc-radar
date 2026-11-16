@@ -15,6 +15,7 @@ nav = [
     { "Rain grid" = "api/grid.md" },
     { "Archive" = "api/archive.md" },
     { "History (IT-DPC-SRI)" = "api/history.md" },
+    { "Reliability map" = "api/reliability.md" },
     { "Criticality bulletins" = "api/bulletins.md" },
     { "Products and API" = "api/products.md" },
     { "Errors" = "api/errors.md" },

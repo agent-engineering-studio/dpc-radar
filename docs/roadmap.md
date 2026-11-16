@@ -78,17 +78,36 @@ Ten real cases in [`benchmarks/`](benchmark.md): the Melito storm and the
 Lipari miss of 10 October 2026, the corrupted :30 CUM24 series (found on
 30/09–02/10, 08–11/10 and 21/10–03/11), the clean frame right after a corrupted
 one, two calm days, and two suspect artefacts (a steady 1,000 mm bump, disks
-over the sea). Limen's rule today passes **8 of 18** confirmed checks: it has
+over the sea). Limen's rule today passes **8 of 19** confirmed checks: it has
 no frame-level decision, lets the edges of the corrupted bell through (88 mm
 where the truth is 9), throws away good pixels after a corrupted frame, and
 cannot see steady artefacts or blind spots. Those are the targets of #3 and #6.
 
-### Radar reliability map · [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) · effort S
+### Radar reliability map · [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) · ✅ first version
 
-One value per cell: distance from the nearest radar, beam blocking by
-mountains, density of rain gauges, and how often radar and «Merging» disagree
-there. **For Limen:** where the radar is blind, the forecast weighs more and
-radar zero is never "dry". **Check:** Lipari comes out as low reliability.
+[`dpc_radar.reliability(lon, lat)`](api/reliability.md) gives a score between
+0 and 1 and its parts, from a map shipped with the package (720 kB, 1 km):
+
+- **visibility**: the height above the ground of the lowest beam that reaches
+  the point without being cut by a mountain, from the 24 radar sites and an
+  open terrain model;
+- **coverage**: how often the mosaic has data there. From June to November
+  2026 the radars of Calabria and Apulia were on 36–61 % of the time, and the
+  west of Sicily was never covered;
+- **agreement**: the radar alone (SRT1) against the «Merging» (CUM3) over the
+  same months: around Palermo the radar read 11 % of the gauge-corrected rain.
+
+**Check:** Lipari scores 0.42 (beam at 3,500 m), Melito 0.90; the benchmark
+case passes, with a second check that a map calling everything unreliable
+would fail.
+
+**What is not there.** The density of rain gauges: the DPC does not publish
+the gauges that enter the «Merging». The positions of seven radars come from
+the DPC's table; the others were found by fitting their range circles on the
+mosaic's no-data mask, and four that are always hidden under the others come
+from the literature. Coverage and agreement describe five months, not a
+climate: the 2010–2025 history (#4) will make them steadier. Limen does not
+use the map yet.
 
 ### Rain climatology · [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) · effort M
 
@@ -117,7 +136,7 @@ calibration also needs. **Check:** new verified events per month of archive.
 
 **First step done: `jump-sign`** in the [benchmark](benchmark.md). Where two
 frames 30 minutes apart differ by more than half an hour of rain, the one that
-jumps up is rejected whole. It passes 17 of 18 confirmed checks (Limen today:
+jumps up is rejected whole. It passes 17 of 19 confirmed checks (Limen today:
 8) and, on 96 pairs of whole frames, rejects the 44 corrupted :30 frames and
 no :00 frame. What is left for the learned check: artefacts that do not move.
 

@@ -48,6 +48,15 @@ min = 80.0
 max = 250.0
 masked_ok = false
 
+# The same storm, 60 km away: here the radar measured what the gauges did, so a
+# map that calls everything unreliable does not pass.
+[[case.check]]
+kind = "reliable"
+name = "Melito di Porto Salvo: the radar saw the storm"
+lon = 15.78
+lat = 37.92
+expect = true
+
 [[case.check]]
 kind = "reliable"
 name = "Lipari: a cloudburst the radar did not see"

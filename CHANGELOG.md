@@ -25,6 +25,17 @@ All notable changes to this project are documented here. The format follows
   `radar_total(frames)` sums the hourly `SRT1` frames for the last rule. Rules
   with measured thresholds, not a trained model. On the benchmark it passes
   30/30 checks; on 1,270 `CUM3` frames it finds faulty gauges in 154 (#6).
+- `dpc_radar.correct(grid)`: a radar-only frame (`SRI`, `SRT1`) multiplied by
+  the factor «Merging» / radar of every pixel; `radar_factor(lon, lat)` and
+  `bias_map()` give the factor. The map ships with the package (110 kB, 1 km):
+  the rain of `CUM3` over the rain of the three `SRT1` hours of the same
+  window, June to November 2026, over 9 km, on land. From June to November
+  2026 the radar alone read 20 % more rain than the «Merging» and passed 30 mm
+  in three hours 1.70 times as often; with the map of the other months, the
+  mean error of a month goes from 1.91 to 1.55 mm and 30 mm is passed 0.89
+  times as often. It lowers heavy rain and is not applied to the 2010–2025
+  history: the limits are in the module's documentation.
+  `tools/build_bias.py` builds and measures it (#8).
 - `reliability_map().like(grid, part)` gives any part of the map on the pixels
   of a frame, not only the score.
 - Benchmark: a case with `radar = true` also carries the radar-only rain of

@@ -61,6 +61,18 @@ All notable changes to this project are documented here. The format follows
   candidates to check in the news, and the return period is a ranking: on
   those frames the levels are passed two to five times more often than their
   name says (#5).
+- `dpc_radar.nowcast(frames)`: the rain of the next two hours, every five
+  minutes: the latest SRI frame moved along the motion the rain had in the
+  last half hour. `rain_ahead(frames, minutes=)` sums it into millimetres,
+  `chance(frames, mm=, minutes=)` gives the chance of at least `mm` at every
+  pixel, `motion(frames)` the speed and heading of the rain. All return a
+  `Forecast`, never a `RainGrid`. They need SciPy: the new extra `nowcast`.
+  On 120 moments of heavy rain of 2021–2025 it beats the last frame left
+  still at every threshold and lead (rain of 1 mm/h at one hour: CSI 0.34
+  against 0.27; 10 mm/h: 0.08 against 0.05), and it is poor on peaks: the
+  rain is moved, not changed. `chance` is reliable (of the pixels given
+  40–60 % of 10 mm in the hour, 39 % got them). `tools/measure_nowcast.py`
+  measures it (#7).
 - `dpc_radar.history.suspect(frame)`: whether a frame of the history is
   corrupted (the disk of a radar filled with violent rain, flat patches over
   100 mm/h): 752 of 1,039,785 frames, 229 of them in 2011 and 250 in 2014.

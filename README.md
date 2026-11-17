@@ -55,6 +55,7 @@ four small apps are [below](#notebooks-and-example-apps).
 - [How far the radar alone is from the «Merging»](#how-far-the-radar-alone-is-from-the-merging)
 - [How rare is this rain, here](#how-rare-is-this-rain-here)
 - [Storms, and a list of the rare ones](#storms-and-a-list-of-the-rare-ones)
+- [The rain of the next two hours](#the-rain-of-the-next-two-hours)
 - [The official alert, as data](#the-official-alert-as-data)
 - [How it works](#how-it-works)
 - [The traps we already fell into](#the-traps-we-already-fell-into)
@@ -725,6 +726,44 @@ one-hour summer storms, where hail makes the radar read too much. The
 [tables](https://agentengineering.it/dpc-radar/api/catalogue/) are in the
 reference.
 
+## The rain of the next two hours
+
+The radar shows rain that has already fallen. `nowcast` moves the latest SRI
+frame forward along the motion the rain had in the last half hour: a forecast
+every five minutes, up to two hours.
+
+```python
+from dpc_radar import chance, motion, nowcast, rain_ahead  # pip install "dpc-radar[nowcast]"
+
+frames = [...]  # the SRI of the last half hour, the oldest first
+melito = [(15.78, 37.92)]
+
+motion(frames).at(*melito[0])  # (5.6, 82.9): km/h, and degrees from north
+rain_ahead(frames, minutes=120).sample(melito)  # [44.7] mm in the next two hours
+chance(frames, mm=20, minutes=120).sample(melito)  # [0.40]: the chance of 20 mm
+for forecast in nowcast(frames, minutes=60):  # the intensity, every five minutes
+    print(forecast.time, forecast.sample(melito))
+```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/nowcast.png" alt="Four maps of the Strait of Messina on 10 October 2026: the radar at 00:30 UTC, the rain forecast to 02:30, the rain the radar then saw, and the chance of 20 mm" width="100%">
+</p>
+
+Everything is a `Forecast`, never a `RainGrid`: it carries when it was issued
+and how far ahead it looks, and it cannot be taken for observed rain.
+
+**How far to trust it.** The rain is moved, not changed: a storm born after
+the last frame is not there, and one that dies still is. On 120 moments of
+heavy rain of 2021–2025 it beats the last frame left where it is at every
+threshold and lead, and it is still poor on peaks: for rain of 1 mm/h the CSI
+at one hour is 0.34 (0.27 without motion), for 10 mm/h it is 0.08 (0.05). So
+use `chance` rather than the map of millimetres: of the pixels it gave 40–60 %
+of 10 mm in the next hour, 39 % got them. On the night of Melito the
+millimetres forecast for the town went from 4 to 45 from one half hour to the
+next, and the chance of 20 mm stayed between 0.2 and 0.55. The
+[tables](https://agentengineering.it/dpc-radar/api/nowcast/) are in the
+reference.
+
 ## The official alert, as data
 
 Every day by 16:00 the DPC publishes the **criticality bulletin**: the
@@ -871,6 +910,7 @@ them. Limen's rule today passes 14 of 30 checks; a frame-level check
 | `rarity(window, lon, lat, mm)` / `return_level(window, lon, lat, years)` / `return_period(grid, window=None)` | how rare a rain of 1, 3, 6 or 24 hours is at a point: `return_period` with `low` and `high`, `percentile`, `years` / the rain of a return period, a `Level(mm, low, high)` / the return period of every pixel of an accumulation frame; `climatology()` is the whole map |
 | `storms(grid, threshold=)` / `track(grids, threshold=)` | the patches of rain of a frame as `Storm`s (`lon`, `lat`, `area_km2`, `peak`, `mean`, `bbox`) / followed in time as `Track`s: `duration`, `path`, `distance_km`, `speed_kmh`, `heading`, `water_m3` (extra `storms`) |
 | `rare_events(frames, years=10)` / `with_merging(event, archive)` | the rain of hourly frames over the level of its place, as `Event`s, the rarest first: `start`, `time`, `window`, `mm`, `level_mm`, `times_level`, `return_period`, `area_km2` / the same with `radar_mm`, `merging_mm`, `confirmed` (extra `storms`) |
+| `nowcast(frames, minutes=120)` / `rain_ahead(frames, minutes=60)` / `chance(frames, mm=, minutes=60)` / `motion(frames)` | the SRI moved along its motion, as `Forecast`s (`issued`, `lead`, `time`, `unit`, `data`, `.sample(points)`): mm/h every five minutes / the mm of the next minutes / the chance of at least `mm` / speed and heading of the rain, `.at(lon, lat)` (extra `nowcast`) |
 | `bulletins.latest()` / `bulletins.fetch(name)` | the official criticality bulletin: `Bulletin.zones`, `.alerts()`, `.zone_at(lon, lat)` (extra `bulletins`) |
 | `SRI`, `SRT1`, `CUM3`, `CUM6`, `CUM12`, `CUM24` | the products: `name`, `hours` (`None` for an intensity), `merging`, `description` |
 | `PRODUCTS`, `product(name)` | every product by name; `product("cum24")` → `CUM24` |
@@ -912,7 +952,7 @@ flowchart LR
 | **Rain climatology** ✅ | how rare is this rain *here*, from eight years of radar (2018–2025) | rain judged against the place, not against one national threshold; the effect on Limen's alerts is still to measure | [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) |
 | **Storm catalogue** ✅ | every storm as an object, and the rare rain as candidate events to check in the news | 1,689 candidates in 160 days of 2026, 1,054 confirmed by the «Merging»; the check in the news is Limen's | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
 | **Frame quality check** ✅ | rules that tell a real storm from a broken frame or a faulty gauge, and say why | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
-| **Nowcasting** | the rain field moved forward along its motion, 0–2 hours | a trigger on rain that is *coming* | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
+| **Nowcasting** ✅ | the rain field moved forward along its motion, 0–2 hours, and the chance of rain at every pixel | a trigger on rain that is *coming*; moved, not changed: better than the last frame, poor on peaks | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
 | **Radar–gauge bias** ✅ | how far the radar alone is from the «Merging», place by place, and a factor for it | radar-only rain closer to the «Merging» between two frames; the history is still open | [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) |
 | **AI for agents** | an MCP server, `llms.txt`, reports that cite their frames | the same facts for Limen's assistant | [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) |
 
@@ -954,12 +994,14 @@ dpc-radar/
 │   ├── climatology.py  # how rare a rain is at a place: percentile and return period
 │   ├── storms.py     # storms as objects, followed in time (extra [storms])
 │   ├── catalogue.py  # the rain over the level of its place, as events
+│   ├── nowcast.py    # the rain of the next two hours (extra [nowcast])
 │   └── errors.py     # DpcRadarError
 ├── tests/            # offline: synthetic GeoTIFFs and a fake API
 │   └── live/         # the same on the real API: uv run pytest -m live
 ├── benchmarks/       # known cases, and how each cleaning rule scores
 ├── tools/            # build_reliability.py, build_bias.py, build_climatology.py: the maps;
-│                     # build_catalogue.py: the list of rare rain
+│                     # build_catalogue.py: the list of rare rain;
+│                     # measure_nowcast.py: the nowcast against what came next
 └── docs/
     ├── make_images.py  # the images of this README, from real frames
     └── roadmap.md      # what comes next, and where AI helps

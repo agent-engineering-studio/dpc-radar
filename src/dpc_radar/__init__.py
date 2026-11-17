@@ -17,6 +17,7 @@ from dpc_radar.climatology import (
 )
 from dpc_radar.errors import DpcRadarError
 from dpc_radar.grid import FrameCheck, RainGrid
+from dpc_radar.nowcast import Forecast, Motion, chance, motion, nowcast, rain_ahead
 from dpc_radar.products import (
     API_BASE,
     CUM3,
@@ -63,9 +64,11 @@ __all__ = [
     "Climatology",
     "DpcRadarError",
     "Event",
+    "Forecast",
     "FrameCheck",
     "LastProduct",
     "Level",
+    "Motion",
     "Product",
     "Quality",
     "RadarClient",
@@ -78,14 +81,18 @@ __all__ = [
     "Track",
     "__version__",
     "bias_map",
+    "chance",
     "climatology",
     "correct",
     "is_expired",
+    "motion",
+    "nowcast",
     "parse_download",
     "parse_last_product",
     "product",
     "radar_factor",
     "radar_total",
+    "rain_ahead",
     "rare_events",
     "rarity",
     "reliability",

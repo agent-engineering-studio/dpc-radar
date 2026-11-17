@@ -21,6 +21,7 @@ nav = [
     { "Rain climatology" = "api/climatology.md" },
     { "Storms as objects" = "api/storms.md" },
     { "Catalogue of rare rain" = "api/catalogue.md" },
+    { "The next two hours" = "api/nowcast.md" },
     { "Criticality bulletins" = "api/bulletins.md" },
     { "Products and API" = "api/products.md" },
     { "Errors" = "api/errors.md" },

@@ -772,6 +772,10 @@ bench = [
     { name = "numpy" },
     { name = "rasterio" },
 ]
+demo = [
+    { name = "matplotlib" },
+    { name = "streamlit" },
+]
 dev = [
     { name = "matplotlib" },
     { name = "mcp" },
@@ -818,6 +822,10 @@ bench = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "rasterio", specifier = ">=1.4" },
+]
+demo = [
+    { name = "matplotlib", specifier = ">=3.9" },
+    { name = "streamlit", specifier = ">=1.40" },
 ]
 dev = [
     { name = "matplotlib", specifier = ">=3.9" },

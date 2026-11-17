@@ -93,7 +93,7 @@ async def test_archive_writes_down_frames_that_are_gone(tmp_path: Path) -> None:
     assert again.present == 2 and again.requests == 0
 
 
-async def test_archive_reads_limens_absent_list_and_counts_failures(tmp_path: Path) -> None:
+async def test_archive_reads_an_older_absent_list_and_counts_failures(tmp_path: Path) -> None:
     t = datetime(2026, 11, 1, 0, tzinfo=UTC)
     (tmp_path / "CUM3").mkdir()
     (tmp_path / "CUM3" / "assenti.txt").write_text("202611010000\n")

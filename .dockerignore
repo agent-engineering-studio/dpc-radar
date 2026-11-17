@@ -1,0 +1,11 @@
+# Everything, but what the image is built from.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!src
+!demo
+!scripts
+**/__pycache__
+**/*.pyc

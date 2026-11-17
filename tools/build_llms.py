@@ -52,9 +52,11 @@ NOTES = """\
 
 #: What each page of the nav holds, for llms.txt. API pages use their module docstring.
 DESCRIPTIONS = {
-    "index.md": "the guide: how a radar measures rain, the products, quick start, the traps, "
+    "index.md": "the guide: how a radar measures rain, the products, running it locally with "
+    "Docker, quick start, the traps, "
     "API at a glance",
-    "examples.md": "five notebooks on real storms and four example programs",
+    "examples.md": "five notebooks on real storms, the demo page (Docker or uv) and three "
+    "example programs",
     "benchmark.md": "real frames where the answer is known, and how each cleaning rule scores",
     "roadmap.md": "what was built in each phase, what was measured, what is still open",
     "changelog.md": "what changed in each release",

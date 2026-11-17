@@ -26,16 +26,19 @@ async with RadarClient() as radar:
 print(rain.sample([(15.78, 37.92)]))  # mm at Melito di Porto Salvo (192 on 10 October 2026)
 ```
 
-> **Work in progress.** dpc-radar is being extracted from
-> [Limen](https://github.com/agent-engineering-studio/limen). Today it holds
-> the products, the rain grid, the client, the archive of the «Merging», the
-> 2010–2025 history and the criticality bulletins. Next: the ideas on the
-> [roadmap](https://agentengineering.it/dpc-radar/roadmap/).
+On top of the frames it answers the questions that come next: can this
+frame be trusted, does the radar see this place, how rare is this rain here,
+where are the storms going, what will fall in the next two hours, what does
+the official bulletin say. As Python, as a command line, and as tools for an
+assistant.
 
 **Try it now, nothing to install:** open the
 [first notebook in Colab](https://colab.research.google.com/github/agent-engineering-studio/dpc-radar/blob/main/notebooks/01_first_rain_map.ipynb)
-and draw today's rain map of Italy in five minutes. Four more notebooks and
-four small apps are [below](#notebooks-and-example-apps).
+and draw today's rain map of Italy in five minutes.
+
+**Or run all of it on your machine:** `docker compose up` gives you the
+library, its data and a [demo page](#run-it-on-your-machine) on
+http://localhost:8501.
 
 ---
 
@@ -48,6 +51,7 @@ four small apps are [below](#notebooks-and-example-apps).
 - [The products](#the-products)
 - [The open data behind it](#the-open-data-behind-it)
 - [Who is it for, and what you can build](#who-is-it-for-and-what-you-can-build)
+- [Run it on your machine](#run-it-on-your-machine)
 - [Notebooks and example apps](#notebooks-and-example-apps)
 - [Quick start](#quick-start)
 - [Keep the «Merging», read fifteen years of history](#keep-the-merging-read-fifteen-years-of-history)
@@ -344,9 +348,65 @@ Two limits to know before you plan a project:
 - **Teachers**: five notebooks that turn a storm in the news into a lesson
   on measurement, error and open data.
 
-It started inside [Limen](https://github.com/agent-engineering-studio/limen),
-where the radar decides *when* to re-run the risk model (heavy rain on the
-radar starts a run at once) and the «Merging» totals feed the flood score.
+## Run it on your machine
+
+Everything in one go: the library with every extra, the command line, the MCP
+server and a demo page, with the data of the last two days already downloaded.
+
+**With Docker**, and nothing else to install:
+
+```bash
+git clone https://github.com/agent-engineering-studio/dpc-radar
+cd dpc-radar
+docker compose up        # builds the image, downloads the data, starts the demo
+```
+
+Then open **http://localhost:8501**. The first run takes a few minutes: it
+builds the image and downloads about 70 MB of frames into a Docker volume,
+which stays there for the next run.
+
+**Without Docker**, with [uv](https://docs.astral.sh/uv/) (it installs Python
+too):
+
+```bash
+git clone https://github.com/agent-engineering-studio/dpc-radar
+cd dpc-radar
+scripts/init.sh          # installs everything, downloads the data into ./data
+make demo                # the demo, on http://localhost:8501
+```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.png" alt="The demo page on the tab «Storms now»: a map of Italy with the rain intensity, the storms circled in red with an arrow for their motion, and a table with position, area, peak and speed of each one" width="100%">
+</p>
+
+The [demo](https://github.com/agent-engineering-studio/dpc-radar/blob/main/demo/app.py) is one Streamlit file. Pick a place, and each tab
+shows one thing the library does, with the lines of Python that do it and the
+data they return:
+
+| Tab | What you see | From |
+|---|---|---|
+| **Rain here** | the rain now and in the last 1 to 24 hours, the map, the official alert, the check of the frame | `Facts.rain_at`, `area_summary`, `official_alert` |
+| **Storms now** | every storm raining on Italy, and where it is going | `Facts.storm_now` |
+| **Next two hours** | the rain to come and the chance of it, as a forecast | `Facts.rain_ahead`, `rain_ahead` |
+| **How rare** | the rain that comes back once in 2 to 50 years at that place | `return_level`, `rarity` |
+| **Can it be trusted** | how well the radar sees that place, and the map for all of Italy | `reliability`, `radar_factor` |
+| **A day, as a report** | a whole day from the frames on disk: totals, maps, the text | `report.build`, `MergingArchive` |
+
+What the init step downloads, and what you can run next:
+
+| Command | With Docker | What it does |
+|---|---|---|
+| `scripts/fetch-data.sh` | `docker compose run --rm init` | downloads the frames of the last days and the borders of the maps; run it again to get the newest |
+| `uv run dpc-radar archive data/archive --days 7` | `docker compose run --rm cli archive /data/archive --days 7` | keeps the frames before the DPC deletes them |
+| `uv run dpc-radar report --bbox … --day … --out …` | `docker compose run --rm cli report …` | the report of a day over a box |
+| `uv run python` | `docker compose run --rm python` | Python, with `dpc_radar` to import |
+| `uv run dpc-radar mcp` | `docker run -i --rm dpc-radar:local dpc-radar mcp` | the MCP server, for an assistant |
+
+Three variables change the defaults: `DPC_RADAR_DAYS` (how many days of
+frames, 2), `DPC_RADAR_PORT` (the port of the demo with Docker, 8501) and
+`DPC_RADAR_DATA` (the data folder: `./data` without Docker, the volume
+`radar-data` with it). The demo is a demo of the library, not an alert
+service.
 
 ## Notebooks and example apps
 
@@ -375,18 +435,14 @@ day before, next to the rain that fell (notebook 5):
   <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/nb-alert-vs-rain.png" alt="Two maps of southern Italy on 10 October 2026: the official alert zones in yellow and orange, and the rain measured in 24 hours" width="100%">
 </p>
 
-And four small programs in [`examples/`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples), each one file:
+And three small programs in [`examples/`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples), each one file
+(the fourth, in the browser, is the [demo](#run-it-on-your-machine)):
 
 | Program | What it does | Run it |
 |---|---|---|
 | [`rain_at.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/rain_at.py) | the rain at a place: now, last 3–24 hours, official alert | `uv run python examples/rain_at.py 12.50 41.90 --name Roma` |
 | [`storm_watch.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/storm_watch.py) | watches an area and tells you when a violent shower enters it | `uv run python examples/storm_watch.py --rate 30` |
-| [`nightly_archive.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/nightly_archive.py) | keeps your archive up to date; made for cron | `uv run python examples/nightly_archive.py ~/radar-archive` |
-| [`app.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/app.py) | a rain dashboard for any town, in the browser | `uv run --group examples streamlit run examples/app.py` |
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/dashboard.png" alt="The example dashboard: rain now and in the last 3 to 24 hours in Rome, the map, the official alert and the result of the frame check" width="100%">
-</p>
+| [`nightly_archive.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/nightly_archive.py) | keeps your archive up to date; made for cron (the same as `dpc-radar archive`, as code to copy) | `uv run python examples/nightly_archive.py ~/radar-archive` |
 
 ---
 
@@ -534,6 +590,14 @@ rain = MergingArchive(folder).hourly(
     [(15.78, 37.92)], datetime(2026, 10, 10, 0, tzinfo=UTC), datetime(2026, 10, 10, 6, tzinfo=UTC)
 )
 # {01:00: [47.4], 02:00: [63.0], 03:00: [24.6], 04:00: [6.3], 05:00: [5.5], 06:00: [1.7]}
+```
+
+The same from the shell, ready for `cron`: it fetches what the folder lacks
+and says how it went in one line.
+
+```bash
+dpc-radar archive radar-archive --days 3
+# 102 frames saved (98 MB), 0 already there, 0 gone at the DPC, 0 to retry next time
 ```
 
 It keeps two products: `CUM3` (radar and gauges, every three hours) and
@@ -800,6 +864,8 @@ each with the product and the time it came from.
 
 ```bash
 claude mcp add dpc-radar -- uvx --from "dpc-radar[mcp]" dpc-radar mcp
+# or, with the image of this repository (docker compose build):
+claude mcp add dpc-radar -- docker run -i --rm dpc-radar:local dpc-radar mcp
 ```
 
 Then "how much has it rained on Messina in the last three hours?" is
@@ -915,7 +981,7 @@ flowchart LR
 
 ## The traps we already fell into
 
-Every line below cost a bug in Limen. The library handles the ones it can;
+Every line below cost a bug in a real early-warning system. The library handles the ones it can;
 the others are here so you don't have to find them yourself.
 
 | Trap | What happens | What to do |
@@ -933,7 +999,8 @@ the others are here so you don't have to find them yourself.
 
 Every trap above is a case in the **[benchmark](https://agentengineering.it/dpc-radar/benchmark/)**:
 real frames where we know the answer, and how each cleaning rule scores on
-them. Limen's rule today passes 14 of 30 checks; a frame-level check
+them. The rule the library started from (`limen-max-step`) passes 14 of 30
+checks; a frame-level check
 (`jump-sign`) passes 26, 28 with the reliability map, and `quality` all 30.
 
 ---
@@ -976,6 +1043,8 @@ them. Limen's rule today passes 14 of 30 checks; a frame-level check
 | `products.HEADERS`, `products.NODATA` | the `origin` header; `-9999.0`, the no-data value of every product |
 | `products.to_epoch_ms`, `from_epoch_ms`, `parse_period` | the API's times and periods (`PT5M`, `PT30M`) |
 | `DpcRadarError` | an answer the library cannot read, or a bad argument |
+| `dpc-radar archive FOLDER --days 2` | the command line: save the CUM3 and SRT1 frames the folder lacks |
+| `dpc-radar report` / `dpc-radar check` / `dpc-radar mcp` | the report of a day over a box / the numbers of a text against its facts / the MCP server |
 
 Full reference: **https://agentengineering.it/dpc-radar/api/client/**
 
@@ -983,12 +1052,14 @@ Full reference: **https://agentengineering.it/dpc-radar/api/client/**
 
 ## Roadmap, and where AI helps
 
-The plan is on the [roadmap](https://agentengineering.it/dpc-radar/roadmap/)
-and tracked in [#10](https://github.com/agent-engineering-studio/dpc-radar/issues/10).
-Each idea is measured against one goal of
-[Limen](https://github.com/agent-engineering-studio/limen): anticipate within
-72 hours 90 % of the events in the news, with at most 10 % of
-municipality-days on alert.
+The plan of 2026 is done: every idea below is in the library, and what each
+one measured is on the [roadmap](https://agentengineering.it/dpc-radar/roadmap/)
+([#10](https://github.com/agent-engineering-studio/dpc-radar/issues/10)).
+dpc-radar stands on its own: it needs no other project, and no project needs
+to change for you to use it. Its first user is
+[Limen](https://github.com/agent-engineering-studio/limen), an open
+early-warning system; what is still open on that side is tracked there
+([limen#643](https://github.com/agent-engineering-studio/limen/issues/643)).
 
 ```mermaid
 flowchart LR
@@ -996,19 +1067,19 @@ flowchart LR
     P0 --> P1["Phase 1<br/>frame quality check"]
     P1 --> P2["Phase 2<br/>nowcasting<br/>radar–gauge bias"]
     P2 --> P3["Phase 3<br/>MCP · llms.txt<br/>event reports"]
-    P0 & P1 & P2 & P3 -.-> L["Limen<br/>fewer false alarms ·<br/>more events anticipated"]
+    P0 & P1 & P2 & P3 -.-> L["Whoever uses it<br/>fewer false alarms ·<br/>more events anticipated"]
 ```
 
-| Idea | In plain words | What Limen gains | Issue |
+| Idea | In plain words | What you gain | Issue |
 |---|---|---|---|
-| **Benchmark** | a fixed set of storms and faults where we know the answer | every change measurable | [#2](https://github.com/agent-engineering-studio/dpc-radar/issues/2) |
-| **Reliability map** | where the radar sees well, and where it is blind | a blind spot is no longer read as "dry" | [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) |
-| **Rain climatology** ✅ | how rare is this rain *here*, from eight years of radar (2018–2025) | rain judged against the place, not against one national threshold; the effect on Limen's alerts is still to measure | [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) |
-| **Storm catalogue** ✅ | every storm as an object, and the rare rain as candidate events to check in the news | 1,689 candidates in 160 days of 2026, 1,054 confirmed by the «Merging»; the check in the news is Limen's | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
+| **Benchmark** ✅ | a fixed set of storms and faults where we know the answer | every change measurable | [#2](https://github.com/agent-engineering-studio/dpc-radar/issues/2) |
+| **Reliability map** ✅ | where the radar sees well, and where it is blind | a blind spot is no longer read as "dry" | [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) |
+| **Rain climatology** ✅ | how rare is this rain *here*, from eight years of radar (2018–2025) | rain judged against the place, not against one national threshold; the effect on real alerts is still to measure | [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) |
+| **Storm catalogue** ✅ | every storm as an object, and the rare rain as candidate events to check in the news | 1,689 candidates in 160 days of 2026, 1,054 confirmed by the «Merging»; the check in the news is yours | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
 | **Frame quality check** ✅ | rules that tell a real storm from a broken frame or a faulty gauge, and say why | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
 | **Nowcasting** ✅ | the rain field moved forward along its motion, 0–2 hours, and the chance of rain at every pixel | a trigger on rain that is *coming*; moved, not changed: better than the last frame, poor on peaks | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
 | **Radar–gauge bias** ✅ | how far the radar alone is from the «Merging», place by place, and a factor for it | radar-only rain closer to the «Merging» between two frames; the history is still open | [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) |
-| **AI for agents** ✅ | an MCP server, `llms.txt` and an agent skill, reports whose every number is checked against the facts | the same facts for Limen's assistant, as data; Limen does not use them yet | [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) |
+| **AI for agents** ✅ | an MCP server, `llms.txt` and an agent skill, reports whose every number is checked against the facts | the same facts for any assistant, as data, with the frame each one came from | [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) |
 
 One rule holds for every AI feature: **the numbers come from the frames**,
 computed by tested code. A language model may read the news and explain the

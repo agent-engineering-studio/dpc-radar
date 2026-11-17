@@ -88,7 +88,7 @@ class RainGrid:
     def peak(self, bbox: BBox, *, threshold: float) -> tuple[float, int]:
         """The highest value inside ``bbox``, and how many pixels reach ``threshold``.
 
-        ``(0.0, 0)`` outside the frame or where there is no data: Limen's radar
+        ``(0.0, 0)`` outside the frame or where there is no data: a radar
         trigger asks "is it raining hard enough, on enough km², here?".
         """
         tile = self._window(bbox)
@@ -126,7 +126,7 @@ class RainGrid:
           as it is (it is the previous one that was corrupted);
         * different grids: ``not_comparable``, the frame as it is.
 
-        ``max_step`` is the caller's choice (Limen uses 150 mm for CUM
+        ``max_step`` is the caller's choice (150 mm is a good one for CUM
         frames 30 minutes apart). Measured on the benchmark of known cases, this
         rule passes 26 of 30 checks and, on 96 pairs of whole frames, rejects
         the 44 corrupted ones and no clean one. It cannot see an artefact that
@@ -176,7 +176,7 @@ class RainGrid:
     def discard_inconsistent(self, previous: RainGrid, *, max_step: float) -> tuple[RainGrid, int]:
         """This frame without the pixels that moved more than ``max_step``.
 
-        Limen's rule from October 2026, kept for comparison: it cannot tell
+        The first rule, from October 2026, kept for comparison: it cannot tell
         which of the two frames is wrong, so it masks the pixels in both cases,
         and it lets through the edges of a corrupted bell (jumps under
         ``max_step``). Prefer :meth:`check`.

@@ -5,14 +5,25 @@ data better. Nothing here is a promise. Every item has an issue: comment there
 before you start. The whole plan is tracked in
 [#10](https://github.com/agent-engineering-studio/dpc-radar/issues/10).
 
-dpc-radar is being extracted from
+!!! note "Where this stands (November 2026)"
+    Every phase of this plan is in the library, and #10 is closed. dpc-radar
+    is a library on its own: install it, or run it with
+    [Docker and the demo](index.md#run-it-on-your-machine), with no other
+    project. This page is the record of the plan and of what each phase
+    measured. The plan was written for the library's first user, Limen, and
+    its goal is the yardstick below; what is still open on that side (adopting
+    the new functions, the history before 2018, the faulty gauges, the news
+    check of the catalogue) is tracked in
+    [limen#643](https://github.com/agent-engineering-studio/limen/issues/643).
+
+dpc-radar was born inside
 [Limen](https://github.com/agent-engineering-studio/limen), an open
 early-warning system for landslides, floods and wildfires in Italy. Limen
 uses the DPC radar three ways: as a **trigger** (heavy rain on the radar
 starts a run at once), as **rain already fallen** (the «Merging» totals feed
 the flood score and the wildfire drought codes), and as **history** (radar
 rain from 2010 to 2025 replays past landslides). Every improvement below lands
-in this library first, and Limen gets it by updating one pin.
+in this library first, for everyone, and Limen gets it by updating one pin.
 
 ## The goal we measure against
 

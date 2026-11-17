@@ -20,8 +20,8 @@ either, the hour is not measured (``None``), which is not the same as dry.
 
 Layout: ``<folder>/<PRODUCT>/<YYYY>/<MM>/<DD>/<PRODUCT>_<YYYYMMDDhhmm>.tif``,
 plus ``<folder>/<PRODUCT>/absent.txt`` with the frames the DPC no longer keeps.
-It is the layout of Limen's archive, so an existing one can be read as is
-(its ``assenti.txt`` is read too).
+An archive written before this library, with ``assenti.txt`` in place of
+``absent.txt``, is read as is.
 
 Whatever goes wrong with one frame stays with that frame: it is counted, or read
 as not there, and the reason goes to the ``dpc_radar.archive`` logger as a
@@ -52,7 +52,7 @@ STEPS: Final = {"CUM3": 3, "SRT1": 1}
 _RADAR_DRY_MM = 0.1
 #: Before this age a 403 is a frame not published yet, not one that is gone.
 ABSENT_AFTER: Final = timedelta(days=7)
-_ABSENT_FILES = ("absent.txt", "assenti.txt")  # the second: Limen's archive
+_ABSENT_FILES = ("absent.txt", "assenti.txt")  # the second: archives older than the library
 
 
 def path(folder: Path, product: str, time: datetime) -> Path:

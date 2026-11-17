@@ -35,9 +35,29 @@ Notebooks 2, 4 and 5 read frames of 10 October 2026, which the DPC keeps
 until about March 2027. After that, change the date at the top to a recent
 storm.
 
+## The demo
+
+One page in the browser that shows what the library can tell about a place:
+the rain now and in the last 24 hours, the storms and where they go, the
+rain of the next two hours, how rare a rain is there, how far the radar can
+be trusted, and the report of a whole day. Every tab shows the Python that
+made it and the data it returned.
+
+```bash
+git clone https://github.com/agent-engineering-studio/dpc-radar
+cd dpc-radar
+docker compose up                     # with Docker alone
+scripts/init.sh && make demo          # or with uv
+```
+
+Then open http://localhost:8501. More in
+[Run it on your machine](index.md#run-it-on-your-machine).
+
+![The demo, on the tab «Storms now»](images/demo.png)
+
 ## Example apps
 
-Four programs in
+Three programs in
 [`examples/`](https://github.com/agent-engineering-studio/dpc-radar/tree/main/examples), each one file.
 
 | Program | What it does | Run it |
@@ -45,9 +65,6 @@ Four programs in
 | [`rain_at.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/rain_at.py) | the rain at a place: now, last 3–24 hours, official alert | `uv run python examples/rain_at.py 12.50 41.90 --name Roma` |
 | [`storm_watch.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/storm_watch.py) | tells you when a violent shower enters an area | `uv run python examples/storm_watch.py --rate 30` |
 | [`nightly_archive.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/nightly_archive.py) | keeps your archive up to date; made for cron | `uv run python examples/nightly_archive.py ~/radar-archive` |
-| [`app.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/examples/app.py) | a rain dashboard for any town | `uv run --group examples streamlit run examples/app.py` |
-
-![The example dashboard](images/dashboard.png)
 
 ## The theory, in one picture
 

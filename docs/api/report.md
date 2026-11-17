@@ -16,7 +16,7 @@ The frames come from the API (the last five months: 33 requests) or, with
 
 ## One day: Melito di Porto Salvo, 10 October 2026
 
-The command above, on the archive Limen keeps. These are the images it
+The command above, on an archive kept since September 2026. These are the images it
 wrote, and part of its text.
 
 ![Two maps of the rain of 10 October 2026 around the Strait of Messina: the radar alone, with its maximum of 176 mm on the coast to the east, and the Merging, with 207 mm over Melito di Porto Salvo, marked by a cross](../images/report-map.png)

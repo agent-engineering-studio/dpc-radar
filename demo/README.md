@@ -5,7 +5,13 @@ alert zone, a storm or a radar, and a card shows what dpc-radar knows about
 it. It is here to show the library at work, and to be copied from: every card
 has the lines of Python that give it.
 
-![The demo: the map of Italy and the card of a storm](../docs/images/demo.png)
+![The demo: the rain of the last 12 hours, the alert zones, the storms and the radars](../docs/images/demo.png)
+
+**Play**, under the legend, shows how the rain moved: the last thirteen frames
+of the layer, one every ten minutes for the rain rate, one every thirty for
+the sums. The slider stops on a frame; **Live** goes back to the newest one.
+
+![The demo playing the last two hours of rain rate](../docs/images/demo.gif)
 
 ## Run it
 
@@ -38,6 +44,8 @@ The map shows the rain of now (mm/h) or of the last 1, 3, 6, 12 or 24 hours
 | a radar | whether it is on, and the rain inside its range | `SITES`, `radar_status` |
 
 Grey on the map is where nothing was measured, which is not the same as dry.
+The radars are drawn when you tick them; the storms are those of now, so the
+film hides them.
 
 ## How it is made
 
@@ -53,6 +61,7 @@ the bulletin every fifteen. The API has its own URLs to try:
 ```bash
 curl 'http://localhost:3000/api/point?lon=12.5&lat=41.9'
 curl 'http://localhost:3000/api/storms'
+curl 'http://localhost:3000/api/film/now'
 ```
 
 `DPC_RADAR_PORT` changes the port of the page; `DPC_RADAR_API` tells the page

@@ -11,6 +11,7 @@ is an alert service.
     /api/health            is it up
     /api/layer/{key}       the newest frame of «now», 1, 3, 6, 12 or 24 hours
     /api/rain/{key}.png    that frame as a picture, in the projection of the map
+    /api/film/{key}        the frames before it, for the map to play: /api/rain/{key}.png?t=
     /api/zones             the alert zones of the newest bulletin, as GeoJSON
     /api/storms            the storms on the newest frame, as GeoJSON
     /api/radars            the radars, and which are on, as GeoJSON
@@ -78,6 +79,8 @@ WEST, SOUTH, EAST, NORTH = 5.5, 35.0, 19.5, 48.0
 AHEAD = (30, 60, 120)
 CHANCE_MM, CHANCE_MINUTES = 5.0, 60
 HOUR = timedelta(hours=1)
+#: The film of a layer: how many frames, and the least time between two of them.
+FILM_FRAMES, FILM_STEP = 13, timedelta(minutes=10)
 
 _R = 6378137.0
 _BASELINE = 6  # frames of five minutes: the half hour the motion is measured on
@@ -115,7 +118,8 @@ class Cache:
                 if fresh:
                     return held[2]  # type: ignore[no-any-return]
             value = await job()
-            self._held[key] = (clock.monotonic(), made_from, value)
+            if ttl != 0:  # zero is a lock alone: the job keeps what it wants to keep
+                self._held[key] = (clock.monotonic(), made_from, value)
             return value
 
 
@@ -142,6 +146,7 @@ class Radar:
         self.client = RadarClient()
         self.cache = Cache()
         self._frames: OrderedDict[tuple[str, datetime], RainGrid] = OrderedDict()
+        self._pictures: OrderedDict[tuple[str, datetime], bytes] = OrderedDict()
 
     async def last(self, name: str) -> LastProduct:
         last = await self.cache.get(f"last {name}", lambda: self.client.last_product(name), ttl=30)
@@ -190,6 +195,29 @@ class Radar:
             )
 
         return await self.cache.get(f"checked {name}", check, made_from=last.time)
+
+    async def picture(self, name: str, time: datetime | None) -> bytes | None:
+        """A frame as a picture: the newest one checked, an older one as the DPC published it.
+
+        Only the pictures of older frames are kept (50 kB each, a grid is 7 MB).
+        """
+        newest = (await self.frame(name)).grid
+        key = (name, newest.time if time is None else time)
+
+        async def draw() -> bytes | None:
+            if key not in self._pictures:
+                grid = newest if key[1] == newest.time else self._frames.get(key)
+                if grid is None:
+                    found = await self.client.at(name, key[1])
+                    if isinstance(found, Absent):
+                        return None
+                    grid = found
+                self._pictures[key] = await asyncio.to_thread(picture, grid)
+                while len(self._pictures) > 120:
+                    self._pictures.popitem(last=False)
+            return self._pictures[key]
+
+        return await self.cache.get(f"picture {name} {key[1].isoformat()}", draw, ttl=0)
 
     async def half_hour(self) -> list[RainGrid]:
         """The SRI frames of the last half hour, the oldest first, the last one checked."""
@@ -419,15 +447,33 @@ async def layer(radar: Radar, request: Request) -> dict[str, Any]:
     }
 
 
+async def film(radar: Radar, request: Request) -> dict[str, Any]:
+    """The frames before the newest one, the oldest first: what the map plays."""
+    key = request.path_params["key"]
+    newest = (await radar.frame(_layer(key))).grid
+    step = max(newest.product.period, FILM_STEP)
+    times = [stamp(newest.time - step * k) for k in range(FILM_FRAMES - 1, -1, -1)]
+    return {
+        "key": key,
+        "product": newest.product.name,
+        "step_minutes": step // timedelta(minutes=1),
+        "frames": [{"time": t, "image": f"/api/rain/{key}.png?t={t}"} for t in times],
+        "python": f'await RadarClient().at("{newest.product.name}", time)',
+    }
+
+
 async def rain(radar: Radar, request: Request) -> Response:
-    name = _layer(request.path_params["key"])
-    frame = await radar.frame(name)
-    png = await radar.cache.get(
-        f"picture {name}",
-        lambda: asyncio.to_thread(picture, frame.grid),
-        made_from=frame.grid.time,
-    )
-    return Response(png, media_type="image/png", headers={"Cache-Control": "max-age=300"})
+    name, asked = _layer(request.path_params["key"]), request.query_params.get("t")
+    try:
+        time = None if asked is None else datetime.fromisoformat(asked)
+    except ValueError:
+        raise DpcRadarError("a time is YYYY-MM-DDTHH:MMZ") from None
+    if time is not None and time.tzinfo is None:
+        raise DpcRadarError("a time is YYYY-MM-DDTHH:MMZ")
+    png = await radar.picture(name, time)
+    if png is None:
+        return Response(status_code=404)
+    return Response(png, media_type="image/png", headers={"Cache-Control": "max-age=3600"})
 
 
 def _shown(bulletin: bulletins.Bulletin) -> date:
@@ -709,6 +755,7 @@ app = Starlette(
     routes=[
         route("/api/health", health),
         route("/api/layer/{key}", layer),
+        route("/api/film/{key}", film),
         route("/api/rain/{key}.png", rain),
         route("/api/zones", zones),
         route("/api/storms", storms_now),

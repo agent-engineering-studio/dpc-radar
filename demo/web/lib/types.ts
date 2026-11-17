@@ -18,6 +18,13 @@ export type Layer = {
   python: string;
 };
 
+export type Film = {
+  key: LayerKey;
+  product: string;
+  step_minutes: number;
+  frames: { time: string; image: string }[];
+};
+
 export type Moving = { kmh: number; towards_degrees: number } | null;
 
 export type ZoneDay = {

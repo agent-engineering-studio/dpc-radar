@@ -18,6 +18,13 @@ All notable changes to this project are documented here. The format follows
   it on http://localhost:3000 (it was 8501); `make demo` now needs Node too.
   The demo reads live only: `docker compose up` no longer downloads frames
   first (`docker compose run --rm init` still does).
+- The map of the demo opens on Italy as large as the window holds it, and the
+  radars are drawn only when ticked.
+
+### Added
+
+- The demo plays how the rain moved: the last thirteen frames of the layer
+  shown, with a slider to stop on one (`/api/film/{layer}` in `demo/api.py`).
 
 ## [0.3.0] - 2026-11-17
 

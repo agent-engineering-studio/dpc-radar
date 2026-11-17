@@ -111,18 +111,54 @@ the gauges that enter the «Merging». The positions of seven radars come from
 the DPC's table; the others were found by fitting their range circles on the
 mosaic's no-data mask, and four that are always hidden under the others come
 from the literature. Coverage and agreement describe five months, not a
-climate: the 2010–2025 history (#4) will make them steadier. Limen does not
+climate. Limen does not
 use the map yet.
 
-### Rain climatology · [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) · effort M
+### Rain climatology · [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) · ✅ first version: eight years, in radar millimetres
 
-From the 2010–2025 history, per cell and per window (1, 3, 6, 24 h):
-percentiles and a return period from an extreme-value fit.
-`climatology.rarity(...)` answers "this rain is a 1-in-N-years event here".
-**For Limen:** alert on rain that is unusual *for that place*, not over one
-national threshold. This is the largest expected effect on limen#345: fewer
-municipality-days on alert, without losing events. **Check:** both numbers
-of limen#345, with and without it, on held-out seasons.
+[`dpc_radar.rarity(window, lon, lat, mm)`](api/climatology.md) answers "this
+rain is a 1-in-N-years event here" for 1, 3, 6 and 24 hours: a percentile and
+a return period with its 90 % interval. `return_level` gives the rain of a
+return period, `return_period(frame)` the return period of every pixel. The
+map ships with the package (1.6 MB, cells of 5 km): a GEV of the highest
+window of the year, the location from the cell, the spread from the 55 km
+around it, one shape for Italy.
+
+What the history says first: **it is not one series**. Until 2017 the mosaic
+read about two thirds of what it reads since 2018 (the highest hour of the
+year over today's map: 0.64–0.90 before, 1.09–1.35 after). A map on all
+sixteen years puts 61 % of the pixels over their 2-year level in five months
+of 2026. So the map stands on 2018–2025, and fewer than one frame in a
+thousand, corrupted, is left out (`history.suspect`).
+
+**Check:** fitted on six years and asked about the other two. The 2-year level
+is passed by 52 % of the pixels in a year (it should be 50), the 5-year by
+24 % (20), the 10-year by 14 % (10), the 20-year by 8 % (5): "10 years" came
+about every 7, "20 years" every 13. On the hourly frames of 2026 the 1 h
+levels behave the same; the 24 h levels are passed more. The
+[tables](api/climatology.md#the-measure-in-full) are in the reference.
+
+**What was tried and dropped.** A fit pixel by pixel, and one with the shape
+of each cell: on held-out years the 20-year level was passed by 9–10 % of the
+pixels. A shape by area (55 km, 205 km): no better than one for Italy, and a
+blotchy map.
+
+**What is not there.**
+
+- **More years.** Eight years cannot say what a 50-year rain is; the map
+  stops there and its interval is wide (at 50 years, from 0.8 to 1.5 times
+  the level). The years before 2018 could be used only after bringing them to
+  today's scale, and nothing here says how.
+- **Rain-gauge millimetres.** The levels are those of the radar alone, which
+  reads more than the gauges over most of the land (#8). They are not the
+  official rainfall curves, and on a radar-only frame the return period brings
+  the faults of the frame: on 2 November 2026 the radar alone was over the
+  10-year level on twice the area of the «Merging».
+- **Limen.** Nothing here measures limen#345: whether judging rain against
+  the place gives fewer municipality-days on alert without losing events is
+  to be measured in Limen, on held-out seasons. The 2018 step also touches
+  its backtests on the history
+  ([limen#243](https://github.com/agent-engineering-studio/limen/issues/243)).
 
 ### Storm catalogue · [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) · effort M
 
@@ -275,7 +311,7 @@ as structured data instead of prose
 
 | Limen today | With dpc-radar | Issue | Number of limen#345 it should move |
 |---|---|---|---|
-| one national rain threshold | rain judged against the climate of each cell | #4 | fewer municipality-days on alert |
+| one national rain threshold | rain judged against the climate of each cell: `rarity` (done); its use in Limen (open) | #4 | fewer municipality-days on alert, to be measured |
 | 8 verified events | candidate events from the storm catalogue, checked in the news | #5 | a denominator worth measuring |
 | radar zero read as dry where the radar is blind | a reliability map | #3 | fewer missed events |
 | a fixed 150 mm rule for bad frames | a score per frame and pixel, with the reason | #6 | fewer false alarms |

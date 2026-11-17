@@ -36,6 +36,20 @@ All notable changes to this project are documented here. The format follows
   times as often. It lowers heavy rain and is not applied to the 2010–2025
   history: the limits are in the module's documentation.
   `tools/build_bias.py` builds and measures it (#8).
+- `dpc_radar.rarity(window, lon, lat, mm)`: how rare a rain of 1, 3, 6 or 24
+  hours is at a place, as a percentile and as a return period with its 90 %
+  interval; `return_level(window, lon, lat, years)` is the rain of a return
+  period and `return_period(grid, window=None)` the return period of every
+  pixel of an accumulation frame. The map ships with the package (1.6 MB,
+  5 km cells): a GEV of the highest window of the year, from the IT-DPC-SRI
+  history of 2018–2025. 100 mm in 24 hours come every 1.7 years in Genoa and
+  every 32 in Bari. It is in radar millimetres and stands on eight years: on
+  held-out years its "10 years" came about every 7 and its "20 years" every
+  13, and nothing is given beyond 50. `tools/build_climatology.py` builds and
+  measures it (#4).
+- `dpc_radar.history.suspect(frame)`: whether a frame of the history is
+  corrupted (the disk of a radar filled with violent rain, flat patches over
+  100 mm/h): 752 of 1,039,785 frames, 229 of them in 2011 and 250 in 2014.
 - `reliability_map().like(grid, part)` gives any part of the map on the pixels
   of a frame, not only the score.
 - Benchmark: a case with `radar = true` also carries the radar-only rain of
@@ -57,6 +71,8 @@ All notable changes to this project are documented here. The format follows
   with it.
 
 ### Changed
+
+- `SriHistory.hourly` reads a corrupted frame as missing.
 
 - The documentation site is built with Zensical (`zensical.toml`) instead of
   MkDocs Material (`mkdocs.yml`); pages and URLs are unchanged.

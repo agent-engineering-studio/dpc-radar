@@ -18,6 +18,19 @@ of :mod:`dpc_radar.archive` where both exist.
 
 An hour covered for less than half by frames is ``None``, not measured: a gap
 in the archive is not a dry hour.
+
+Fewer than one frame in a thousand is corrupted (752 of 1,039,785): the whole
+disk of a radar filled with violent rain, or flat patches of one value over
+100 mm/h (229 frames in 2011, 250 in 2014, 5 to 44 in the other years).
+:func:`suspect` tells them from what rain looks like in the other million
+frames, and :meth:`SriHistory.hourly` reads them as missing. It does not catch
+everything: a single spike or a short ray of clutter passes, and the median of
+the 3x3 pixels is what softens those.
+
+It is not one series. Until 2017 the mosaic read less: the highest hour of the
+year is about two thirds of what it is since 2018 (the table is in
+:mod:`dpc_radar.climatology`). A threshold, a trend or a statistic that
+crosses 2018 compares two different instruments.
 """
 
 from __future__ import annotations
@@ -38,6 +51,46 @@ EPOCH: Final = datetime(2010, 1, 1, tzinfo=UTC)
 #: The longest step of the archive: a wider interval is a gap, and the frame
 #: before the gap does not cover it.
 _MAX_STEP_MIN = 15
+
+
+#: A frame is suspect with at least this many pixels of violent rain (100 mm/h) ...
+_MIN_VIOLENT: Final = 100
+#: ... when they are more than this share of the pixels with rain (1 mm/h),
+_VIOLENT_OF_WET: Final = 0.05
+#: or more than this share of the pixels with heavy rain (50 mm/h),
+_VIOLENT_OF_HEAVY: Final = 0.7
+#: or more than this many in all.
+_MAX_VIOLENT: Final = 2000
+#: Or with this many pixels of heavy rain, when they are more than this share of the wet ones.
+_MIN_HEAVY: Final = 200
+_HEAVY_OF_WET: Final = 0.2
+
+
+def suspect(frame: np.ndarray) -> bool:
+    """Whether a frame in mm/h looks corrupted rather than rained on.
+
+    In a storm the violent rain is a few pixels inside a much wider area of
+    lighter rain. A frame is suspect when that is not so: at least 100 pixels
+    at 100 mm/h or more that are over 5 % of the pixels with rain or over 70 %
+    of those at 50 mm/h (a flat patch), or more than 2000 of them; or at least
+    200 pixels at 50 mm/h that are over 20 % of the pixels with rain. The
+    thresholds stand on the one million frames of IT-DPC-SRI: they reject
+    about one in a thousand.
+    """
+    heavy = int(np.count_nonzero(frame >= 50))
+    if heavy < _MIN_VIOLENT:
+        return False
+    wet = int(np.count_nonzero(frame >= 1))
+    violent = int(np.count_nonzero(frame >= 100))
+    if heavy >= _MIN_HEAVY and heavy > _HEAVY_OF_WET * wet:
+        return True
+    if violent < _MIN_VIOLENT:
+        return False
+    return (
+        violent > _MAX_VIOLENT
+        or violent > _VIOLENT_OF_WET * wet
+        or violent > _VIOLENT_OF_HEAVY * heavy
+    )
 
 
 def _blosc() -> Any:
@@ -131,7 +184,8 @@ class SriHistory:
 
         The mean of the intensities of the hour's frames, each weighted by the
         time it covers until the next one (15 minutes at most), read as the
-        median of the 3x3 pixels around the point. The same signature as
+        median of the 3x3 pixels around the point. A corrupted frame
+        (:func:`suspect`) is read as missing. The same signature as
         :meth:`dpc_radar.archive.MergingArchive.hourly`: the two are
         interchangeable.
         """
@@ -151,7 +205,7 @@ class SriHistory:
             after = int(self._minutes[i + 1]) if i + 1 < len(self._minutes) else m + 5
             weight = min(after - m, _MAX_STEP_MIN)
             f = self.frame(i)
-            if f is None:
+            if f is None or suspect(f):
                 continue
             windows = f[rows, cols].astype(np.float64)
             with warnings.catch_warnings():
@@ -172,4 +226,4 @@ class SriHistory:
         return out
 
 
-__all__ = ["EPOCH", "SriHistory"]
+__all__ = ["EPOCH", "SriHistory", "suspect"]

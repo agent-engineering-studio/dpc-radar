@@ -11,7 +11,7 @@ from numcodecs import Blosc
 from rasterio.crs import CRS
 
 from dpc_radar import DpcRadarError
-from dpc_radar.history import EPOCH, SriHistory
+from dpc_radar.history import EPOCH, SriHistory, suspect
 from tests.conftest import TMERC
 
 DATA = Path(__file__).parent / "data"
@@ -80,6 +80,36 @@ def test_a_gap_counts_15_minutes_at_most(tmp_path: Path) -> None:
     rain = sri.hourly([MELITO], EPOCH + timedelta(hours=7), EPOCH + timedelta(hours=10))
     # 07:00 covers 15 minutes only: not measured. The last frame covers 5 minutes.
     assert rain == {EPOCH + timedelta(hours=8): [None], EPOCH + timedelta(hours=10): [None]}
+
+
+def _storm(violent: int, heavy: int, wet: int) -> np.ndarray:
+    """A frame with that many pixels at 120, 60 and 5 mm/h, dry elsewhere."""
+    data = np.zeros(SHAPE, dtype="f4").ravel()
+    data[:violent] = 120
+    data[violent : violent + heavy] = 60
+    data[violent + heavy : violent + heavy + wet] = 5
+    return data.reshape(SHAPE)
+
+
+def test_what_a_corrupted_frame_looks_like() -> None:
+    assert not suspect(_frame(4))
+    assert not suspect(_storm(90, 0, 0))  # a few pixels: too little to tell
+    assert not suspect(_storm(400, 1500, 30_000))  # a large storm inside its rain
+    assert suspect(_storm(400, 1500, 3_000))  # violent rain with little rain around it
+    assert suspect(_storm(400, 100, 30_000))  # a flat patch: nothing between 50 and 100
+    assert suspect(_storm(2500, 9000, 200_000))  # more violent rain than a frame ever had
+    assert suspect(_storm(0, 5000, 10_000))  # a disk of heavy rain (2010 stops at 100 mm/h)
+    assert not suspect(_storm(0, 5000, 100_000))
+    assert not suspect(_storm(150, 150, 10_000))  # under 200 heavy pixels the share does not count
+
+
+def test_hourly_reads_a_corrupted_frame_as_missing(tmp_path: Path) -> None:
+    hour = 8 * 60
+    minutes = [hour - 60, hour - 45, hour - 30, hour - 15, hour]
+    frames = {0: _frame(4), 1: _frame(8), 2: _frame(120), 3: _frame(4), 4: _frame(0)}
+    sri = SriHistory(store(tmp_path, minutes, frames))
+    rain = sri.hourly([MELITO], EPOCH + timedelta(hours=7), EPOCH + timedelta(hours=8))
+    assert rain[EPOCH + timedelta(hours=8)][0] == pytest.approx((4 + 8 + 4) / 3)
 
 
 def test_a_real_chunk_decodes(tmp_path: Path) -> None:

@@ -5,6 +5,15 @@ from importlib.metadata import version
 
 from dpc_radar.bias import BiasMap, bias_map, correct, radar_factor
 from dpc_radar.client import ABSENT, Absent, RadarClient
+from dpc_radar.climatology import (
+    Climatology,
+    Level,
+    Rarity,
+    climatology,
+    rarity,
+    return_level,
+    return_period,
+)
 from dpc_radar.errors import DpcRadarError
 from dpc_radar.grid import FrameCheck, RainGrid
 from dpc_radar.products import (
@@ -49,18 +58,22 @@ __all__ = [
     "SRT1",
     "Absent",
     "BiasMap",
+    "Climatology",
     "DpcRadarError",
     "FrameCheck",
     "LastProduct",
+    "Level",
     "Product",
     "Quality",
     "RadarClient",
     "RadarSite",
     "RainGrid",
+    "Rarity",
     "Reliability",
     "ReliabilityMap",
     "__version__",
     "bias_map",
+    "climatology",
     "correct",
     "is_expired",
     "parse_download",
@@ -68,6 +81,9 @@ __all__ = [
     "product",
     "radar_factor",
     "radar_total",
+    "rarity",
     "reliability",
     "reliability_map",
+    "return_level",
+    "return_period",
 ]

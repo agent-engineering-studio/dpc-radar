@@ -18,6 +18,7 @@ nav = [
     { "Reliability map" = "api/reliability.md" },
     { "Frame quality" = "api/quality.md" },
     { "Radar bias" = "api/bias.md" },
+    { "Rain climatology" = "api/climatology.md" },
     { "Criticality bulletins" = "api/bulletins.md" },
     { "Products and API" = "api/products.md" },
     { "Errors" = "api/errors.md" },

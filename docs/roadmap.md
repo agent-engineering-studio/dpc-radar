@@ -160,14 +160,40 @@ blotchy map.
   its backtests on the history
   ([limen#243](https://github.com/agent-engineering-studio/limen/issues/243)).
 
-### Storm catalogue · [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) · effort M
+### Storm catalogue · [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) · ✅ first version: candidates, not yet verified
 
-Group SRI cells into storm objects and track them from frame to frame (area,
-peak, duration, path). The most extreme storms over inhabited places become
-**candidate events**. **For Limen:** the radar says where to look; Limen's
-fact-check, which already reads the news with a language model, confirms or
-rejects. More verified events, and the storms without damage that a
-calibration also needs. **Check:** new verified events per month of archive.
+[`dpc_radar.storms(frame, threshold=)`](api/storms.md) gives the patches of
+rain of a frame as objects (centre, area, peak) and `track` follows them from
+frame to frame (duration, path, speed, water).
+[`dpc_radar.rare_events(frames)`](api/catalogue.md) reads hourly frames, sums
+them over 1, 3, 6 and 24 hours and gives the rain over the level of its place
+(#4) as events, the rarest first; `with_merging` adds what the «Merging» says
+of each. `tools/build_catalogue.py` writes the list as a CSV.
+
+**Check:** on the 160 days of 2026 in the archive, on land and where the radar
+is reliable: 1,689 events over the 10-year level (317 a month; the «Merging»
+confirms 1,054), 339 at the 50-year ceiling (64 a month; 214 confirmed). Of
+the two events of the season we knew, the flood of Melito di Porto Salvo is
+found (rank 172; 113 among the confirmed) and Lipari is not: the radar is
+nearly blind there. The [tables](api/catalogue.md#the-measure-in-full) and
+the [list](data/rare-rain-2026.csv) are in the reference.
+
+**What it taught.** The list is long. A return period is about one place, and
+on the hourly frames of 2026 the levels of the climatology are passed two to
+five times more often than their name says: the return period is a ranking.
+The single rarest pixel is often an echo, so an event is ranked by the level
+its rarest 10 km² reach. June is full of one-hour summer storms over the
+Apennines, where hail may make the radar read too much.
+
+**What is not there.**
+
+- **Verified events.** "New verified events per month" is still to count: the
+  catalogue gives candidates, and the check in the news is Limen's. Its eight
+  verified events live in its database, so how many of them the catalogue
+  finds was not measured.
+- **Municipalities.** An event carries the name of its alert zone and a
+  point; the join with the municipalities is Limen's.
+- **The history.** Only the 2026 season was listed.
 
 ---
 
@@ -312,7 +338,7 @@ as structured data instead of prose
 | Limen today | With dpc-radar | Issue | Number of limen#345 it should move |
 |---|---|---|---|
 | one national rain threshold | rain judged against the climate of each cell: `rarity` (done); its use in Limen (open) | #4 | fewer municipality-days on alert, to be measured |
-| 8 verified events | candidate events from the storm catalogue, checked in the news | #5 | a denominator worth measuring |
+| 8 verified events | candidate events from the catalogue: `rare_events` (done, 317 a month); their check in the news (open) | #5 | a denominator worth measuring |
 | radar zero read as dry where the radar is blind | a reliability map | #3 | fewer missed events |
 | a fixed 150 mm rule for bad frames | a score per frame and pixel, with the reason | #6 | fewer false alarms |
 | a trigger on rain already fallen | a trigger on rain that is coming (0–2 h) | #7 | more events anticipated |

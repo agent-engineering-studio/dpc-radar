@@ -54,6 +54,7 @@ four small apps are [below](#notebooks-and-example-apps).
 - [Where the radar can be trusted](#where-the-radar-can-be-trusted)
 - [How far the radar alone is from the «Merging»](#how-far-the-radar-alone-is-from-the-merging)
 - [How rare is this rain, here](#how-rare-is-this-rain-here)
+- [Storms, and a list of the rare ones](#storms-and-a-list-of-the-rare-ones)
 - [The official alert, as data](#the-official-alert-as-data)
 - [How it works](#how-it-works)
 - [The traps we already fell into](#the-traps-we-already-fell-into)
@@ -681,6 +682,49 @@ area of the «Merging»). Clean the frame with [`quality`](#4-check-a-frame-befo
 first. The [tables](https://agentengineering.it/dpc-radar/api/climatology/)
 are in the reference.
 
+## Storms, and a list of the rare ones
+
+`storms` turns a frame into objects: every patch of rain over a threshold,
+with its centre, area and peak. `track` follows them from frame to frame.
+
+```python
+from dpc_radar import rare_events, storms, track, with_merging  # pip install "dpc-radar[storms]"
+
+for storm in storms(sri, threshold=10):  # the convective cores of an SRI frame
+    print(storm.lon, storm.lat, storm.area_km2, storm.peak)
+
+for t in track(sri_frames, threshold=10):  # one Track per storm
+    print(t.start, t.duration, t.peak, t.distance_km, t.speed_kmh, t.heading, t.water_m3)
+
+events = rare_events(hourly_srt1_frames)  # rain over the 10-year level of its place
+events = [with_merging(e, archive) for e in events]  # ... and what the «Merging» says
+```
+
+`rare_events` reads hourly frames in order, sums them over 1, 3, 6 and 24
+hours and keeps the patches over the level of their place
+([`rarity`](#how-rare-is-this-rain-here)), where the radar is reliable. Rain
+that lasts is one `Event`, the rarest first: where, when, how many
+millimetres against which level, and whether the «Merging» confirms it.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/catalogue.png" alt="A map of Italy with the 339 events of June to November 2026 at the ceiling of the climatology, full where the Merging confirms them, and their count by month and by window" width="100%">
+</p>
+
+On the 160 days of 2026 in our archive it finds **1,689 events** over the
+10-year level on land, 339 of them at the 50-year ceiling; the «Merging»
+confirms 1,054 and 214. The flood of Melito di Porto Salvo of 10 October is
+there, at rank 172; Lipari is not, because the radar is nearly blind there.
+The list is [a CSV](https://github.com/agent-engineering-studio/dpc-radar/blob/main/docs/data/rare-rain-2026.csv).
+
+**How far to trust it.** These are **candidates**, not verified events: the
+radar says where to look, the news says what happened. The list is long
+because a "10-year" rain falls somewhere in Italy most weeks, and because on
+the hourly frames of 2026 the levels are passed two to five times more often
+than their name says: read the return period as a ranking. June is full of
+one-hour summer storms, where hail makes the radar read too much. The
+[tables](https://agentengineering.it/dpc-radar/api/catalogue/) are in the
+reference.
+
 ## The official alert, as data
 
 Every day by 16:00 the DPC publishes the **criticality bulletin**: the
@@ -825,6 +869,8 @@ them. Limen's rule today passes 14 of 30 checks; a frame-level check
 | `SITES` | the 24 radars of the mosaic: position, altitude, band, range |
 | `correct(grid)` / `radar_factor(lon, lat)` / `bias_map()` | a radar-only frame times the factor «Merging» / radar of every pixel / the factor at a point (1.0: no correction) / the whole map, `.like(grid)` |
 | `rarity(window, lon, lat, mm)` / `return_level(window, lon, lat, years)` / `return_period(grid, window=None)` | how rare a rain of 1, 3, 6 or 24 hours is at a point: `return_period` with `low` and `high`, `percentile`, `years` / the rain of a return period, a `Level(mm, low, high)` / the return period of every pixel of an accumulation frame; `climatology()` is the whole map |
+| `storms(grid, threshold=)` / `track(grids, threshold=)` | the patches of rain of a frame as `Storm`s (`lon`, `lat`, `area_km2`, `peak`, `mean`, `bbox`) / followed in time as `Track`s: `duration`, `path`, `distance_km`, `speed_kmh`, `heading`, `water_m3` (extra `storms`) |
+| `rare_events(frames, years=10)` / `with_merging(event, archive)` | the rain of hourly frames over the level of its place, as `Event`s, the rarest first: `start`, `time`, `window`, `mm`, `level_mm`, `times_level`, `return_period`, `area_km2` / the same with `radar_mm`, `merging_mm`, `confirmed` (extra `storms`) |
 | `bulletins.latest()` / `bulletins.fetch(name)` | the official criticality bulletin: `Bulletin.zones`, `.alerts()`, `.zone_at(lon, lat)` (extra `bulletins`) |
 | `SRI`, `SRT1`, `CUM3`, `CUM6`, `CUM12`, `CUM24` | the products: `name`, `hours` (`None` for an intensity), `merging`, `description` |
 | `PRODUCTS`, `product(name)` | every product by name; `product("cum24")` → `CUM24` |
@@ -864,7 +910,7 @@ flowchart LR
 | **Benchmark** | a fixed set of storms and faults where we know the answer | every change measurable | [#2](https://github.com/agent-engineering-studio/dpc-radar/issues/2) |
 | **Reliability map** | where the radar sees well, and where it is blind | a blind spot is no longer read as "dry" | [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) |
 | **Rain climatology** ✅ | how rare is this rain *here*, from eight years of radar (2018–2025) | rain judged against the place, not against one national threshold; the effect on Limen's alerts is still to measure | [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) |
-| **Storm catalogue** | every storm as an object, and the extreme ones as events to check in the news | many more verified events to measure against | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
+| **Storm catalogue** ✅ | every storm as an object, and the rare rain as candidate events to check in the news | 1,689 candidates in 160 days of 2026, 1,054 confirmed by the «Merging»; the check in the news is Limen's | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
 | **Frame quality check** ✅ | rules that tell a real storm from a broken frame or a faulty gauge, and say why | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
 | **Nowcasting** | the rain field moved forward along its motion, 0–2 hours | a trigger on rain that is *coming* | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
 | **Radar–gauge bias** ✅ | how far the radar alone is from the «Merging», place by place, and a factor for it | radar-only rain closer to the «Merging» between two frames; the history is still open | [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) |
@@ -906,11 +952,14 @@ dpc-radar/
 │   ├── quality.py    # what to trust in a frame, pixel by pixel, and why
 │   ├── bias.py       # how far the radar alone is from the «Merging», and a factor
 │   ├── climatology.py  # how rare a rain is at a place: percentile and return period
+│   ├── storms.py     # storms as objects, followed in time (extra [storms])
+│   ├── catalogue.py  # the rain over the level of its place, as events
 │   └── errors.py     # DpcRadarError
 ├── tests/            # offline: synthetic GeoTIFFs and a fake API
 │   └── live/         # the same on the real API: uv run pytest -m live
 ├── benchmarks/       # known cases, and how each cleaning rule scores
-├── tools/            # build_reliability.py, build_bias.py, build_climatology.py: the maps
+├── tools/            # build_reliability.py, build_bias.py, build_climatology.py: the maps;
+│                     # build_catalogue.py: the list of rare rain
 └── docs/
     ├── make_images.py  # the images of this README, from real frames
     └── roadmap.md      # what comes next, and where AI helps
@@ -944,6 +993,9 @@ Questions, ideas and maps you made go in the organisation's
   radar data too: CC BY-SA 4.0.
 - **The climatology** (`src/dpc_radar/data/climatology.tif`) is derived from
   IT-DPC-SRI: CC BY-SA 4.0, credit the DPC and Fondazione Bruno Kessler.
+- **The list of rare rain** (`docs/data/rare-rain-2026.csv`) is derived from
+  the DPC radar data: CC BY-SA 4.0. The names of the alert zones come from
+  the criticality bulletins.
 - **Country borders** in the images: [Natural Earth](https://www.naturalearthdata.com/), public domain.
 
 This library is not affiliated with the DPC. It is not an alert system:

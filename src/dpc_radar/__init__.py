@@ -4,6 +4,7 @@ import logging
 from importlib.metadata import version
 
 from dpc_radar.bias import BiasMap, bias_map, correct, radar_factor
+from dpc_radar.catalogue import Event, rare_events, with_merging
 from dpc_radar.client import ABSENT, Absent, RadarClient
 from dpc_radar.climatology import (
     Climatology,
@@ -41,6 +42,7 @@ from dpc_radar.reliability import (
     reliability,
     reliability_map,
 )
+from dpc_radar.storms import Storm, Track, storms, track
 
 __version__ = version("dpc-radar")
 logging.getLogger("dpc_radar").addHandler(logging.NullHandler())
@@ -60,6 +62,7 @@ __all__ = [
     "BiasMap",
     "Climatology",
     "DpcRadarError",
+    "Event",
     "FrameCheck",
     "LastProduct",
     "Level",
@@ -71,6 +74,8 @@ __all__ = [
     "Rarity",
     "Reliability",
     "ReliabilityMap",
+    "Storm",
+    "Track",
     "__version__",
     "bias_map",
     "climatology",
@@ -81,9 +86,13 @@ __all__ = [
     "product",
     "radar_factor",
     "radar_total",
+    "rare_events",
     "rarity",
     "reliability",
     "reliability_map",
     "return_level",
     "return_period",
+    "storms",
+    "track",
+    "with_merging",
 ]

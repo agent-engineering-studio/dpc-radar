@@ -74,13 +74,12 @@ docs = [
     "mkdocstrings[python]>=0.26",
 ]
 # What the demo in demo/ needs on top of the extras.
-demo = ["matplotlib>=3.9", "streamlit>=1.40"]
+demo = ["starlette>=0.40", "uvicorn>=0.30"]
 examples = [
     "ipykernel>=6.29",
     "matplotlib>=3.9",
     "nbconvert>=7.16",
     "nbformat>=5.10",
-    "streamlit>=1.40",
 ]
 
 [tool.ruff]
@@ -94,8 +93,9 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "ARG", "PTH", "RUF"]
 "tests/**" = ["ARG", "B018"]
 # The image script draws labels with typographic signs (×, –, −) on purpose.
 "docs/**" = ["RUF001"]
-# The demo writes for people: ×, – and ° are what it means.
-"demo/**" = ["RUF001"]
+# The demo writes for people: ×, – and ° are what it means. Its handlers
+# share one signature: not every one uses every argument.
+"demo/**" = ["RUF001", "ARG001"]
 # Baseline methods implement an interface: not every method uses every argument.
 "benchmarks/methods.py" = ["ARG002"]
 

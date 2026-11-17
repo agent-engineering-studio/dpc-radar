@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The demo is a map, no longer a Streamlit page: all of Italy on OpenStreetMap,
+  centred on Rome, with the rain of now or of the last 1 to 24 hours, the alert
+  zones, the storms and the radars. A click on a point, a zone, a storm or a
+  radar opens a card with the rain there, the forecast of the next two hours,
+  the official alert and how far the radar can be trusted. It is two parts: a
+  small API over the library (`demo/api.py`, Starlette) and the page
+  (`demo/web`, Next.js and Leaflet). `docker compose up` and `make demo` serve
+  it on http://localhost:3000 (it was 8501); `make demo` now needs Node too.
+  The demo reads live only: `docker compose up` no longer downloads frames
+  first (`docker compose run --rm init` still does).
+
 ## [0.3.0] - 2026-11-17
 
 ### Added

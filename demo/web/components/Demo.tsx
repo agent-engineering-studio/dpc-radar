@@ -1,0 +1,215 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useState } from "react";
+import Card from "@/components/Card";
+import type { Shown } from "@/components/MapView";
+import { ago, ask, clock, failed } from "@/lib/format";
+import type {
+  AheadData,
+  Collection,
+  Failed,
+  Layer,
+  LayerKey,
+  PointData,
+  RadarProps,
+  RadarRain,
+  Selection,
+  StormProps,
+  ZoneDay,
+} from "@/lib/types";
+
+// Leaflet needs a window: the map is drawn in the browser only.
+const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
+
+const LAYERS: { key: LayerKey; label: string; long: string }[] = [
+  { key: "now", label: "Now", long: "Rain rate now" },
+  { key: "1", label: "1 h", long: "Rain of the last hour" },
+  { key: "3", label: "3 h", long: "Rain of the last 3 hours" },
+  { key: "6", label: "6 h", long: "Rain of the last 6 hours" },
+  { key: "12", label: "12 h", long: "Rain of the last 12 hours" },
+  { key: "24", label: "24 h", long: "Rain of the last 24 hours" },
+];
+const TOGGLES: { key: keyof Shown; label: string }[] = [
+  { key: "rain", label: "Rain" },
+  { key: "zones", label: "Alert zones" },
+  { key: "storms", label: "Storms" },
+  { key: "radars", label: "Radars" },
+];
+const REFRESH_MS = 120_000;
+
+const wrong = (error: unknown): Failed => ({
+  error: error instanceof Error ? error.message : "it did not answer",
+});
+
+/** Ask the API again every two minutes: a new radar frame comes every five. */
+function useLive<T>(path: string): T | Failed | null {
+  const [found, setFound] = useState<{ path: string; value: T | Failed } | null>(null);
+  useEffect(() => {
+    const stop = new AbortController();
+    const read = () =>
+      ask<T>(path, stop.signal)
+        .then((value) => setFound({ path, value }))
+        .catch((error) => stop.signal.aborted || setFound({ path, value: wrong(error) }));
+    read();
+    const timer = setInterval(read, REFRESH_MS);
+    return () => {
+      stop.abort();
+      clearInterval(timer);
+    };
+  }, [path]);
+  return found?.path === path ? found.value : null;
+}
+
+/** Ask once for what was clicked; the answer to an older click is dropped. */
+function useAnswer<T>(path: string | null): T | Failed | null {
+  const [found, setFound] = useState<{ path: string; value: T | Failed } | null>(null);
+  useEffect(() => {
+    if (!path) return;
+    const stop = new AbortController();
+    ask<T>(path, stop.signal)
+      .then((value) => setFound({ path, value }))
+      .catch((error) => stop.signal.aborted || setFound({ path, value: wrong(error) }));
+    return () => stop.abort();
+  }, [path]);
+  return found?.path === path ? found.value : null;
+}
+
+const good = <T,>(value: T | Failed | null): T | null => (value === null || failed(value) ? null : value);
+
+export default function Demo() {
+  const [key, setKey] = useState<LayerKey>("now");
+  const [shown, setShown] = useState<Shown>({ rain: true, zones: true, storms: true, radars: true });
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [, tick] = useState(0);
+
+  const layer = useLive<Layer>(`/api/layer/${key}`);
+  const zones = useLive<Collection<ZoneDay>>("/api/zones");
+  const storms = useLive<Collection<StormProps>>("/api/storms");
+  const radars = useLive<Collection<RadarProps>>("/api/radars");
+
+  const at = selection && `lon=${selection.lon.toFixed(4)}&lat=${selection.lat.toFixed(4)}`;
+  const point = useAnswer<PointData>(at && `/api/point?${at}`);
+  const ahead = useAnswer<AheadData>(at && `/api/ahead?${at}`);
+  const radarRain = useAnswer<RadarRain>(
+    selection?.kind === "radar" && selection.radar.in_mosaic
+      ? `/api/radar?name=${encodeURIComponent(selection.radar.name)}`
+      : null,
+  );
+
+  // "5 min ago" grows old by itself.
+  useEffect(() => {
+    const timer = setInterval(() => tick((n) => n + 1), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    const close = (e: KeyboardEvent) => e.key === "Escape" && setSelection(null);
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, []);
+
+  const select = useCallback((next: Selection) => setSelection(next), []);
+  const drawn = good(layer);
+  const zone = point && !failed(point) && point.zone && !failed(point.zone) ? point.zone.name : null;
+  const stormCount = good(storms)?.features.length;
+  const off = good(radars)?.features.filter((f) => f.properties.on === false).length;
+  const alerts = good(zones)?.features.filter((f) => f.properties.level > 0).length;
+  const counts: Partial<Record<keyof Shown, string | undefined>> = {
+    zones: alerts === undefined ? undefined : alerts ? `${alerts} on alert` : "no alert",
+    storms: stormCount === undefined ? undefined : String(stormCount),
+    radars: off === undefined ? undefined : off ? `${off} off` : undefined,
+  };
+  const problems = [layer, zones, storms, radars].filter(failed);
+
+  return (
+    <main className={selection ? "with-card" : undefined}>
+      <MapView
+        layer={drawn}
+        shown={shown}
+        zones={good(zones)}
+        storms={good(storms)}
+        radars={good(radars)}
+        selection={selection}
+        zone={zone}
+        onSelect={select}
+      />
+
+      <div className="panel controls">
+        <h1>
+          dpc-radar <span>the rain over Italy, live</span>
+        </h1>
+        <div className="segments" role="radiogroup" aria-label="What the map shows">
+          {LAYERS.map((one) => (
+            <button
+              key={one.key}
+              role="radio"
+              aria-checked={key === one.key}
+              title={one.long}
+              onClick={() => setKey(one.key)}
+            >
+              {one.label}
+            </button>
+          ))}
+        </div>
+        <div className="toggles">
+          {TOGGLES.map((one) => (
+            <label key={one.key} data-layer={one.key}>
+              <input
+                type="checkbox"
+                checked={shown[one.key]}
+                onChange={(e) => setShown({ ...shown, [one.key]: e.target.checked })}
+              />
+              <span>
+                {one.label}
+                {counts[one.key] && <small>{counts[one.key]}</small>}
+              </span>
+            </label>
+          ))}
+        </div>
+        {!selection && <p className="hint">Click anywhere on the map: a zone, a storm, a radar or any point.</p>}
+        {problems.map((problem, k) => (
+          <p key={k} className="wrong">
+            {problem.error}
+          </p>
+        ))}
+      </div>
+
+      <div className="panel legend">
+        {drawn ? (
+          <>
+            <h2>
+              {LAYERS.find((one) => one.key === drawn.key)?.long} <small>{drawn.unit}</small>
+            </h2>
+            <ol>
+              {drawn.legend.map((step) => (
+                <li key={step.from}>
+                  <i style={{ background: step.colour }} />
+                  {step.from}
+                </li>
+              ))}
+            </ol>
+            <p>
+              <span className="veil" /> not measured, which is not dry
+            </p>
+            <p title={`${drawn.product} of ${drawn.time}, ${drawn.source}; check against the frame before: ${drawn.quality.verdict ?? "not made"}`}>
+              Frame of <b>{clock(drawn.time)}</b> ({ago(drawn.time)}) · {drawn.source}
+            </p>
+          </>
+        ) : (
+          <p>{layer && failed(layer) ? "The rain is not available right now." : "Reading the newest radar frame…"}</p>
+        )}
+      </div>
+
+      {selection && (
+        <Card
+          selection={selection}
+          layer={key}
+          point={point}
+          ahead={ahead}
+          radarRain={radarRain}
+          onClose={() => setSelection(null)}
+        />
+      )}
+    </main>
+  );
+}

@@ -1,10 +1,11 @@
 # The demo
 
-One page in the browser that shows what dpc-radar can tell about a place in
-Italy. It is here to show the library at work, and to be copied from: every
-tab has the lines of Python that made it and the data they returned.
+A live map of the rain over all of Italy, on OpenStreetMap. Click a point, an
+alert zone, a storm or a radar, and a card shows what dpc-radar knows about
+it. It is here to show the library at work, and to be copied from: every card
+has the lines of Python that give it.
 
-![The demo, on the tab «Storms now»](../docs/images/demo.png)
+![The demo: the map of Italy and the card of a storm](../docs/images/demo.png)
 
 ## Run it
 
@@ -14,42 +15,48 @@ With Docker, from the root of the repository:
 docker compose up
 ```
 
-With [uv](https://docs.astral.sh/uv/):
+With [uv](https://docs.astral.sh/uv/) and [Node](https://nodejs.org/) 20 or
+later:
 
 ```bash
 scripts/init.sh
 make demo
 ```
 
-Then open http://localhost:8501.
+Then open http://localhost:3000.
 
 ## What is in it
 
-| Tab | What you see | From |
+The map shows the rain of now (mm/h) or of the last 1, 3, 6, 12 or 24 hours
+(mm), and over it three layers one can switch off:
+
+| Click | The card shows | From |
 |---|---|---|
-| Rain here | the rain now and in the last 1 to 24 hours, the map, the official alert, the check of the frame | `Facts.rain_at`, `area_summary`, `official_alert` |
-| Storms now | every storm raining on Italy, and where it is going | `Facts.storm_now` |
-| Next two hours | the rain to come and the chance of it, as a forecast | `Facts.rain_ahead`, `rain_ahead` |
-| How rare | the rain that comes back once in 2 to 50 years at that place | `return_level`, `rarity` |
-| Can it be trusted | how well the radar sees that place, the map for all of Italy, and the radars the DPC viewer reports as off | `reliability`, `radar_factor`, `radar_status` |
-| A day, as a report | a whole day from the frames on disk: totals, maps, the text | `report.build`, `MergingArchive` |
-| Use it yourself | where to start: Python, the shell, an assistant | |
+| any point | the rain now and in the last 1 to 24 hours, how rare it is there, the rain of the next two hours and the chance of it, how far the radar can be trusted there | `RainGrid.sample`, `rarity`, `nowcast`, `chance`, `reliability` |
+| an alert zone | the official alert of the DPC bulletin, day by day, and the rain over the whole zone | `bulletins.latest`, `facts.describe` |
+| a storm | its peak, its area, where it is going and how fast | `storms`, `motion` |
+| a radar | whether it is on, and the rain inside its range | `SITES`, `radar_status` |
 
-## Where the data come from
+Grey on the map is where nothing was measured, which is not the same as dry.
 
-The first five tabs read live from the DPC API: no key, no account. Frames are
-kept in memory and asked for again every five minutes, the bulletin every
-half hour.
+## How it is made
 
-The report reads the frames kept on disk, in `$DPC_RADAR_DATA/archive`
-(`./data/archive` without Docker, the volume `radar-data` with it).
-`scripts/fetch-data.sh` fills it with the last two days; run it again, or
-`dpc-radar archive data/archive --days 7`, to have more.
-
-| File | What it is |
+| Folder | What it is |
 |---|---|
-| [`app.py`](app.py) | the page |
-| [`borders.py`](borders.py) | the country outlines of the maps (Natural Earth, public domain), downloaded once |
+| [`api.py`](api.py) | a small API over the library (Starlette): the rain as a picture, the zones, the storms and the radars as GeoJSON, the numbers of a point |
+| [`web/`](web) | the page (Next.js, Leaflet): it draws the map and asks the API, through its own `/api/*` |
+
+Everything is read live from the DPC: no key, no account, nothing on disk.
+Frames are kept in memory; the newest is asked for again every two minutes,
+the bulletin every fifteen. The API has its own URLs to try:
+
+```bash
+curl 'http://localhost:3000/api/point?lon=12.5&lat=41.9'
+curl 'http://localhost:3000/api/storms'
+```
+
+`DPC_RADAR_PORT` changes the port of the page; `DPC_RADAR_API` tells the page
+where the API is (default `http://127.0.0.1:8000`).
 
 This is a demo of a library, not an alert service. For official warnings see
 the DPC bulletin and your regional civil protection.

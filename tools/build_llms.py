@@ -55,7 +55,7 @@ DESCRIPTIONS = {
     "index.md": "the guide: how a radar measures rain, the products, running it locally with "
     "Docker, quick start, the traps, "
     "API at a glance",
-    "examples.md": "five notebooks on real storms, the demo page (Docker or uv) and three "
+    "examples.md": "five notebooks on real storms, the demo (a live map; Docker or uv) and three "
     "example programs",
     "benchmark.md": "real frames where the answer is known, and how each cleaning rule scores",
     "roadmap.md": "what was built in each phase, what was measured, what is still open",

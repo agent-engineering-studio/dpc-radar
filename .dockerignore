@@ -6,6 +6,7 @@
 !LICENSE
 !src
 !demo
+demo/web
 !scripts
 **/__pycache__
 **/*.pyc

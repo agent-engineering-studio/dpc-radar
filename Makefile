@@ -39,10 +39,10 @@ init:
 data:
 	sh scripts/fetch-data.sh
 
-# The demo, on http://localhost:8501.
+# The demo, on http://localhost:3000 (needs uv and Node).
 demo:
-	uv run --all-extras --group demo streamlit run demo/app.py --client.toolbarMode minimal
+	sh scripts/demo.sh
 
-# The same with Docker alone: build the image, download the data, run the demo.
+# The same with Docker alone: build the images, run the demo.
 docker:
 	docker compose up --build

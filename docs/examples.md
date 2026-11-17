@@ -37,11 +37,10 @@ storm.
 
 ## The demo
 
-One page in the browser that shows what the library can tell about a place:
-the rain now and in the last 24 hours, the storms and where they go, the
-rain of the next two hours, how rare a rain is there, how far the radar can
-be trusted, and the report of a whole day. Every tab shows the Python that
-made it and the data it returned.
+A live map of the rain over all of Italy, on OpenStreetMap. Click a point, an
+alert zone, a storm or a radar, and a card shows the rain there: now and in
+the last 24 hours, how rare it is, the next two hours, the official alert,
+how far the radar can be trusted. Every card shows the Python that gives it.
 
 ```bash
 git clone https://github.com/agent-engineering-studio/dpc-radar
@@ -50,10 +49,10 @@ docker compose up                     # with Docker alone
 scripts/init.sh && make demo          # or with uv
 ```
 
-Then open http://localhost:8501. More in
+Then open http://localhost:3000. More in
 [Run it on your machine](index.md#run-it-on-your-machine).
 
-![The demo, on the tab «Storms now»](images/demo.png)
+![The demo: the map of Italy and the card of a storm](images/demo.png)
 
 ## Example apps
 

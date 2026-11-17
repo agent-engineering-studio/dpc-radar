@@ -19,11 +19,13 @@ services:
   # What the page asks: the library, behind a few URLs (demo/api.py).
   api:
     <<: *radar
+    container_name: dpc-radar-api
     restart: unless-stopped
 
   # The page: a map of Italy, and a card for whatever is clicked (demo/web).
   web:
     image: dpc-radar-web:local
+    container_name: dpc-radar-web
     build: demo/web
     environment:
       DPC_RADAR_API: http://api:8000

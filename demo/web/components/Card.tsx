@@ -1,6 +1,7 @@
 "use client";
 
-import { ALERT, clock, day, failed, going, mm, place } from "@/lib/format";
+import { ALERT, clock, failed, place } from "@/lib/format";
+import { useText } from "@/lib/i18n";
 import type {
   AheadData,
   AreaRain,
@@ -21,15 +22,14 @@ type Props = {
   onClose: () => void;
 };
 
-const NOT_MEASURED = "No data here, or masked by the quality check. Not measured is not dry.";
-
 function Swatch({ colour }: { colour: string | null | undefined }) {
   return <span className="swatch" style={{ background: colour ?? "transparent" }} aria-hidden />;
 }
 
 function Waiting({ lines = 2 }: { lines?: number }) {
+  const t = useText();
   return (
-    <div className="waiting" aria-label="Loading">
+    <div className="waiting" aria-label={t.loading}>
       {Array.from({ length: lines }, (_, k) => (
         <span key={k} />
       ))}
@@ -54,33 +54,33 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
 }
 
 function Risk({ zone }: { zone: ZoneDay }) {
-  const risks = [
-    ["hydrogeological", zone.hydrogeological],
-    ["hydraulic", zone.hydraulic],
-    ["thunderstorms", zone.thunderstorms],
-  ].filter(([, level]) => level !== "none");
+  const t = useText();
+  const risks = (["hydrogeological", "hydraulic", "thunderstorms"] as const)
+    .map((name) => [t.risks[name], zone[name]] as const)
+    .filter(([, level]) => level !== "none");
   return (
     <li>
       <span className="pill" style={{ background: ALERT[zone.colour] }} data-level={zone.colour}>
-        {zone.level ? zone.colour : "no alert"}
+        {t.colours[zone.colour]}
       </span>
       <span>
-        <b>{day(zone.day)}</b>
-        {risks.length > 0 && <small>{risks.map(([name, level]) => `${name}: ${level}`).join(" · ")}</small>}
+        <b>{t.day(zone.day)}</b>
+        {risks.length > 0 && <small>{risks.map(([name, level]) => `${name}: ${t.colours[level as ZoneDay["colour"]] ?? level}`).join(" · ")}</small>}
       </span>
     </li>
   );
 }
 
 function AreaTable({ rows }: { rows: AreaRain[] }) {
+  const t = useText();
   return (
     <table>
       <thead>
         <tr>
-          <th>last</th>
-          <th>highest</th>
-          <th>mean</th>
-          <th title="The area with 10 mm or more">≥ 10 mm</th>
+          <th>{t.last}</th>
+          <th>{t.highest}</th>
+          <th>{t.mean}</th>
+          <th title={t.areaOver}>≥ 10 mm</th>
         </tr>
       </thead>
       <tbody>
@@ -88,17 +88,17 @@ function AreaTable({ rows }: { rows: AreaRain[] }) {
           <tr key={row.hours}>
             <th>{row.hours} h</th>
             {row.error || row.max_mm === null ? (
-              <td colSpan={3} className="muted" title={row.error ?? NOT_MEASURED}>
-                not measured
+              <td colSpan={3} className="muted" title={row.error ?? t.notMeasured}>
+                {t.notMeasuredShort}
               </td>
             ) : (
               <>
                 <td>
                   <Swatch colour={row.colour} />
-                  {mm(row.max_mm)} mm
+                  {t.mm(row.max_mm)} mm
                 </td>
-                <td>{mm(row.mean_mm)} mm</td>
-                <td>{Math.round(row.km2_over?.["10"] ?? 0).toLocaleString("en-GB")} km²</td>
+                <td>{t.mm(row.mean_mm)} mm</td>
+                <td>{t.whole(row.km2_over?.["10"] ?? 0)} km²</td>
               </>
             )}
           </tr>
@@ -109,9 +109,10 @@ function AreaTable({ rows }: { rows: AreaRain[] }) {
 }
 
 function RainHere({ point, layer }: { point: PointData; layer: LayerKey }) {
+  const t = useText();
   const { now } = point;
   return (
-    <Section title="Rain here" hint={failed(now) ? undefined : `radar frame of ${clock(now.time)}`}>
+    <Section title={t.rainHere} hint={failed(now) ? undefined : t.radarFrameOf(clock(now.time))}>
       {failed(now) ? (
         <Wrong what={now} />
       ) : (
@@ -119,11 +120,11 @@ function RainHere({ point, layer }: { point: PointData; layer: LayerKey }) {
           <Swatch colour={now.colour} />
           {now.measured ? (
             <>
-              <b>{mm(now.mm_h)}</b> mm/h <small>right now</small>
+              <b>{t.mm(now.mm_h)}</b> mm/h <small>{t.rightNow}</small>
             </>
           ) : (
-            <span className="muted" title={NOT_MEASURED}>
-              not measured right now
+            <span className="muted" title={t.notMeasured}>
+              {t.notMeasuredNow}
             </span>
           )}
         </p>
@@ -131,14 +132,14 @@ function RainHere({ point, layer }: { point: PointData; layer: LayerKey }) {
       <ol className="tiles">
         {point.rain.map((row) => (
           <li key={row.hours} className={String(row.hours) === layer ? "active" : undefined}>
-            <small>last {row.hours} h</small>
+            <small>{t.lastHours(row.hours)}</small>
             {row.error || !row.measured ? (
-              <span className="muted" title={row.error ?? NOT_MEASURED}>
-                n/m
+              <span className="muted" title={row.error ?? t.notMeasured}>
+                {t.nm}
               </span>
             ) : (
               <>
-                <b>{mm(row.mm)}</b>
+                <b>{t.mm(row.mm)}</b>
                 <small>mm</small>
               </>
             )}
@@ -150,22 +151,23 @@ function RainHere({ point, layer }: { point: PointData; layer: LayerKey }) {
         .filter((row) => (row.rarity?.return_period_years ?? 0) >= 2)
         .map((row) => (
           <p key={row.hours} className="note">
-            {mm(row.mm)} mm in {row.hours} h comes back here once in{" "}
+            {t.comesBack(t.mm(row.mm), row.hours)}
             <b>
-              {row.rarity!.at_least ? "50 years or more" : `about ${Math.round(row.rarity!.return_period_years!)} years`}
+              {row.rarity!.at_least ? t.fiftyYears : t.aboutYears(Math.round(row.rarity!.return_period_years!))}
             </b>
             .
           </p>
         ))}
-      {point.rain.some((row) => !row.error && !row.measured) && <p className="note">n/m: not measured, which is not dry.</p>}
+      {point.rain.some((row) => !row.error && !row.measured) && <p className="note">{t.nmNote}</p>}
     </Section>
   );
 }
 
 function Ahead({ ahead }: { ahead: AheadData | Failed | null }) {
-  const moving = ahead && !failed(ahead) ? going(ahead.moving) : null;
+  const t = useText();
+  const moving = ahead && !failed(ahead) ? t.going(ahead.moving) : null;
   return (
-    <Section title="Next two hours" hint="a forecast">
+    <Section title={t.nextTwoHours} hint={t.aForecast}>
       {ahead === null ? (
         <Waiting />
       ) : failed(ahead) ? (
@@ -175,14 +177,14 @@ function Ahead({ ahead }: { ahead: AheadData | Failed | null }) {
           <ol className="tiles three">
             {ahead.steps.map((step) => (
               <li key={step.minutes}>
-                <small>next {step.minutes < 60 ? `${step.minutes} min` : `${step.minutes / 60} h`}</small>
+                <small>{t.next} {step.minutes < 60 ? `${step.minutes} min` : `${step.minutes / 60} h`}</small>
                 {step.forecast_mm === null ? (
-                  <span className="muted" title="Not known, which is not dry.">
-                    n/k
+                  <span className="muted" title={t.notKnownDry}>
+                    {t.nk}
                   </span>
                 ) : (
                   <>
-                    <b>{mm(step.forecast_mm)}</b>
+                    <b>{t.mm(step.forecast_mm)}</b>
                     <small>mm</small>
                   </>
                 )}
@@ -192,12 +194,12 @@ function Ahead({ ahead }: { ahead: AheadData | Failed | null }) {
           <p className="note">
             {ahead.chance.probability !== null && (
               <>
-                Chance of {ahead.chance.mm} mm or more in the next hour:{" "}
+                {t.chanceOf(ahead.chance.mm)}
                 <b>{Math.round(ahead.chance.probability * 100)} %</b>.{" "}
               </>
             )}
-            {moving && <>The rain around is {moving === "almost still" ? moving : `moving at ${moving}`}. </>}
-            The radar frame of {clock(ahead.issued)}, moved and not changed: storms born later are not in it.
+            {moving && t.rainAround(moving, moving === t.almostStill)}
+            {t.movedNotChanged(clock(ahead.issued))}
           </p>
         </>
       )}
@@ -206,30 +208,31 @@ function Ahead({ ahead }: { ahead: AheadData | Failed | null }) {
 }
 
 function Zone({ zone }: { zone: PointData["zone"] }) {
+  const t = useText();
   if (zone === null) {
     return (
-      <Section title="Alert zone">
-        <p className="note">This point is in no alert zone of the bulletin (the sea, or abroad).</p>
+      <Section title={t.alertZone}>
+        <p className="note">{t.noZone}</p>
       </Section>
     );
   }
   if (failed(zone)) {
     return (
-      <Section title="Alert zone">
+      <Section title={t.alertZone}>
         <Wrong what={zone} />
       </Section>
     );
   }
   return (
     <>
-      <Section title="Official alert" hint={`bulletin of ${day(zone.issued.slice(0, 10))}`}>
+      <Section title={t.officialAlert} hint={t.bulletinOf(t.day(zone.issued.slice(0, 10)))}>
         <ul className="alerts">
           {zone.days.map((one) => (
             <Risk key={one.day} zone={one} />
           ))}
         </ul>
       </Section>
-      <Section title="Rain in the whole zone" hint={zone.name}>
+      <Section title={t.rainInZone} hint={zone.name}>
         <AreaTable rows={zone.rain} />
       </Section>
     </>
@@ -237,20 +240,22 @@ function Zone({ zone }: { zone: PointData["zone"] }) {
 }
 
 function Trust({ point }: { point: PointData }) {
+  const t = useText();
   const { reliability: r, radars } = point;
   return (
-    <Section title="How far to trust it">
+    <Section title={t.trust}>
       <p className="note">
         {r.score === null ? (
-          "Outside what the radars see: no reliability here."
+          t.outsideRadars
         ) : (
           <>
-            The radar sees this place{" "}
-            <b>{r.reliable ? "well" : "badly"}</b> (score {r.score.toFixed(2)} of 1)
+            {t.radarSees}
+            <b>{r.reliable ? t.well : t.badly}</b>
+            {t.score(r.score.toLocaleString(t.locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}
             {r.nearest_radar && (
               <>
-                : the nearest is {r.nearest_radar}, {Math.round(r.distance_km ?? 0)} km away
-                {r.beam_height_m !== null && <>, and its beam passes {Math.round(r.beam_height_m).toLocaleString("en-GB")} m above the ground</>}
+                {t.nearest(r.nearest_radar, Math.round(r.distance_km ?? 0))}
+                {r.beam_height_m !== null && t.beam(t.whole(r.beam_height_m))}
               </>
             )}
             .
@@ -263,7 +268,7 @@ function Trust({ point }: { point: PointData }) {
         radars.radars.length > 0 && (
           <ul className="radars">
             {radars.radars.map((radar) => (
-              <li key={radar.name} title={radar.on === null ? "status not known" : radar.on ? "on" : "off"}>
+              <li key={radar.name} title={t.state(radar.on)}>
                 <span className="dot" data-on={String(radar.on)} />
                 {radar.name} <small>{Math.round(radar.distance_km)} km</small>
               </li>
@@ -276,13 +281,14 @@ function Trust({ point }: { point: PointData }) {
 }
 
 function Header({ selection, point }: { selection: Selection; point: PointData | Failed | null }) {
+  const t = useText();
   const zone = point && !failed(point) && point.zone && !failed(point.zone) ? point.zone.name : null;
   const [kind, title] =
     selection.kind === "storm"
-      ? ["Storm", `${selection.storm.peak_mm_h.toFixed(0)} mm/h at its peak`]
+      ? [t.storm, t.atPeak(selection.storm.peak_mm_h.toFixed(0))]
       : selection.kind === "radar"
-        ? ["Radar", selection.radar.name]
-        : ["Point", zone ?? (point ? "Outside the alert zones" : "…")];
+        ? [t.radar, selection.radar.name]
+        : [t.point, zone ?? (point ? t.outsideZones : "…")];
   return (
     <header>
       <small>{kind}</small>
@@ -296,71 +302,73 @@ function Header({ selection, point }: { selection: Selection; point: PointData |
 }
 
 function Storm({ selection }: { selection: Extract<Selection, { kind: "storm" }> }) {
+  const t = useText();
   const { storm } = selection;
   return (
-    <Section title="This storm" hint="rain at 10 mm/h or more">
+    <Section title={t.thisStorm} hint={t.stormHint}>
       <dl>
-        <dt>Peak</dt>
+        <dt>{t.peak}</dt>
         <dd>
           <Swatch colour={storm.colour} />
-          {mm(storm.peak_mm_h)} mm/h
+          {t.mm(storm.peak_mm_h)} mm/h
         </dd>
-        <dt>Mean</dt>
-        <dd>{mm(storm.mean_mm_h)} mm/h</dd>
-        <dt>Area</dt>
-        <dd>{Math.round(storm.area_km2).toLocaleString("en-GB")} km²</dd>
-        <dt>Moving</dt>
-        <dd>{going(storm.moving) ?? "not known"}</dd>
+        <dt>{t.meanLabel}</dt>
+        <dd>{t.mm(storm.mean_mm_h)} mm/h</dd>
+        <dt>{t.area}</dt>
+        <dd>{t.whole(storm.area_km2)} km²</dd>
+        <dt>{t.moving}</dt>
+        <dd>{t.going(storm.moving) ?? t.notKnown}</dd>
       </dl>
-      <p className="note">An intensity at one instant, not the rain of an hour. Below: the rain at its peak.</p>
+      <p className="note">{t.stormNote}</p>
     </Section>
   );
 }
 
 function Radar({ selection, rain }: { selection: Extract<Selection, { kind: "radar" }>; rain: RadarRain | Failed | null }) {
+  const t = useText();
   const { radar } = selection;
-  const state = radar.on === null ? "not known" : radar.on ? "on" : "off";
+  const state = radar.on === null ? t.notKnown : t.state(radar.on);
   return (
     <>
-      <Section title="This radar">
+      <Section title={t.thisRadar}>
         <dl>
-          <dt>Status</dt>
+          <dt>{t.statusLabel}</dt>
           <dd>
             <span className="dot" data-on={String(radar.on)} /> {state}
           </dd>
           {radar.band && (
             <>
-              <dt>Band</dt>
+              <dt>{t.band}</dt>
               <dd>{radar.band}</dd>
             </>
           )}
           {radar.range_km && (
             <>
-              <dt>Range</dt>
+              <dt>{t.range}</dt>
               <dd>{radar.range_km} km</dd>
             </>
           )}
           {radar.altitude_m !== null && (
             <>
-              <dt>Altitude</dt>
-              <dd>{Math.round(radar.altitude_m).toLocaleString("en-GB")} m</dd>
+              <dt>{t.altitude}</dt>
+              <dd>{t.whole(radar.altitude_m)} m</dd>
             </>
           )}
           {radar.operator && (
             <>
-              <dt>Run by</dt>
+              <dt>{t.runBy}</dt>
               <dd>{radar.operator}</dd>
             </>
           )}
         </dl>
         <p className="note">
           {radar.in_mosaic
-            ? "The status is what the DPC viewer shows: a file that is not documented open data."
-            : "In the status file of the DPC viewer, but not among the radars of the mosaic."}
+            ? t.statusNote
+            : t.notInMosaic}
         </p>
       </Section>
       {radar.in_mosaic && (
-        <Section title="Rain inside its range" hint={`${radar.range_km} km around`}>
+        <Section title={t.rainInRange} hint={t.around(radar.range_km)}>
           {rain === null ? <Waiting lines={4} /> : failed(rain) ? <Wrong what={rain} /> : <AreaTable rows={rain.rain} />}
         </Section>
       )}
@@ -369,13 +377,14 @@ function Radar({ selection, rain }: { selection: Extract<Selection, { kind: "rad
 }
 
 export default function Card({ selection, layer, point, ahead, radarRain, onClose }: Props) {
+  const t = useText();
   const code =
     point && !failed(point)
       ? [point.python, ahead && !failed(ahead) ? ahead.python : null].filter(Boolean).join("\n")
       : null;
   return (
     <aside className="card" aria-live="polite">
-      <button className="close" onClick={onClose} aria-label="Close">
+      <button className="close" onClick={onClose} aria-label={t.close}>
         ×
       </button>
       <Header selection={selection} point={point} />
@@ -400,13 +409,13 @@ export default function Card({ selection, layer, point, ahead, radarRain, onClos
         )}
         {code && (
           <details>
-            <summary>The Python that gives this</summary>
+            <summary>{t.python}</summary>
             <pre>
               <code>{`from dpc_radar import RadarClient\nfrom dpc_radar.facts import Facts\n\n${code}`}</code>
             </pre>
           </details>
         )}
-        <footer>Radar data, not an alert: the official alert is the DPC bulletin.</footer>
+        <footer>{t.footer}</footer>
       </div>
     </aside>
   );

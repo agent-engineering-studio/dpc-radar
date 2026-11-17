@@ -2,7 +2,8 @@
 
 import L from "leaflet";
 import { useEffect, useRef } from "react";
-import { ALERT, going } from "@/lib/format";
+import { ALERT } from "@/lib/format";
+import type { Text } from "@/lib/i18n";
 import type { Collection, Layer, RadarProps, Selection, StormProps, ZoneDay } from "@/lib/types";
 
 // Rome, until the size of the window is known; then Italy as large as the window holds it,
@@ -25,6 +26,8 @@ type Props = {
   /** The picture of an older frame, while the film plays; otherwise the one of the layer. */
   image: string | null;
   shown: Shown;
+  /** The words of the tips, in the language of the page. */
+  text: Text;
   zones: Collection<ZoneDay> | null;
   storms: Collection<StormProps> | null;
   radars: Collection<RadarProps> | null;
@@ -73,7 +76,7 @@ export default function MapView(props: Props) {
       maxZoom: 19,
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · ' +
-        'rain and alerts: <a href="https://www.protezionecivile.gov.it/">Dipartimento della Protezione Civile</a>, CC BY-SA 4.0',
+        '<a href="https://www.protezionecivile.gov.it/">Dipartimento della Protezione Civile</a>, CC BY-SA 4.0',
     }).addTo(m);
     // One pane a layer, so that the rain stays under the shapes one clicks on.
     for (const [name, z] of [
@@ -99,7 +102,7 @@ export default function MapView(props: Props) {
   }, []);
 
   // The rain: one picture over all of Italy.
-  const { layer, shown } = props;
+  const { layer, shown, text: t } = props;
   const image = props.image ?? layer?.image;
   const bounds = layer?.bounds;
   useEffect(() => {
@@ -129,8 +132,7 @@ export default function MapView(props: Props) {
       style: (feature) => zoneStyle(feature!.properties as ZoneDay, false),
       onEachFeature: (feature, shape) => {
         const zone = feature.properties as ZoneDay;
-        const alert = zone.level ? `${zone.colour} alert` : "no alert";
-        shape.bindTooltip(`<b>${zone.zone}</b><br>${alert}`, { sticky: true, className: "tip" });
+        shape.bindTooltip(`<b>${zone.zone}</b><br>${t.alert(zone)}`, { sticky: true, className: "tip" });
       },
     }).addTo(m);
     zones.current = drawn;
@@ -138,14 +140,14 @@ export default function MapView(props: Props) {
       drawn.remove();
       zones.current = null;
     };
-  }, [props.zones, shown.zones]);
+  }, [props.zones, shown.zones, t]);
 
   useEffect(() => {
     zones.current?.setStyle((feature) => {
       const zone = feature!.properties as ZoneDay;
       return zoneStyle(zone, zone.zone === props.zone);
     });
-  }, [props.zone, props.zones, shown.zones]);
+  }, [props.zone, props.zones, shown.zones, t]);
 
   // The storms: the patch at 10 mm/h or more, and a dot on its peak that is easy to hit.
   useEffect(() => {
@@ -158,8 +160,8 @@ export default function MapView(props: Props) {
         L.DomEvent.stopPropagation(e);
         onSelect.current({ kind: "storm", lon: storm.peak_lon, lat: storm.peak_lat, storm });
       };
-      const moving = going(storm.moving);
-      const tip = `<b>Storm · ${storm.peak_mm_h.toFixed(0)} mm/h</b><br>${storm.area_km2.toFixed(0)} km²${moving ? ` · ${moving}` : ""}`;
+      const moving = t.going(storm.moving);
+      const tip = `<b>${t.storm} · ${storm.peak_mm_h.toFixed(0)} mm/h</b><br>${t.whole(storm.area_km2)} km²${moving ? ` · ${moving}` : ""}`;
       L.geoJSON(feature as GeoJSON.Feature, {
         pane: "storms",
         style: { color: "#b3124a", weight: 1.5, fillColor: "#e3245e", fillOpacity: 0.3 },
@@ -182,7 +184,7 @@ export default function MapView(props: Props) {
     return () => {
       group.remove();
     };
-  }, [props.storms, shown.storms]);
+  }, [props.storms, shown.storms, t]);
 
   // The radars: green is on, red is off, grey is not known.
   useEffect(() => {
@@ -192,7 +194,6 @@ export default function MapView(props: Props) {
     for (const feature of props.radars.features) {
       const [lon, lat] = (feature.geometry as GeoJSON.Point).coordinates;
       const radar = { ...feature.properties, lon, lat };
-      const state = radar.on === null ? "status not known" : radar.on ? "on" : "off";
       L.circleMarker([lat, lon], {
         pane: "radars",
         radius: radar.in_mosaic ? 6 : 4,
@@ -201,7 +202,7 @@ export default function MapView(props: Props) {
         fillColor: "#ffffff",
         fillOpacity: 1,
       })
-        .bindTooltip(`<b>${radar.name}</b><br>radar · ${state}`, { className: "tip", direction: "top" })
+        .bindTooltip(`<b>${radar.name}</b><br>${t.radar.toLowerCase()} · ${t.state(radar.on)}`, { className: "tip", direction: "top" })
         .on("click", (e) => {
           L.DomEvent.stopPropagation(e);
           onSelect.current({ kind: "radar", lon, lat, radar });
@@ -211,7 +212,7 @@ export default function MapView(props: Props) {
     return () => {
       group.remove();
     };
-  }, [props.radars, shown.radars]);
+  }, [props.radars, shown.radars, t]);
 
   // What was clicked: a pin, and around a radar the circle it sees.
   const { selection } = props;
@@ -244,5 +245,5 @@ export default function MapView(props: Props) {
     };
   }, [selection]);
 
-  return <div ref={box} className="map" aria-label="Map of Italy with the rain" />;
+  return <div ref={box} className="map" aria-label={t.mapLabel} />;
 }

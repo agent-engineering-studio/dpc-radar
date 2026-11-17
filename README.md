@@ -388,7 +388,8 @@ frames, one after the other.
 </p>
 
 Click anything and a card says what the library knows about it, with the
-lines of Python that give it. The radars are drawn when you tick them:
+lines of Python that give it. The radars are drawn when you tick them, and
+the page is in Italian or in English (**IT | EN**, top of the panel):
 
 | Click | The card shows | From |
 |---|---|---|

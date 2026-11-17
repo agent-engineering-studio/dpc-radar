@@ -95,9 +95,9 @@ All notable changes to this project are documented here. The format follows
 - The README explains in plain words how a radar measures rain and where it
   fails, the open data behind the library, its benefits and what can be built
   with it.
-- `dpc-radar mcp`: an MCP server with seven tools on the rain over Italy
+- `dpc-radar mcp`: an MCP server with eight tools on the rain over Italy
   (`latest`, `rain_at`, `area_summary`, `storm_now`, `rain_ahead`,
-  `official_alert`, `rarity`). Every answer is computed from a frame and
+  `official_alert`, `rarity`, `radar_status`). Every answer is computed from a frame and
   names its product and time; the frame is checked with `quality` first, and
   "not measured" is `null`, never zero. `dpc_radar.facts.Facts` gives the
   same answers from Python. New extra `mcp` (#9).
@@ -126,6 +126,18 @@ All notable changes to this project are documented here. The format follows
   `report` (#9).
 - `bulletins.names()` and `bulletins.name_on(names, day)`: the bulletins the
   DPC keeps, and the one issued on a day (#9).
+- `RadarClient.radar_status(time=None)`: which radars the DPC viewer reports
+  as on, now or at a time of the last two weeks, as a `NetworkStatus`
+  (`.off`, `.of(site)`, `.geojson()`), or `ABSENT` when not known. Also
+  `dpc-radar sites [--time] [--out FILE]`, the MCP tool `radar_status`,
+  `Facts.radar_status` and, in the demo, the radars reported off on the
+  reliability map. `RadarSite.code` links `SITES` to the file. The file is
+  public but not documented and has no licence, and it does not always
+  agree with the mosaic (17 November 2026: Linate reported off with data
+  all around it, Catania reported on with none), so it is a hint and never
+  enters `reliability` or `quality`. The 23 radars the file shares with
+  `SITES` are within 1.4 km of our positions; it names three more (Reggio
+  Calabria, Desio, Flero) that leave no trace in the mosaic.
 - `llms.txt`, `llms-full.txt` and an agent skill (`skills/dpc-radar/SKILL.md`),
   published with the documentation (#9).
 

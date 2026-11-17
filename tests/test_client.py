@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -10,7 +11,8 @@ import numpy as np
 import pytest
 
 from dpc_radar import ABSENT, CUM24, Absent, DpcRadarError, RadarClient
-from tests.conftest import T0, grid, tiff
+from dpc_radar.status import STATUS_PERIOD, NetworkStatus, status_time
+from tests.conftest import T0, grid, status_file, tiff
 
 _LINK = "https://s3-prod-dpc-radar.s3.eu-south-1.amazonaws.com/CUM24.tif?sig=x"
 _EXPIRED = (
@@ -196,3 +198,45 @@ def test_absent_is_one_falsy_value() -> None:
     assert Absent() is ABSENT
     assert not ABSENT
     assert repr(ABSENT) == "ABSENT"
+
+
+def status_api(found: set[str]) -> tuple[httpx.MockTransport, list[str]]:
+    """A fake bucket of status files: it has the ones named in ``found`` (HHMM)."""
+    asked: list[str] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        assert "origin" not in request.headers  # a plain request: the bucket asks for nothing
+        when = request.url.path.split("/")[-2]
+        asked.append(when)
+        if "/2026/10/10/0500/" in request.url.path:
+            return httpx.Response(500)
+        return httpx.Response(200, json=status_file()) if when in found else httpx.Response(403)
+
+    return httpx.MockTransport(handle), asked
+
+
+async def test_radar_status_at_a_time() -> None:
+    transport, asked = status_api({"0600"})
+    async with client(transport, status_base="https://files.test/SITES") as radar:
+        found = await radar.radar_status(T0 + timedelta(minutes=3))
+        assert isinstance(found, NetworkStatus)
+        assert found.time == T0 and [r.code for r in found.off] == ["LAURO", "LINATE"]
+        assert await radar.radar_status(T0 - timedelta(hours=1, minutes=30)) is ABSENT
+        with pytest.raises(httpx.HTTPStatusError):
+            await radar.radar_status(T0 - timedelta(hours=1))
+    assert asked[:2] == ["0600", "0430"]
+
+
+async def test_radar_status_now_is_the_newest_file_there_is() -> None:
+    now = datetime.now(UTC)
+    before = status_time(now - STATUS_PERIOD * 2)
+    transport, asked = status_api({f"{before:%H%M}"})
+    async with client(transport) as radar:
+        found = await radar.radar_status()
+        assert isinstance(found, NetworkStatus) and before <= found.time <= now
+    assert 2 <= len(asked) <= 4
+
+    transport, asked = status_api(set())
+    async with client(transport) as radar:
+        assert await radar.radar_status() is ABSENT
+    assert len(asked) == 4

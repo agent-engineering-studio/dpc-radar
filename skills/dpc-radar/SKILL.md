@@ -136,7 +136,7 @@ asyncio.run(main())
 
 If the user only needs answers (not code), the MCP server may already be
 connected: tools `latest`, `rain_at`, `area_summary`, `storm_now`,
-`rain_ahead`, `official_alert` and `rarity` from `dpc-radar mcp` (extra
+`rain_ahead`, `official_alert`, `rarity` and `radar_status` from `dpc-radar mcp` (extra
 `mcp`). Prefer them to downloading frames by hand. To add it to Claude Code:
 
 ```bash

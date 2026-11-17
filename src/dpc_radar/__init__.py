@@ -43,6 +43,7 @@ from dpc_radar.reliability import (
     reliability,
     reliability_map,
 )
+from dpc_radar.status import NetworkStatus, RadarStatus
 from dpc_radar.storms import Storm, Track, storms, track
 
 __version__ = version("dpc-radar")
@@ -69,10 +70,12 @@ __all__ = [
     "LastProduct",
     "Level",
     "Motion",
+    "NetworkStatus",
     "Product",
     "Quality",
     "RadarClient",
     "RadarSite",
+    "RadarStatus",
     "RainGrid",
     "Rarity",
     "Reliability",

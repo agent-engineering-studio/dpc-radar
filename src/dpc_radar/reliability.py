@@ -69,7 +69,9 @@ class RadarSite:
     own table; ``"mosaic"`` the range circle fitted on the no-data mask of the
     mosaic (within about 1 km); ``"literature"`` a published table, for radars
     whose circle is always hidden under the others. ``range_km`` is the radius
-    of the circle in the mosaic (``"literature"`` sites: assumed).
+    of the circle in the mosaic (``"literature"`` sites: assumed). ``code`` is
+    the name the DPC gives the radar in its status file
+    (:mod:`dpc_radar.status`); ``None`` if the file does not list it.
     """
 
     name: str
@@ -79,36 +81,40 @@ class RadarSite:
     band: Literal["C", "X"]
     range_km: float
     source: Literal["dpc", "mosaic", "literature"]
+    code: str | None = None
 
 
 #: The radars that feed the mosaic. The seven of the DPC come from its table
 #: (Rete Radar Nazionale, technical annex); the others are named there without
 #: coordinates and were placed by fitting their range circles on the mosaic.
+#: The status file of the DPC viewer (:mod:`dpc_radar.status`) has all of them
+#: but Salento, each within 1.4 km of the position here; its own coordinates
+#: are rounded, so the ones here were kept.
 SITES: Final[tuple[RadarSite, ...]] = (
-    RadarSite("Il Monte", 14.624, 41.939, 692, "C", 200, "dpc"),
-    RadarSite("Monte Crocione", 10.607, 43.956, 1017, "C", 200, "dpc"),
-    RadarSite("Monte Serano", 12.791, 42.856, 1428, "C", 200, "dpc"),
-    RadarSite("Monte Pettinascura", 16.624, 39.373, 1708, "C", 200, "dpc"),
-    RadarSite("Zouf Plan", 12.974, 46.556, 1999, "C", 200, "dpc"),
-    RadarSite("Monte Lauro", 14.824, 37.123, 965, "C", 200, "dpc"),
-    RadarSite("Monte Armidda", 9.491, 39.873, 1261, "C", 200, "dpc"),
-    RadarSite("Bric della Croce", 7.733, 45.034, 727, "C", 170, "mosaic"),
-    RadarSite("Monte Settepani", 8.197, 44.246, 1386, "C", 170, "mosaic"),
-    RadarSite("Monte Macaion", 11.210, 46.495, 1866, "C", 120, "mosaic"),
-    RadarSite("Concordia Sagittaria", 12.786, 45.694, 0, "C", 200, "mosaic"),
-    RadarSite("Fossalon di Grado", 13.476, 45.727, 0, "C", 125, "mosaic"),
-    RadarSite("Fiumicino", 12.229, 41.905, 0, "C", 200, "mosaic"),
-    RadarSite("Linate", 9.280, 45.340, 100, "C", 250, "mosaic"),
-    RadarSite("Capo Caccia", 8.160, 40.565, 200, "C", 200, "mosaic"),
-    RadarSite("Monte Rasu", 9.005, 40.421, 1258, "C", 200, "mosaic"),
+    RadarSite("Il Monte", 14.624, 41.939, 692, "C", 200, "dpc", "ILMONTE"),
+    RadarSite("Monte Crocione", 10.607, 43.956, 1017, "C", 200, "dpc", "CROCIONE"),
+    RadarSite("Monte Serano", 12.791, 42.856, 1428, "C", 200, "dpc", "SERANO"),
+    RadarSite("Monte Pettinascura", 16.624, 39.373, 1708, "C", 200, "dpc", "PETTINASCURA"),
+    RadarSite("Zouf Plan", 12.974, 46.556, 1999, "C", 200, "dpc", "ZOUFPLAN"),
+    RadarSite("Monte Lauro", 14.824, 37.123, 965, "C", 200, "dpc", "LAURO"),
+    RadarSite("Monte Armidda", 9.491, 39.873, 1261, "C", 200, "dpc", "ARMIDDA"),
+    RadarSite("Bric della Croce", 7.733, 45.034, 727, "C", 170, "mosaic", "BRIC"),
+    RadarSite("Monte Settepani", 8.197, 44.246, 1386, "C", 170, "mosaic", "SETTEPANI"),
+    RadarSite("Monte Macaion", 11.210, 46.495, 1866, "C", 120, "mosaic", "MACAION"),
+    RadarSite("Concordia Sagittaria", 12.786, 45.694, 0, "C", 200, "mosaic", "SAGITTARIA"),
+    RadarSite("Fossalon di Grado", 13.476, 45.727, 0, "C", 125, "mosaic", "FOSSALON"),
+    RadarSite("Fiumicino", 12.229, 41.905, 0, "C", 200, "mosaic", "FIUMICINO"),
+    RadarSite("Linate", 9.280, 45.340, 100, "C", 250, "mosaic", "LINATE"),
+    RadarSite("Capo Caccia", 8.160, 40.565, 200, "C", 200, "mosaic", "CAPOCACCIA"),
+    RadarSite("Monte Rasu", 9.005, 40.421, 1258, "C", 200, "mosaic", "RASU"),
     RadarSite("Salento", 18.061, 40.502, 50, "C", 200, "mosaic"),
-    RadarSite("Napoli Capodichino", 14.290, 40.884, 90, "X", 100, "mosaic"),
-    RadarSite("Catania Fontanarossa", 15.050, 37.466, 12, "X", 100, "mosaic"),
-    RadarSite("Bari Palese", 16.765, 41.136, 50, "X", 100, "mosaic"),
-    RadarSite("San Pietro Capofiume", 11.624, 44.655, 11, "C", 125, "literature"),
-    RadarSite("Monte Grande", 11.673, 45.363, 472, "C", 125, "literature"),
-    RadarSite("Gattatico", 10.499, 44.791, 35, "C", 125, "literature"),
-    RadarSite("Monte Midia", 13.177, 42.058, 1710, "C", 125, "literature"),
+    RadarSite("Napoli Capodichino", 14.290, 40.884, 90, "X", 100, "mosaic", "XBAND1"),
+    RadarSite("Catania Fontanarossa", 15.050, 37.466, 12, "X", 100, "mosaic", "XBAND4"),
+    RadarSite("Bari Palese", 16.765, 41.136, 50, "X", 100, "mosaic", "XBAND3"),
+    RadarSite("San Pietro Capofiume", 11.624, 44.655, 11, "C", 125, "literature", "CAPOFIUME"),
+    RadarSite("Monte Grande", 11.673, 45.363, 472, "C", 125, "literature", "GRANDE"),
+    RadarSite("Gattatico", 10.499, 44.791, 35, "C", 125, "literature", "GATTATICO"),
+    RadarSite("Monte Midia", 13.177, 42.058, 1710, "C", 125, "literature", "MIDIA"),
 )
 
 

@@ -31,7 +31,7 @@ Then open http://localhost:8501.
 | Storms now | every storm raining on Italy, and where it is going | `Facts.storm_now` |
 | Next two hours | the rain to come and the chance of it, as a forecast | `Facts.rain_ahead`, `rain_ahead` |
 | How rare | the rain that comes back once in 2 to 50 years at that place | `return_level`, `rarity` |
-| Can it be trusted | how well the radar sees that place, and the map for all of Italy | `reliability`, `radar_factor` |
+| Can it be trusted | how well the radar sees that place, the map for all of Italy, and the radars the DPC viewer reports as off | `reliability`, `radar_factor`, `radar_status` |
 | A day, as a report | a whole day from the frames on disk: totals, maps, the text | `report.build`, `MergingArchive` |
 | Use it yourself | where to start: Python, the shell, an assistant | |
 

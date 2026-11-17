@@ -8,6 +8,9 @@
 * ``dpc-radar archive folder --days 2``: save the «Merging» frames of the last
   days that are not in the folder yet (:mod:`dpc_radar.archive`). Safe to run
   again, and to schedule: it downloads only what is missing.
+* ``dpc-radar sites``: which radars the DPC reports on and off, now or at
+  ``--time``; ``--out sites.geojson`` saves them as GeoJSON
+  (:mod:`dpc_radar.status`).
 * ``dpc-radar check report.md facts.json``: are all the numbers of a text in
   the facts? For a text written, or rewritten, by someone else.
 """
@@ -49,6 +52,14 @@ def _days(text: str) -> int:
     return days
 
 
+def _time(text: str) -> datetime:
+    try:
+        time = datetime.fromisoformat(text)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"a time is YYYY-MM-DDTHH:MM, UTC: {text!r}") from None
+    return time if time.tzinfo else time.replace(tzinfo=UTC)
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="dpc-radar",
@@ -78,6 +89,10 @@ def _parser() -> argparse.ArgumentParser:
     archive.add_argument(
         "--limit", type=int, default=200, help="most requests in one run (default 200)"
     )
+
+    sites = commands.add_parser("sites", help="which radars the DPC reports on and off")
+    sites.add_argument("--time", type=_time, metavar="YYYY-MM-DDTHH:MM", help="a UTC time")
+    sites.add_argument("--out", type=Path, help="save the status as GeoJSON in this file")
 
     check = commands.add_parser("check", help="are the numbers of a text all in the facts?")
     check.add_argument("text", type=Path)
@@ -138,6 +153,32 @@ def _archive(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _status(time: datetime | None) -> object:
+    from dpc_radar import RadarClient
+
+    async with RadarClient() as radar:
+        return await radar.radar_status(time)
+
+
+def _sites(args: argparse.Namespace) -> int:
+    from dpc_radar.status import STATUS_CAVEAT, NetworkStatus
+
+    status = asyncio.run(_status(args.time))
+    if not isinstance(status, NetworkStatus):
+        raise DpcRadarError("the DPC has no radar status for that time: not known")
+    if args.out is not None:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(status.geojson(), ensure_ascii=False, indent=1) + "\n")
+        print(args.out)
+        return 0
+    print(f"radar status of {status.time:%Y-%m-%dT%H:%MZ}")
+    print(f"({STATUS_CAVEAT})")
+    for r in status.radars:
+        name = "(not in the mosaic)" if r.site is None else r.site.name
+        print(f"{'on ' if r.on else 'OFF'}  {r.code:<13}{name:<23}{r.province}")
+    return 0
+
+
 def _check(args: argparse.Namespace) -> int:
     from dpc_radar.report import check_text
 
@@ -152,7 +193,13 @@ def _check(args: argparse.Namespace) -> int:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command; the exit status (0: done)."""
     args = _parser().parse_args(argv)
-    run = {"mcp": _mcp, "report": _report, "archive": _archive, "check": _check}[args.command]
+    run = {
+        "mcp": _mcp,
+        "report": _report,
+        "archive": _archive,
+        "sites": _sites,
+        "check": _check,
+    }[args.command]
     try:
         return run(args)
     except ImportError as exc:

@@ -29,6 +29,7 @@ All notable changes to this project are documented here. The format follows
   browser, and a switch changes it.
 - The containers of the demo have fixed names: `dpc-radar-api` and
   `dpc-radar-web`.
+- `make down` stops the demo and removes its containers.
 
 ## [0.3.0] - 2026-11-17
 

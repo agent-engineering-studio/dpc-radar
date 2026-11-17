@@ -33,6 +33,13 @@ bulletins = ["shapely>=2.0"]
 storms = ["scipy>=1.13"]
 # The rain of the next two hours: the interpolation that moves the field.
 nowcast = ["scipy>=1.13"]
+# The MCP server (dpc-radar mcp): the protocol, and what its tools compute with.
+mcp = ["mcp>=2.3", "scipy>=1.13", "shapely>=2.0"]
+# Event reports (dpc-radar report): the two images, and the alert zones.
+report = ["matplotlib>=3.9", "shapely>=2.0"]
+
+[project.scripts]
+dpc-radar = "dpc_radar.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/agent-engineering-studio/dpc-radar"
@@ -46,6 +53,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "matplotlib>=3.9",
+    "mcp>=2.3",
     "mypy>=1.13",
     "numcodecs>=0.13",
     "pytest>=8.3",

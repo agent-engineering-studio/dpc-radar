@@ -142,10 +142,21 @@ class Bulletin:
         return sorted(found, key=lambda z: (-z.level, z.name))
 
 
+def names_from(listing: dict[str, Any]) -> list[str]:
+    """Every bulletin name in a GitHub tree listing of ``files/geojson``, oldest first."""
+    return sorted(t["path"] for t in listing.get("tree", []) if _NAME.match(t["path"]))
+
+
 def latest_name_from(listing: dict[str, Any]) -> str | None:
     """The newest bulletin name in a GitHub tree listing of ``files/geojson``."""
-    names = sorted(t["path"] for t in listing.get("tree", []) if _NAME.match(t["path"]))
-    return names[-1] if names else None
+    found = names_from(listing)
+    return found[-1] if found else None
+
+
+def name_on(found: list[str], day: date) -> str | None:
+    """Of the names of :func:`names`, the last bulletin issued on ``day`` (Italian time)."""
+    prefix = f"{day:%Y%m%d}_"
+    return next((n for n in reversed(found) if n.startswith(prefix)), None)
 
 
 @asynccontextmanager
@@ -169,15 +180,14 @@ async def _json(send: Send, url: str) -> dict[str, Any]:
     return json_object(response)
 
 
-async def latest_name(
-    client: httpx.AsyncClient | None = None, *, send: Send | None = None
-) -> str | None:
-    """The file name of the newest bulletin (``…_today.json``), or ``None``.
+async def names(client: httpx.AsyncClient | None = None, *, send: Send | None = None) -> list[str]:
+    """The file names of every bulletin the DPC keeps (``…_today.json``), oldest first.
 
     Three small calls to the repository tree instead of one recursive call: the
     archive holds thousands of files. Unauthenticated, GitHub allows 60 calls an
     hour; pass a client with a token header for more, or a ``send`` hook to use
-    your own HTTP layer.
+    your own HTTP layer. For the bulletin of a past day: :func:`name_on`, then
+    :func:`fetch`.
     """
     async with _sender(client, send) as http:
         try:
@@ -185,9 +195,17 @@ async def latest_name(
             files = next(t["sha"] for t in root["tree"] if t["path"] == "files")
             sub = await _json(http, f"{API}/git/trees/{files}")
             geojson = next(t["sha"] for t in sub["tree"] if t["path"] == "geojson")
-            return latest_name_from(await _json(http, f"{API}/git/trees/{geojson}"))
+            return names_from(await _json(http, f"{API}/git/trees/{geojson}"))
         except (KeyError, StopIteration) as exc:
             raise DpcRadarError(f"unexpected layout of {REPO}: {exc!r}") from exc
+
+
+async def latest_name(
+    client: httpx.AsyncClient | None = None, *, send: Send | None = None
+) -> str | None:
+    """The file name of the newest bulletin (``…_today.json``), or ``None``."""
+    found = await names(client, send=send)
+    return found[-1] if found else None
 
 
 async def fetch(
@@ -225,5 +243,8 @@ __all__ = [
     "latest_name",
     "latest_name_from",
     "level",
+    "name_on",
+    "names",
+    "names_from",
     "zones_from_geojson",
 ]

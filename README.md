@@ -57,6 +57,7 @@ four small apps are [below](#notebooks-and-example-apps).
 - [Storms, and a list of the rare ones](#storms-and-a-list-of-the-rare-ones)
 - [The rain of the next two hours](#the-rain-of-the-next-two-hours)
 - [The official alert, as data](#the-official-alert-as-data)
+- [Ask an assistant, write a report](#ask-an-assistant-write-a-report)
 - [How it works](#how-it-works)
 - [The traps we already fell into](#the-traps-we-already-fell-into)
 - [API at a glance](#api-at-a-glance)
@@ -789,6 +790,57 @@ Levels are numbers: 0 none, 1 yellow, 2 orange, 3 red. This is **the**
 official alert: whatever you compute from the radar is not, and belongs next
 to it, never in its place.
 
+## Ask an assistant, write a report
+
+**As tools for an assistant.** `dpc-radar mcp` is a server of the
+[Model Context Protocol](https://modelcontextprotocol.io/): seven tools
+(`latest`, `rain_at`, `area_summary`, `storm_now`, `rain_ahead`,
+`official_alert`, `rarity`) that answer with numbers computed from a frame,
+each with the product and the time it came from.
+
+```bash
+claude mcp add dpc-radar -- uvx --from "dpc-radar[mcp]" dpc-radar mcp
+```
+
+Then "how much has it rained on Messina in the last three hours?" is
+answered from the `CUM3` frame of that moment, checked against the one
+before it; where the radar does not measure, the answer is `null`, not zero.
+The same facts from Python: `dpc_radar.facts.Facts`.
+
+**As a report.** One command writes the report of a day of rain over a box:
+
+```bash
+pip install "dpc-radar[report]"
+dpc-radar report --bbox 15.5,37.85,16.2,38.3 --day 2026-10-10 --out melito
+```
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/report-map.png" alt="Two maps of the rain of 10 October 2026 around the Strait of Messina: the radar alone, and the Merging with 207 mm over Melito di Porto Salvo" width="100%">
+</p>
+
+It writes `facts.json` (every figure, with its frames), `report.md`, a map
+and an hourly chart: how much it rained on the radar alone and on the
+«Merging», where it rained most and how rare that was there, how far the
+radar can be trusted at that place, and the level the official bulletin had
+given it. For 10 October 2026: 206.7 mm at Melito di Porto Salvo on the
+«Merging», where the radar alone read 115 mm; six hours with a return period
+of about 31 years; the zone on orange since the day before.
+
+The text is written from a template, and **every number in it is checked
+against `facts.json` before it is saved**. The same check takes a text of
+your own, or of a language model (`--text`, or `dpc-radar check report.md
+facts.json`): a number that is not in the facts is refused. It catches an
+invented number, not one said of the wrong thing.
+
+**For coding agents.** The site publishes
+[`llms.txt`](https://agentengineering.it/dpc-radar/llms.txt),
+[`llms-full.txt`](https://agentengineering.it/dpc-radar/llms-full.txt) (the
+whole documentation as text) and an
+[agent skill](https://agentengineering.it/dpc-radar/skills/dpc-radar/SKILL.md)
+with the traps below as rules. Details:
+[MCP server](https://agentengineering.it/dpc-radar/api/mcp/),
+[event reports](https://agentengineering.it/dpc-radar/api/report/).
+
 ---
 
 ## How it works
@@ -911,6 +963,8 @@ them. Limen's rule today passes 14 of 30 checks; a frame-level check
 | `storms(grid, threshold=)` / `track(grids, threshold=)` | the patches of rain of a frame as `Storm`s (`lon`, `lat`, `area_km2`, `peak`, `mean`, `bbox`) / followed in time as `Track`s: `duration`, `path`, `distance_km`, `speed_kmh`, `heading`, `water_m3` (extra `storms`) |
 | `rare_events(frames, years=10)` / `with_merging(event, archive)` | the rain of hourly frames over the level of its place, as `Event`s, the rarest first: `start`, `time`, `window`, `mm`, `level_mm`, `times_level`, `return_period`, `area_km2` / the same with `radar_mm`, `merging_mm`, `confirmed` (extra `storms`) |
 | `nowcast(frames, minutes=120)` / `rain_ahead(frames, minutes=60)` / `chance(frames, mm=, minutes=60)` / `motion(frames)` | the SRI moved along its motion, as `Forecast`s (`issued`, `lead`, `time`, `unit`, `data`, `.sample(points)`): mm/h every five minutes / the mm of the next minutes / the chance of at least `mm` / speed and heading of the rain, `.at(lon, lat)` (extra `nowcast`) |
+| `Facts(radar)` (`dpc_radar.facts`) | the facts as dicts, each with its frame: `rain_at`, `area_summary`, `storm_now`, `rain_ahead`, `official_alert`, `rarity`, `latest`; the tools of `dpc-radar mcp` (extra `mcp`) |
+| `report.build(read, bbox, day)` / `check_text(text, facts)` | the report of a day over a box: `.facts`, `.text()`, `.save(folder, text=None)` / the numbers of a text that are not in the facts; `dpc-radar report`, `dpc-radar check` (extra `report`) |
 | `bulletins.latest()` / `bulletins.fetch(name)` | the official criticality bulletin: `Bulletin.zones`, `.alerts()`, `.zone_at(lon, lat)` (extra `bulletins`) |
 | `SRI`, `SRT1`, `CUM3`, `CUM6`, `CUM12`, `CUM24` | the products: `name`, `hours` (`None` for an intensity), `merging`, `description` |
 | `PRODUCTS`, `product(name)` | every product by name; `product("cum24")` → `CUM24` |
@@ -954,7 +1008,7 @@ flowchart LR
 | **Frame quality check** ✅ | rules that tell a real storm from a broken frame or a faulty gauge, and say why | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
 | **Nowcasting** ✅ | the rain field moved forward along its motion, 0–2 hours, and the chance of rain at every pixel | a trigger on rain that is *coming*; moved, not changed: better than the last frame, poor on peaks | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
 | **Radar–gauge bias** ✅ | how far the radar alone is from the «Merging», place by place, and a factor for it | radar-only rain closer to the «Merging» between two frames; the history is still open | [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) |
-| **AI for agents** | an MCP server, `llms.txt`, reports that cite their frames | the same facts for Limen's assistant | [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) |
+| **AI for agents** ✅ | an MCP server, `llms.txt` and an agent skill, reports whose every number is checked against the facts | the same facts for Limen's assistant, as data; Limen does not use them yet | [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) |
 
 One rule holds for every AI feature: **the numbers come from the frames**,
 computed by tested code. A language model may read the news and explain the
@@ -995,13 +1049,19 @@ dpc-radar/
 │   ├── storms.py     # storms as objects, followed in time (extra [storms])
 │   ├── catalogue.py  # the rain over the level of its place, as events
 │   ├── nowcast.py    # the rain of the next two hours (extra [nowcast])
+│   ├── facts.py      # the facts as dicts, each with the frame it came from
+│   ├── mcp_server.py  # the facts as MCP tools: dpc-radar mcp (extra [mcp])
+│   ├── report.py     # the report of a day over a box (extra [report])
+│   ├── cli.py        # the dpc-radar command: mcp, report, check
 │   └── errors.py     # DpcRadarError
 ├── tests/            # offline: synthetic GeoTIFFs and a fake API
 │   └── live/         # the same on the real API: uv run pytest -m live
 ├── benchmarks/       # known cases, and how each cleaning rule scores
 ├── tools/            # build_reliability.py, build_bias.py, build_climatology.py: the maps;
 │                     # build_catalogue.py: the list of rare rain;
-│                     # measure_nowcast.py: the nowcast against what came next
+│                     # measure_nowcast.py: the nowcast against what came next;
+│                     # build_llms.py: llms.txt and llms-full.txt for the site
+├── skills/dpc-radar/  # the agent skill: how to use the library, and its traps
 └── docs/
     ├── make_images.py  # the images of this README, from real frames
     └── roadmap.md      # what comes next, and where AI helps

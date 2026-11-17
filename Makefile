@@ -21,6 +21,7 @@ build:
 
 docs:
 	uv run --group docs zensical build --clean --strict
+	uv run --group docs python tools/build_llms.py
 
 # Run every notebook again and save the results. Needs the network: 02, 04
 # and 05 read frames the DPC keeps for about five months.

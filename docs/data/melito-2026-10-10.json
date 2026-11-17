@@ -1,0 +1,345 @@
+{
+  "event": {
+    "day": "2026-10-10",
+    "from": "2026-10-10T00:00Z",
+    "to": "2026-10-11T00:00Z",
+    "bbox": [
+      15.5,
+      37.85,
+      16.2,
+      38.3
+    ],
+    "times": "UTC"
+  },
+  "frames": {
+    "radar": {
+      "product": "SRT1",
+      "expected": 24,
+      "used": 24,
+      "missing": [],
+      "rejected": [],
+      "masked_pixels": 0
+    },
+    "merging": {
+      "product": "CUM3",
+      "expected": 8,
+      "used": 8,
+      "missing": [],
+      "rejected": [],
+      "masked_pixels": 0
+    }
+  },
+  "radar": {
+    "complete": true,
+    "area_km2": 3392.0,
+    "measured_share": 1.0,
+    "max_mm": 176.4,
+    "max_lon": 16.1096,
+    "max_lat": 37.9053,
+    "mean_mm": 74.3,
+    "median_mm": 66.1,
+    "p95_mm": 140.3,
+    "km2_over": {
+      "20": 3392.0,
+      "50": 2692.0,
+      "100": 646.0,
+      "200": 0.0
+    }
+  },
+  "merging": {
+    "complete": true,
+    "area_km2": 3095.8,
+    "measured_share": 1.0,
+    "max_mm": 206.7,
+    "max_lon": 15.785,
+    "max_lat": 37.925,
+    "mean_mm": 73.9,
+    "median_mm": 65.2,
+    "p95_mm": 129.2,
+    "km2_over": {
+      "20": 3094.8,
+      "50": 2434.6,
+      "100": 567.6,
+      "200": 1.0
+    }
+  },
+  "hourly_threshold_mm": 10,
+  "hourly": [
+    {
+      "time": "2026-10-10T01:00Z",
+      "max_mm": 28.6,
+      "mean_mm": 9.5,
+      "km2_over": 1487.0
+    },
+    {
+      "time": "2026-10-10T02:00Z",
+      "max_mm": 35.5,
+      "mean_mm": 8.9,
+      "km2_over": 1166.0
+    },
+    {
+      "time": "2026-10-10T03:00Z",
+      "max_mm": 23.6,
+      "mean_mm": 6.2,
+      "km2_over": 479.0
+    },
+    {
+      "time": "2026-10-10T04:00Z",
+      "max_mm": 25.9,
+      "mean_mm": 10.4,
+      "km2_over": 1515.0
+    },
+    {
+      "time": "2026-10-10T05:00Z",
+      "max_mm": 36.0,
+      "mean_mm": 11.9,
+      "km2_over": 1912.0
+    },
+    {
+      "time": "2026-10-10T06:00Z",
+      "max_mm": 23.6,
+      "mean_mm": 6.2,
+      "km2_over": 638.0
+    },
+    {
+      "time": "2026-10-10T07:00Z",
+      "max_mm": 6.8,
+      "mean_mm": 1.4,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T08:00Z",
+      "max_mm": 0.3,
+      "mean_mm": 0.0,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T09:00Z",
+      "max_mm": 1.5,
+      "mean_mm": 0.1,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T10:00Z",
+      "max_mm": 15.3,
+      "mean_mm": 2.9,
+      "km2_over": 119.0
+    },
+    {
+      "time": "2026-10-10T11:00Z",
+      "max_mm": 9.3,
+      "mean_mm": 1.7,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T12:00Z",
+      "max_mm": 3.6,
+      "mean_mm": 0.1,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T13:00Z",
+      "max_mm": 12.6,
+      "mean_mm": 0.3,
+      "km2_over": 4.0
+    },
+    {
+      "time": "2026-10-10T14:00Z",
+      "max_mm": 19.4,
+      "mean_mm": 2.3,
+      "km2_over": 115.0
+    },
+    {
+      "time": "2026-10-10T15:00Z",
+      "max_mm": 16.6,
+      "mean_mm": 2.2,
+      "km2_over": 62.0
+    },
+    {
+      "time": "2026-10-10T16:00Z",
+      "max_mm": 11.3,
+      "mean_mm": 3.4,
+      "km2_over": 14.0
+    },
+    {
+      "time": "2026-10-10T17:00Z",
+      "max_mm": 24.7,
+      "mean_mm": 3.7,
+      "km2_over": 361.0
+    },
+    {
+      "time": "2026-10-10T18:00Z",
+      "max_mm": 27.4,
+      "mean_mm": 1.8,
+      "km2_over": 255.0
+    },
+    {
+      "time": "2026-10-10T19:00Z",
+      "max_mm": 24.4,
+      "mean_mm": 1.2,
+      "km2_over": 144.0
+    },
+    {
+      "time": "2026-10-10T20:00Z",
+      "max_mm": 6.9,
+      "mean_mm": 0.1,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T21:00Z",
+      "max_mm": 0.0,
+      "mean_mm": 0.0,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T22:00Z",
+      "max_mm": 4.2,
+      "mean_mm": 0.0,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-10T23:00Z",
+      "max_mm": 1.0,
+      "mean_mm": 0.0,
+      "km2_over": 0.0
+    },
+    {
+      "time": "2026-10-11T00:00Z",
+      "max_mm": 0.4,
+      "mean_mm": 0.0,
+      "km2_over": 0.0
+    }
+  ],
+  "radar_over_merging": 1.01,
+  "peak": {
+    "lon": 15.785,
+    "lat": 37.925,
+    "of": "merging",
+    "method": "median of the 3x3 pixels around the place of the maximum",
+    "radar_mm": 115.1,
+    "merging_mm": 190.8,
+    "hourly_radar_mm": [
+      16.0,
+      21.2,
+      8.3,
+      20.3,
+      17.7,
+      5.4,
+      0.3,
+      0.0,
+      0.3,
+      6.2,
+      0.0,
+      0.0,
+      0.6,
+      1.9,
+      3.0,
+      8.4,
+      1.1,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      3.9,
+      0.0,
+      0.0
+    ],
+    "wettest": [
+      {
+        "ended": "2026-10-10T02:00Z",
+        "hours": 1,
+        "mm": 21.2,
+        "return_period_years": 2.4,
+        "low_years": 1.6,
+        "high_years": 4.6,
+        "percentile": 99.99,
+        "max_return_years": 50,
+        "at_least": false,
+        "years_of_radar": 8,
+        "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+      },
+      {
+        "ended": "2026-10-10T04:00Z",
+        "hours": 3,
+        "mm": 49.8,
+        "return_period_years": 6.7,
+        "low_years": 3.4,
+        "high_years": 15.1,
+        "percentile": 99.99,
+        "max_return_years": 50,
+        "at_least": false,
+        "years_of_radar": 8,
+        "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+      },
+      {
+        "ended": "2026-10-10T06:00Z",
+        "hours": 6,
+        "mm": 88.9,
+        "return_period_years": 31.3,
+        "low_years": 10.2,
+        "high_years": 50.0,
+        "percentile": 99.99,
+        "max_return_years": 50,
+        "at_least": false,
+        "years_of_radar": 8,
+        "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+      },
+      {
+        "ended": "2026-10-11T00:00Z",
+        "hours": 24,
+        "mm": 114.6,
+        "return_period_years": 41.8,
+        "low_years": 13.9,
+        "high_years": 50.0,
+        "percentile": 99.99,
+        "max_return_years": 50,
+        "at_least": false,
+        "years_of_radar": 8,
+        "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+      }
+    ],
+    "reliability": {
+      "score": 0.9,
+      "reliable": true,
+      "beam_height_m": 1100.0,
+      "nearest_radar": "Catania Fontanarossa",
+      "distance_km": 82.4
+    }
+  },
+  "bulletins": [
+    {
+      "bulletin": "20261009_1615",
+      "issued": "2026-10-09T16:15+02:00",
+      "days_before": 1,
+      "zone": {
+        "day": "2026-10-10",
+        "zone": "Versante Jonico Meridionale",
+        "level": 2,
+        "colour": "orange",
+        "hydrogeological": "orange",
+        "hydraulic": "orange",
+        "thunderstorms": "orange"
+      }
+    },
+    {
+      "bulletin": "20261010_1417",
+      "issued": "2026-10-10T14:17+02:00",
+      "days_before": 0,
+      "zone": {
+        "day": "2026-10-10",
+        "zone": "Versante Jonico Meridionale",
+        "level": 2,
+        "colour": "orange",
+        "hydrogeological": "orange",
+        "hydraulic": "orange",
+        "thunderstorms": "orange"
+      }
+    }
+  ],
+  "notes": [
+    "a point is the median of the 3x3 pixels around it; a maximum is one pixel",
+    "the radar alone and the «Merging» are on different grids: 1 km and 0.01 degrees",
+    "each total is over the rectangle of its own grid that holds the box, so the two areas differ a little",
+    "radar data, not an alert: the official alert is the DPC bulletin"
+  ]
+}

@@ -5,9 +5,14 @@ import { useEffect, useRef } from "react";
 import { ALERT, going } from "@/lib/format";
 import type { Collection, Layer, RadarProps, Selection, StormProps, ZoneDay } from "@/lib/types";
 
-// Rome, and a zoom that holds Italy from the Alps to Lampedusa.
+// Rome, until the size of the window is known; then Italy as large as the window holds it,
+// from the Alps to Sicily: its middle is 40 km from Rome.
 const ROME: L.LatLngExpression = [41.9, 12.5];
 const ZOOM = 6;
+const ITALY: L.LatLngBoundsExpression = [
+  [36.6, 6.6],
+  [47.1, 18.55],
+];
 
 const ON = "#1a9850";
 const OFF = "#d7191c";
@@ -17,6 +22,8 @@ export type Shown = { rain: boolean; zones: boolean; storms: boolean; radars: bo
 
 type Props = {
   layer: Layer | null;
+  /** The picture of an older frame, while the film plays; otherwise the one of the layer. */
+  image: string | null;
   shown: Shown;
   zones: Collection<ZoneDay> | null;
   storms: Collection<StormProps> | null;
@@ -52,12 +59,14 @@ export default function MapView(props: Props) {
       zoom: ZOOM,
       minZoom: 5,
       maxZoom: 13,
+      zoomSnap: 0.25,
       zoomControl: false,
       maxBounds: [
         [30, -4],
         [52, 29],
       ],
     });
+    m.fitBounds(ITALY, { animate: false });
     L.control.zoom({ position: "bottomright" }).addTo(m);
     L.control.scale({ imperial: false, position: "bottomright" }).addTo(m);
     L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -91,23 +100,25 @@ export default function MapView(props: Props) {
 
   // The rain: one picture over all of Italy.
   const { layer, shown } = props;
+  const image = props.image ?? layer?.image;
+  const bounds = layer?.bounds;
   useEffect(() => {
     const m = map.current;
     if (!m) return;
-    if (!layer || !shown.rain) {
+    if (!image || !bounds || !shown.rain) {
       rain.current?.remove();
       rain.current = null;
       return;
     }
-    if (rain.current) rain.current.setUrl(layer.image);
+    if (rain.current) rain.current.setUrl(image);
     else {
-      rain.current = L.imageOverlay(layer.image, layer.bounds, {
+      rain.current = L.imageOverlay(image, bounds, {
         pane: "rain",
         opacity: 0.85,
         interactive: false,
       }).addTo(m);
     }
-  }, [layer, shown.rain]);
+  }, [image, bounds, shown.rain]);
 
   // The alert zones. A click on one falls through to the map: it is a click on a point of it.
   useEffect(() => {

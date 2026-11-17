@@ -375,13 +375,20 @@ make demo                # the demo, on http://localhost:3000
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.png" alt="The demo: a map of Italy on OpenStreetMap with the rain intensity, the alert zones, the storms and the radars; beside it the card of a storm, with its peak, the rain of the last 24 hours, the forecast of the next two hours and the official alert" width="100%">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.png" alt="The demo: northern and central Italy on OpenStreetMap with the rain of the last 12 hours, the alert zones in yellow and orange, the storms in red and the radars as green and red rings" width="560">
 </p>
 
 The [demo](https://github.com/agent-engineering-studio/dpc-radar/tree/main/demo) is a map of all of Italy on
-OpenStreetMap, centred on Rome, with the rain of now or of the last 1 to 24
-hours. Click anything and a card says what the library knows about it, with
-the lines of Python that give it:
+OpenStreetMap, as large as the window holds it, with the rain of now or of
+the last 1 to 24 hours. **Play** shows how the rain moved: the last thirteen
+frames, one after the other.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.gif" alt="The demo playing the last two hours of rain rate over northern Italy, one frame every ten minutes" width="720">
+</p>
+
+Click anything and a card says what the library knows about it, with the
+lines of Python that give it. The radars are drawn when you tick them:
 
 | Click | The card shows | From |
 |---|---|---|

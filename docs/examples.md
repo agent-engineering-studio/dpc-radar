@@ -52,7 +52,11 @@ scripts/init.sh && make demo          # or with uv
 Then open http://localhost:3000. More in
 [Run it on your machine](index.md#run-it-on-your-machine).
 
-![The demo: the map of Italy and the card of a storm](images/demo.png)
+![The demo: the rain of the last 12 hours, the alert zones, the storms and the radars](images/demo.png)
+
+Play shows how the rain moved in the last frames:
+
+![The demo playing the last two hours of rain rate](images/demo.gif)
 
 ## Example apps
 

@@ -60,6 +60,15 @@ main {
   filter: saturate(0.55) brightness(1.03);
 }
 
+/* Between two whole zooms the tiles are scaled, and a hairline shows where two of them
+   meet: one pixel of overlap covers it. Leaflet adds the colours of two tiles where they
+   overlap, which would draw that pixel white: here the one above covers the one below. */
+.map .leaflet-tile-container img.leaflet-tile {
+  width: 257px !important;
+  height: 257px !important;
+  mix-blend-mode: normal;
+}
+
 .map .leaflet-interactive {
   cursor: pointer;
 }
@@ -237,6 +246,49 @@ main {
 
 .legend b {
   color: var(--ink);
+}
+
+/* The film of the last frames: play, the frame under the finger, and back to now */
+.film {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.film button {
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.film .play {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.film .live {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.film button:hover {
+  background: #f1f3f6;
+}
+
+.film input {
+  flex: 1;
+  min-width: 0;
+  accent-color: #2563eb;
 }
 
 .veil {

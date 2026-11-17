@@ -47,6 +47,10 @@ Grey on the map is where nothing was measured, which is not the same as dry.
 The radars are drawn when you tick them; the storms are those of now, so the
 film hides them.
 
+The page is in Italian and in English: it opens in the language of the
+browser, and **IT | EN** at the top of the panel changes it. The words are in
+[`web/lib/i18n.ts`](web/lib/i18n.ts).
+
 ## How it is made
 
 | Folder | What it is |

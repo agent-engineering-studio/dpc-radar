@@ -4,7 +4,8 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Card from "@/components/Card";
 import type { Shown } from "@/components/MapView";
-import { ago, ask, clock, failed } from "@/lib/format";
+import { ask, clock, failed } from "@/lib/format";
+import { LANGS, LangContext, TEXT, type Lang } from "@/lib/i18n";
 import type {
   AheadData,
   Collection,
@@ -23,28 +24,39 @@ import type {
 // Leaflet needs a window: the map is drawn in the browser only.
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
-const LAYERS: { key: LayerKey; label: string; long: string }[] = [
-  { key: "now", label: "Now", long: "Rain rate now" },
-  { key: "1", label: "1 h", long: "Rain of the last hour" },
-  { key: "3", label: "3 h", long: "Rain of the last 3 hours" },
-  { key: "6", label: "6 h", long: "Rain of the last 6 hours" },
-  { key: "12", label: "12 h", long: "Rain of the last 12 hours" },
-  { key: "24", label: "24 h", long: "Rain of the last 24 hours" },
-];
-const TOGGLES: { key: keyof Shown; label: string }[] = [
-  { key: "rain", label: "Rain" },
-  { key: "zones", label: "Alert zones" },
-  { key: "storms", label: "Storms" },
-  { key: "radars", label: "Radars" },
-];
+const LAYERS: LayerKey[] = ["now", "1", "3", "6", "12", "24"];
+const TOGGLES: (keyof Shown)[] = ["rain", "zones", "storms", "radars"];
 const REFRESH_MS = 120_000;
 // The film: one frame every 600 ms, and a longer look at the newest before it starts again.
 const FRAME_MS = 600;
 const LAST_FRAME_MS = 1800;
 
 const wrong = (error: unknown): Failed => ({
-  error: error instanceof Error ? error.message : "it did not answer",
+  error: error instanceof Error ? error.message : "—",
 });
+
+/** Italian for who reads Italian, English for everyone else; a choice made is kept. */
+function useLang(): [Lang, (lang: Lang) => void] {
+  const [lang, setLang] = useState<Lang>("en");
+  useEffect(() => {
+    let kept: string | null = null;
+    try {
+      kept = localStorage.getItem("lang");
+    } catch {}
+    const first = LANGS.find((one) => one === kept) ?? (navigator.language.startsWith("it") ? "it" : "en");
+    setLang(first);
+  }, []);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+  const choose = (next: Lang) => {
+    setLang(next);
+    try {
+      localStorage.setItem("lang", next);
+    } catch {}
+  };
+  return [lang, choose];
+}
 
 /** Ask the API again every two minutes: a new radar frame comes every five. */
 function useLive<T>(path: string): T | Failed | null {
@@ -82,6 +94,8 @@ function useAnswer<T>(path: string | null): T | Failed | null {
 const good = <T,>(value: T | Failed | null): T | null => (value === null || failed(value) ? null : value);
 
 export default function Demo() {
+  const [lang, setLang] = useLang();
+  const t = TEXT[lang];
   const [key, setKey] = useState<LayerKey>("now");
   const [shown, setShown] = useState<Shown>({ rain: true, zones: true, storms: true, radars: false });
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -93,8 +107,9 @@ export default function Demo() {
   const [arrived, setArrived] = useState(0);
 
   const layer = useLive<Layer>(`/api/layer/${key}`);
-  const film = good(useAnswer<Film>(frame === null ? null : `/api/film/${key}`));
+  const film = good(useLive<Film>(`/api/film/${key}`));
   const frames = film?.key === key ? film.frames : null;
+  const filming = frame !== null;
   const zones = useLive<Collection<ZoneDay>>("/api/zones");
   const storms = useLive<Collection<StormProps>>("/api/storms");
   const radars = useLive<Collection<RadarProps>>("/api/radars");
@@ -121,6 +136,7 @@ export default function Demo() {
 
   // The pictures are asked for at once, and the film waits for the one it needs next.
   useEffect(() => {
+    if (!filming) return;
     for (const one of frames ?? []) {
       if (loaded.current.has(one.image)) continue;
       const picture = new Image();
@@ -130,7 +146,7 @@ export default function Demo() {
       };
       picture.src = one.image;
     }
-  }, [frames]);
+  }, [frames, filming]);
   useEffect(() => {
     if (!playing || !frames || frame === null) return;
     const last = frames.length - 1;
@@ -162,18 +178,21 @@ export default function Demo() {
   const off = good(radars)?.features.filter((f) => f.properties.on === false).length;
   const alerts = good(zones)?.features.filter((f) => f.properties.level > 0).length;
   const counts: Partial<Record<keyof Shown, string | undefined>> = {
-    zones: alerts === undefined ? undefined : alerts ? `${alerts} on alert` : "no alert",
+    zones: alerts === undefined ? undefined : alerts ? t.onAlert(alerts) : t.noAlert,
     storms: stormCount === undefined ? undefined : String(stormCount),
-    radars: off === undefined ? undefined : off ? `${off} off` : undefined,
+    radars: off === undefined ? undefined : off ? t.radarsOff(off) : undefined,
   };
   const problems = [layer, zones, storms, radars].filter(failed);
 
   return (
+    <LangContext.Provider value={t}>
+    <title>{t.title}</title>
     <main className={selection ? "with-card" : undefined}>
       <MapView
         layer={drawn}
         image={still?.image ?? null}
         shown={shown}
+        text={t}
         zones={good(zones)}
         storms={frame === null ? good(storms) : null}
         radars={good(radars)}
@@ -183,44 +202,51 @@ export default function Demo() {
       />
 
       <div className="panel controls">
+        <div className="langs" role="radiogroup" aria-label={t.language}>
+          {LANGS.map((one) => (
+            <button key={one} role="radio" aria-checked={lang === one} onClick={() => setLang(one)}>
+              {one.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <h1>
-          dpc-radar <span>the rain over Italy, live</span>
+          dpc-radar <span>{t.tagline}</span>
         </h1>
-        <div className="segments" role="radiogroup" aria-label="What the map shows">
+        <div className="segments" role="radiogroup" aria-label={t.layersLabel}>
           {LAYERS.map((one) => (
             <button
-              key={one.key}
+              key={one}
               role="radio"
-              aria-checked={key === one.key}
-              title={one.long}
+              aria-checked={key === one}
+              title={t.layers[one][1]}
               onClick={() => {
-                setKey(one.key);
+                setKey(one);
                 if (frame !== null) setFrame(0);
               }}
             >
-              {one.label}
+              {t.layers[one][0]}
             </button>
           ))}
         </div>
         <div className="toggles">
           {TOGGLES.map((one) => (
-            <label key={one.key} data-layer={one.key}>
+            <label key={one} data-layer={one}>
               <input
                 type="checkbox"
-                checked={shown[one.key]}
-                onChange={(e) => setShown({ ...shown, [one.key]: e.target.checked })}
+                checked={shown[one]}
+                onChange={(e) => setShown({ ...shown, [one]: e.target.checked })}
               />
               <span>
-                {one.label}
-                {counts[one.key] && <small>{counts[one.key]}</small>}
+                {t.toggles[one]}
+                {counts[one] && <small>{counts[one]}</small>}
               </span>
             </label>
           ))}
         </div>
-        {!selection && <p className="hint">Click anywhere on the map: a zone, a storm, a radar or any point.</p>}
+        {!selection && <p className="hint">{t.hint}</p>}
         {problems.map((problem, k) => (
           <p key={k} className="wrong">
-            {problem.error}
+            {problem.error === "—" ? t.noAnswer : problem.error}
           </p>
         ))}
       </div>
@@ -229,7 +255,7 @@ export default function Demo() {
         {drawn ? (
           <>
             <h2>
-              {LAYERS.find((one) => one.key === drawn.key)?.long} <small>{drawn.unit}</small>
+              {t.layers[drawn.key][1]} <small>{drawn.unit}</small>
             </h2>
             <ol>
               {drawn.legend.map((step) => (
@@ -240,41 +266,38 @@ export default function Demo() {
               ))}
             </ol>
             <p>
-              <span className="veil" /> not measured, which is not dry
+              <span className="veil" /> {t.notMeasuredDry}
             </p>
-            <p title={`${drawn.product} of ${drawn.time}, ${drawn.source}; check against the frame before: ${drawn.quality.verdict ?? "not made"}`}>
-              Frame of <b>{clock(still?.time ?? drawn.time)}</b> ({ago(still?.time ?? drawn.time)}) · {drawn.source}
+            <p title={t.frameTitle(drawn.product, drawn.time, t.source(drawn.source), drawn.quality.verdict)}>
+              {t.frameOf} <b>{clock(still?.time ?? drawn.time)}</b> ({t.ago(still?.time ?? drawn.time)}) ·{" "}
+              {t.source(drawn.source)}
             </p>
             <div className="film">
-              <button className="play" onClick={play} aria-label={playing ? "Pause" : "Play the last frames"}>
-                {playing ? "❚❚" : "▶"}
+              <button className="play" onClick={play} title={t.playTitle} aria-pressed={playing}>
+                <i aria-hidden>{playing ? "❚❚" : "▶"}</i> {playing ? t.pause : t.play}
               </button>
-              {frame === null ? (
-                <span>Play how the rain moved</span>
-              ) : frames ? (
-                <>
-                  <input
-                    type="range"
-                    aria-label="Frame"
-                    min={0}
-                    max={frames.length - 1}
-                    value={Math.min(frame, frames.length - 1)}
-                    onChange={(e) => {
-                      setPlaying(false);
-                      setFrame(Number(e.target.value));
-                    }}
-                  />
-                  <button className="live" onClick={live} title="Back to the newest frame, and the storms">
-                    Live
-                  </button>
-                </>
+              {frames ? (
+                <input
+                  type="range"
+                  aria-label={t.frame}
+                  min={0}
+                  max={frames.length - 1}
+                  value={frame === null ? frames.length - 1 : Math.min(frame, frames.length - 1)}
+                  onChange={(e) => {
+                    setPlaying(false);
+                    setFrame(Number(e.target.value));
+                  }}
+                />
               ) : (
-                <span>Reading the frames…</span>
+                <span>{t.readingFrames}</span>
               )}
+              <button className="live" onClick={live} title={t.liveTitle} aria-pressed={frame === null}>
+                {t.live}
+              </button>
             </div>
           </>
         ) : (
-          <p>{layer && failed(layer) ? "The rain is not available right now." : "Reading the newest radar frame…"}</p>
+          <p>{layer && failed(layer) ? t.rainUnavailable : t.readingNewest}</p>
         )}
       </div>
 
@@ -289,5 +312,6 @@ export default function Demo() {
         />
       )}
     </main>
+    </LangContext.Provider>
   );
 }

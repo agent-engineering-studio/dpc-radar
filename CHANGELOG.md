@@ -25,6 +25,10 @@ All notable changes to this project are documented here. The format follows
 
 - The demo plays how the rain moved: the last thirteen frames of the layer
   shown, with a slider to stop on one (`/api/film/{layer}` in `demo/api.py`).
+- The demo is in Italian and in English: it opens in the language of the
+  browser, and a switch changes it.
+- The containers of the demo have fixed names: `dpc-radar-api` and
+  `dpc-radar-web`.
 
 ## [0.3.0] - 2026-11-17
 

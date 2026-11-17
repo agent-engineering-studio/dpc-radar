@@ -19,6 +19,7 @@ With Docker, from the root of the repository:
 
 ```bash
 docker compose up
+docker compose down      # stop it and remove the containers (or: make down)
 ```
 
 With [uv](https://docs.astral.sh/uv/) and [Node](https://nodejs.org/) 20 or

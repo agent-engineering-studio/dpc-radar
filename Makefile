@@ -1,4 +1,4 @@
-.PHONY: check lint format typecheck test build docs notebooks diagrams init data demo docker
+.PHONY: check lint format typecheck test build docs notebooks diagrams init data demo docker down
 
 check: lint typecheck test
 
@@ -46,3 +46,7 @@ demo:
 # The same with Docker alone: build the images, run the demo.
 docker:
 	docker compose up --build
+
+# Stop the demo and remove its containers (the frames downloaded stay).
+down:
+	docker compose --profile tools down --remove-orphans

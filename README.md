@@ -359,6 +359,7 @@ server and a demo: a live map of the rain over Italy.
 git clone https://github.com/agent-engineering-studio/dpc-radar
 cd dpc-radar
 docker compose up        # builds the images, starts the demo
+docker compose down      # stops it and removes the containers (or: make down)
 ```
 
 Then open **http://localhost:3000**. The first run takes a few minutes, to

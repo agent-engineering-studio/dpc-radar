@@ -53,6 +53,7 @@ four small apps are [below](#notebooks-and-example-apps).
 - [Keep the «Merging», read fifteen years of history](#keep-the-merging-read-fifteen-years-of-history)
 - [Where the radar can be trusted](#where-the-radar-can-be-trusted)
 - [How far the radar alone is from the «Merging»](#how-far-the-radar-alone-is-from-the-merging)
+- [How rare is this rain, here](#how-rare-is-this-rain-here)
 - [The official alert, as data](#the-official-alert-as-data)
 - [How it works](#how-it-works)
 - [The traps we already fell into](#the-traps-we-already-fell-into)
@@ -553,8 +554,11 @@ rain = history.hourly(
 )
 ```
 
-It is **radar only**, so it under-estimates heavy rain: where both exist,
-compare it with the «Merging».
+It is **radar only**: where both exist, compare it with the «Merging». Fewer
+than one frame in a thousand is corrupted, and `hourly` reads those as
+missing. And it is **not one series**: until 2017 the mosaic read about two
+thirds of what it reads since 2018, so do not carry a threshold across that
+year.
 
 ---
 
@@ -639,6 +643,43 @@ test it on. A model with more inputs (gradient boosting) was tried and
 dropped: about the same mean error, but it almost never reached 100 mm. The
 [full table](https://agentengineering.it/dpc-radar/api/bias/), by region, by
 intensity and by month, is in the reference.
+
+## How rare is this rain, here
+
+A hundred millimetres in a day are a rain of most years in Genoa and one of a
+generation in Bari. `rarity` says how rare a rain of 1, 3, 6 or 24 hours is at
+a place, from a map that ships with the package:
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/climatology.png" alt="Three maps of Italy: the rain of 24 hours passed once in ten years, from 74 mm in Bari to 203 mm in Genoa, and the return period of the rain of the 24 hours to 2 November 2026 read on the radar alone and on the Merging, where the area of ten years or more is half as wide" width="100%">
+</p>
+
+```python
+from dpc_radar import radar_total, rarity, return_level, return_period
+
+rarity(24, 8.93, 44.41, 100.0).return_period  # 1.7   Genoa: most years
+rarity(24, 16.87, 41.12, 100.0)  # Bari: 32 years (between 9 and 50 or more), percentile 99.99
+return_level(24, 8.93, 44.41, 10)  # Level(mm=203.1, low=166.6, high=264.1)
+
+srt1 = await radar.latest("SRT1")
+years = return_period(srt1)  # the return period of every pixel of the last hour
+day = return_period(radar_total(last_24_hours), 24)  # of a sum of hourly frames
+```
+
+The map is a GEV distribution of the highest window of each year, in cells of
+5 km, fitted on the hourly rain of the IT-DPC-SRI history from **2018 to
+2025**. Not from 2010: until 2017 the mosaic read about two thirds of what it
+reads now, and a map on all sixteen years calls ordinary today's rain rare.
+
+**How far to trust it.** Eight years are few. Fitted on six and asked about
+the other two, what the map calls "10 years" came about every 7 and "20 years"
+every 13; nothing is given beyond 50 years. It is in **radar millimetres**:
+the radar alone reads more than the rain gauges over most of the land, so
+these levels are not those of the official rainfall curves, and a radar-only
+frame brings its faults with it (in the image, the radar alone finds twice the
+area of the «Merging»). Clean the frame with [`quality`](#4-check-a-frame-before-you-trust-it)
+first. The [tables](https://agentengineering.it/dpc-radar/api/climatology/)
+are in the reference.
 
 ## The official alert, as data
 
@@ -783,6 +824,7 @@ them. Limen's rule today passes 14 of 30 checks; a frame-level check
 | `reliability(lon, lat)` / `reliability_map()` | how much to trust the radar at a point: `score`, `visibility`, `coverage`, `agreement`, `beam_height`, `reliable` / the whole map, `.like(grid)` on the pixels of a frame |
 | `SITES` | the 24 radars of the mosaic: position, altitude, band, range |
 | `correct(grid)` / `radar_factor(lon, lat)` / `bias_map()` | a radar-only frame times the factor «Merging» / radar of every pixel / the factor at a point (1.0: no correction) / the whole map, `.like(grid)` |
+| `rarity(window, lon, lat, mm)` / `return_level(window, lon, lat, years)` / `return_period(grid, window=None)` | how rare a rain of 1, 3, 6 or 24 hours is at a point: `return_period` with `low` and `high`, `percentile`, `years` / the rain of a return period, a `Level(mm, low, high)` / the return period of every pixel of an accumulation frame; `climatology()` is the whole map |
 | `bulletins.latest()` / `bulletins.fetch(name)` | the official criticality bulletin: `Bulletin.zones`, `.alerts()`, `.zone_at(lon, lat)` (extra `bulletins`) |
 | `SRI`, `SRT1`, `CUM3`, `CUM6`, `CUM12`, `CUM24` | the products: `name`, `hours` (`None` for an intensity), `merging`, `description` |
 | `PRODUCTS`, `product(name)` | every product by name; `product("cum24")` → `CUM24` |
@@ -821,7 +863,7 @@ flowchart LR
 |---|---|---|---|
 | **Benchmark** | a fixed set of storms and faults where we know the answer | every change measurable | [#2](https://github.com/agent-engineering-studio/dpc-radar/issues/2) |
 | **Reliability map** | where the radar sees well, and where it is blind | a blind spot is no longer read as "dry" | [#3](https://github.com/agent-engineering-studio/dpc-radar/issues/3) |
-| **Rain climatology** | how rare is this rain *here*, from 15 years of radar | alerts on unusual rain, not on one national threshold | [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) |
+| **Rain climatology** ✅ | how rare is this rain *here*, from eight years of radar (2018–2025) | rain judged against the place, not against one national threshold; the effect on Limen's alerts is still to measure | [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) |
 | **Storm catalogue** | every storm as an object, and the extreme ones as events to check in the news | many more verified events to measure against | [#5](https://github.com/agent-engineering-studio/dpc-radar/issues/5) |
 | **Frame quality check** ✅ | rules that tell a real storm from a broken frame or a faulty gauge, and say why | fewer false alarms | [#6](https://github.com/agent-engineering-studio/dpc-radar/issues/6) |
 | **Nowcasting** | the rain field moved forward along its motion, 0–2 hours | a trigger on rain that is *coming* | [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) |
@@ -863,11 +905,12 @@ dpc-radar/
 │   ├── reliability.py  # where the radar can be trusted: a map and its parts
 │   ├── quality.py    # what to trust in a frame, pixel by pixel, and why
 │   ├── bias.py       # how far the radar alone is from the «Merging», and a factor
+│   ├── climatology.py  # how rare a rain is at a place: percentile and return period
 │   └── errors.py     # DpcRadarError
 ├── tests/            # offline: synthetic GeoTIFFs and a fake API
 │   └── live/         # the same on the real API: uv run pytest -m live
 ├── benchmarks/       # known cases, and how each cleaning rule scores
-├── tools/            # build_reliability.py, build_bias.py: the maps, from an archive
+├── tools/            # build_reliability.py, build_bias.py, build_climatology.py: the maps
 └── docs/
     ├── make_images.py  # the images of this README, from real frames
     └── roadmap.md      # what comes next, and where AI helps
@@ -899,6 +942,8 @@ Questions, ideas and maps you made go in the organisation's
   Radar positions: DPC, *Rete Radar Nazionale*, technical annex.
 - **The bias map** (`src/dpc_radar/data/bias.tif`) is derived from the DPC
   radar data too: CC BY-SA 4.0.
+- **The climatology** (`src/dpc_radar/data/climatology.tif`) is derived from
+  IT-DPC-SRI: CC BY-SA 4.0, credit the DPC and Fondazione Bruno Kessler.
 - **Country borders** in the images: [Natural Earth](https://www.naturalearthdata.com/), public domain.
 
 This library is not affiliated with the DPC. It is not an alert system:

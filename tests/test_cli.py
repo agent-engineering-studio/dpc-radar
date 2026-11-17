@@ -7,10 +7,10 @@ from typing import Any
 
 import pytest
 
-from dpc_radar import DpcRadarError, cli
+from dpc_radar import ABSENT, DpcRadarError, cli
 from dpc_radar import report as r
 from dpc_radar.archive import ArchiveReport
-from tests.conftest import Radar
+from tests.conftest import Radar, status
 from tests.test_facts import bulletin
 from tests.test_report import frames
 
@@ -141,6 +141,29 @@ def test_archive(offline: list[date], tmp_path: Path, capsys: pytest.CaptureFixt
     [how] = asked
     assert how["folder"] == tmp_path and how["limit"] == 9
     assert how["end"] - how["start"] == timedelta(days=3) and how["end"].minute == 0
+
+
+def test_sites(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: Any) -> None:
+    radar = Radar([])
+    radar.status = status()
+    monkeypatch.setattr("dpc_radar.RadarClient", lambda: radar)
+    assert cli.main(["sites", "--time", "2026-10-10T06:00"]) == 0
+    said = capsys.readouterr().out.splitlines()
+    assert said[0] == "radar status of 2026-10-10T06:00Z" and "not documented" in said[1]
+    assert said[2].split() == ["on", "ILMONTE", "Il", "Monte", "Chieti"]
+    assert said[3].startswith("OFF  LAURO") and "(not in the mosaic)" in said[-1]
+
+    out = tmp_path / "cache" / "sites.geojson"
+    assert cli.main(["sites", "--out", str(out)]) == 0
+    assert capsys.readouterr().out.strip() == str(out)
+    assert len(json.loads(out.read_text())["features"]) == 5
+
+    radar.status = ABSENT
+    assert cli.main(["sites", "--time", "2026-06-01T12:00+00:00"]) == 1
+    assert "no radar status for that time" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        cli.main(["sites", "--time", "yesterday"])
+    assert "a time is YYYY-MM-DDTHH:MM" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("days", ["0", "-1", "many"])

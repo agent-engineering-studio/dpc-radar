@@ -11,7 +11,7 @@ from dpc_radar import bulletins as b
 from dpc_radar import facts as f
 from dpc_radar.facts import Facts
 from dpc_radar.quality import Quality
-from tests.conftest import T0, Radar, grid
+from tests.conftest import T0, Radar, grid, status
 from tests.test_bulletins import NAME, TODAY, TOMORROW
 from tests.test_nowcast import CENTRE, moving
 
@@ -257,3 +257,31 @@ def test_rarity() -> None:
 def test_the_day_of_a_zone() -> None:
     zone = bulletin().zone_at(13.5, 42.5, date(2026, 10, 11))
     assert zone is not None and f.zone_of(zone)["colour"] == "red"
+
+
+async def test_radar_status_of_the_network_and_around_a_point() -> None:
+    radar = Radar([])
+    radar.status = status()
+    facts = Facts(radar)
+    all_of_them = await facts.radar_status()
+    assert all_of_them["known"] and all_of_them["time"] == "2026-10-10T06:00Z"
+    assert all_of_them["off"] == ["LAURO", "LINATE"] and all_of_them["asked"] is None
+    assert [r["code"] for r in all_of_them["radars"] if not r["in_mosaic"]] == ["XBAND2"]
+    assert all_of_them["note"].startswith("as reported by the DPC viewer")
+
+    # Melito, on the Strait: Catania is the nearest, Monte Lauro covers it and is off.
+    near = await facts.radar_status(15.78, 37.92)
+    assert near["asked"] == {"lon": 15.78, "lat": 37.92}
+    on = {r["name"]: r["on"] for r in near["radars"]}
+    assert on == {"Catania Fontanarossa": True, "Monte Lauro": False, "Monte Pettinascura": None}
+    assert near["radars"][0]["distance_km"] < near["radars"][1]["distance_km"] < 200
+    assert "null is not known" in near["note"]
+
+
+async def test_radar_status_when_there_is_none_to_read() -> None:
+    for source in (Radar([]), object()):  # no file now; a source that has no status at all
+        nothing = await Facts(source).radar_status()  # type: ignore[arg-type]
+        assert nothing["known"] is False and nothing["time"] is None and nothing["off"] is None
+        assert nothing["radars"] == [] and "not all on" in nothing["note"]
+    unknown = await Facts(Radar([])).radar_status(15.78, 37.92)
+    assert [r["on"] for r in unknown["radars"]] == [None, None, None]

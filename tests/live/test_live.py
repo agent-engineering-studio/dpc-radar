@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from dpc_radar import ABSENT, CUM3, SRI, RadarClient, RainGrid, bulletins
+from dpc_radar import ABSENT, CUM3, SRI, NetworkStatus, RadarClient, RainGrid, bulletins
 from dpc_radar.archive import MergingArchive, archive
 from dpc_radar.bulletins import COLOURS
 
@@ -59,3 +59,14 @@ async def test_latest_bulletin_covers_italy() -> None:
     assert len([z for z in bulletin.zones if z.valid == bulletin.days()[0]]) > 150
     rome = bulletin.zone_at(12.50, 41.90)
     assert rome is not None and rome.level in COLOURS
+
+
+async def test_the_radar_status_names_the_radars_we_know() -> None:
+    async with RadarClient() as radar:
+        status = await radar.radar_status()
+        old = await radar.radar_status(datetime.now(UTC) - timedelta(days=60))
+    assert old is ABSENT
+    if not isinstance(status, NetworkStatus):  # an undocumented file: gone is an answer too
+        pytest.skip("the DPC has no radar status right now")
+    assert sum(r.site is not None for r in status.radars) >= 20
+    assert (datetime.now(UTC) - status.time).total_seconds() < 30 * 60

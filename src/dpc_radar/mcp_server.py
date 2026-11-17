@@ -15,6 +15,7 @@ The tools are the methods of :class:`dpc_radar.facts.Facts`:
 * ``rain_ahead``: the nowcast at a point, labelled as a forecast.
 * ``official_alert``: the level of the DPC criticality bulletin.
 * ``rarity``: how rare an amount of rain is at a place.
+* ``radar_status``: which radars the DPC reports on and off.
 
 Every answer names the product and the time of the frame it was read from: the
 model words the answer, it does not compute it. What the library refuses
@@ -58,6 +59,9 @@ Rules for whoever answers with these tools:
   present it as a forecast, never as a measurement, and quote its limits.
 - rarity compares with the radar's own history (2018-2025), capped at 50
   years: "at_least" true means "50 years or more", not a number.
+- radar_status is what the DPC viewer reports, from an undocumented file: use
+  it to explain why a place may have no data, never to say the data are good.
+  "on" null and "known" false mean not known.
 - Nothing here is an alert. The official alert is the DPC criticality
   bulletin (official_alert) and the messages of the regional civil
   protection. For danger to people, point to them and to 112.
@@ -193,6 +197,17 @@ def create_server(
             return facts().rarity(lon, lat, hours, mm)
 
         return await _guard(answer())
+
+    @server.tool()
+    async def radar_status(lon: float | None = None, lat: float | None = None) -> dict[str, Any]:
+        """Which radars of the network the DPC reports on and off now.
+
+        With ``lon`` and ``lat``: the radars whose range holds that point,
+        the nearest first, each on, off or null (not known). Without: every
+        radar of the DPC status file. Use it when a place has no data, or
+        reads zero while it rains: its radar may be off.
+        """
+        return await _guard(facts().radar_status(lon, lat))
 
     return server
 

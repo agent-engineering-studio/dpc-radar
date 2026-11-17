@@ -12,6 +12,7 @@ from rasterio.io import MemoryFile
 from dpc_radar import RainGrid
 from dpc_radar.client import ABSENT, Absent
 from dpc_radar.products import LastProduct, Product, product
+from dpc_radar.status import NetworkStatus, parse_status
 
 #: The CUM grid: 0.01° in EPSG:4326. A 20x20 piece whose top-left is 15°E 38°N.
 LONLAT = Affine(0.01, 0, 15.0, 0, -0.01, 38.0)
@@ -51,6 +52,10 @@ class Radar:
         self.newest = newest or {}
         self.asked: list[tuple[str, datetime]] = []
         self.closed = False
+        self.status: NetworkStatus | Absent = ABSENT
+
+    async def radar_status(self, time: datetime | None = None) -> NetworkStatus | Absent:
+        return self.status
 
     async def last_product(self, name: str | Product) -> LastProduct | None:
         p = product(name)
@@ -71,6 +76,38 @@ class Radar:
 
     async def __aexit__(self, *_: object) -> None:
         await self.aclose()
+
+
+def status_file(off: tuple[str, ...] = ("LAURO", "LINATE")) -> dict[str, object]:
+    """A status file shaped as the DPC's: MultiPoints, the radars repeated, a stale time."""
+    radars = [
+        ("ILMONTE", "Monte Il Monte", "Chieti", "DPC", 14.6239, 41.9394, 692),
+        ("LAURO", "Monte Lauro", "Siracusa", "DPC", 14.8239, 37.1228, 960),
+        ("LINATE", "Linate", "Milano", "Enav", 9.28, 45.34, 112),
+        ("XBAND4", "Aereoporto", "Catania", "DPC", 15.0498, 37.4617, 19),
+        ("XBAND2", "Aereoporto", "Reggio Calabria", "DPC", 15.65, 38.07, None),
+    ]
+    features = [
+        {
+            "type": "Feature",
+            "geometry": {"type": "MultiPoint", "coordinates": [[lon, lat]]},
+            "properties": {
+                "nome": code,
+                "localita": place,
+                "provincia": province,
+                "gestore": operator,
+                "quota": height,
+                "status": code not in off,
+                "time": "2025-11-16T23:55:00Z",
+            },
+        }
+        for code, place, province, operator, lon, lat, height in radars
+    ]
+    return {"type": "FeatureCollection", "features": [*features, *features[:2]]}
+
+
+def status(off: tuple[str, ...] = ("LAURO", "LINATE")) -> NetworkStatus:
+    return parse_status(status_file(off), T0)
 
 
 @pytest.fixture

@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from types import TracebackType
 from typing import Any, Final, final
 
@@ -47,9 +47,12 @@ from dpc_radar.products import (
     parse_last_product,
     product,
 )
+from dpc_radar.status import STATUS_BASE, STATUS_PERIOD, NetworkStatus, parse_status, status_url
 
 Send = Callable[..., Awaitable[httpx.Response]]
 _RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
+#: How many files back :meth:`RadarClient.radar_status` looks for the newest one.
+_STATUS_TRIES = 4
 
 
 def json_object(response: httpx.Response) -> dict[str, Any]:
@@ -65,7 +68,7 @@ def json_object(response: httpx.Response) -> dict[str, Any]:
 
 @final
 class Absent:
-    """A frame the DPC no longer keeps (older than about five months)."""
+    """A frame the DPC no longer keeps (older than about five months), or a status file."""
 
     _instance: Absent | None = None
 
@@ -97,6 +100,7 @@ class RadarClient:
         backoff_s: float = 2.0,
         timeout_s: float = 60.0,
         base: str = API_BASE,
+        status_base: str = STATUS_BASE,
         sleep: Callable[[float], Awaitable[Any]] = asyncio.sleep,
     ) -> None:
         self._own = client is None and send is None
@@ -108,6 +112,7 @@ class RadarClient:
         self._backoff_s = backoff_s
         self._timeout_s = timeout_s
         self._base = base.rstrip("/")
+        self._status_base = status_base
         self._sleep = sleep
 
     async def __aenter__(self) -> RadarClient:
@@ -173,6 +178,30 @@ class RadarClient:
         tiff = await self._send("GET", link, timeout=self._timeout_s)
         tiff.raise_for_status()
         return tiff.content
+
+    async def radar_status(self, time: datetime | None = None) -> NetworkStatus | Absent:
+        """Which radars are on at ``time`` (aware), or now: see :mod:`dpc_radar.status`.
+
+        :data:`ABSENT` if the DPC has no status file for that time: they are
+        kept for about two weeks, and the file is not documented open data, so
+        it may also be gone for good. Without a time, the newest file of the
+        last twenty minutes.
+        """
+        if time is not None:
+            return await self._status(time)
+        now = datetime.now(UTC)
+        for back in range(_STATUS_TRIES):
+            found = await self._status(now - STATUS_PERIOD * back)
+            if not isinstance(found, Absent):
+                return found
+        return ABSENT
+
+    async def _status(self, time: datetime) -> NetworkStatus | Absent:
+        response = await self._send("GET", status_url(time, base=self._status_base))
+        if response.status_code in (403, 404):  # S3 says 403 for a file that is not there
+            return ABSENT
+        response.raise_for_status()
+        return parse_status(json_object(response), time)
 
     async def _send(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
         if self._send_hook is not None:

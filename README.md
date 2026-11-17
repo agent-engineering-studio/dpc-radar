@@ -389,16 +389,17 @@ data they return:
 | **Storms now** | every storm raining on Italy, and where it is going | `Facts.storm_now` |
 | **Next two hours** | the rain to come and the chance of it, as a forecast | `Facts.rain_ahead`, `rain_ahead` |
 | **How rare** | the rain that comes back once in 2 to 50 years at that place | `return_level`, `rarity` |
-| **Can it be trusted** | how well the radar sees that place, and the map for all of Italy | `reliability`, `radar_factor` |
+| **Can it be trusted** | how well the radar sees that place, the map for all of Italy, and the radars reported off | `reliability`, `radar_factor`, `radar_status` |
 | **A day, as a report** | a whole day from the frames on disk: totals, maps, the text | `report.build`, `MergingArchive` |
 
 What the init step downloads, and what you can run next:
 
 | Command | With Docker | What it does |
 |---|---|---|
-| `scripts/fetch-data.sh` | `docker compose run --rm init` | downloads the frames of the last days and the borders of the maps; run it again to get the newest |
+| `scripts/fetch-data.sh` | `docker compose run --rm init` | downloads the frames of the last days, the borders of the maps and the status of the radars; run it again to get the newest |
 | `uv run dpc-radar archive data/archive --days 7` | `docker compose run --rm cli archive /data/archive --days 7` | keeps the frames before the DPC deletes them |
 | `uv run dpc-radar report --bbox … --day … --out …` | `docker compose run --rm cli report …` | the report of a day over a box |
+| `uv run dpc-radar sites` | `docker compose run --rm cli sites` | which radars the DPC viewer reports as on |
 | `uv run python` | `docker compose run --rm python` | Python, with `dpc_radar` to import |
 | `uv run dpc-radar mcp` | `docker run -i --rm dpc-radar:local dpc-radar mcp` | the MCP server, for an assistant |
 
@@ -666,6 +667,27 @@ positions come from the DPC's own table; the others were found by fitting
 their range circles on the mosaic. `coverage` and `agreement` describe the five
 months the map was built on.
 
+**Which radars are on now.** The DPC viewer reads a file that says, every
+five minutes, which radars are on:
+
+```python
+status = await radar.radar_status()  # or radar_status(time), two weeks back
+if status:  # ABSENT: not known
+    print([r.code for r in status.off])  # ['LAURO', 'PETTINASCURA', 'LINATE']
+```
+
+```bash
+dpc-radar sites                            # the same, as a table
+```
+
+Take it as a hint, not as proof. The file is public but not documented, and
+it has no licence. On 17 November 2026 it was right about Monte Lauro and
+Monte Pettinascura (off, and missing from the mosaic), but it gave Milano
+Linate as off while the mosaic had data all around it, and Catania as on
+while its circle was empty. The library never uses it to mark data as good
+or bad. More in the
+[documentation](https://agentengineering.it/dpc-radar/api/status/).
+
 ## How far the radar alone is from the «Merging»
 
 The radar-only products (`SRI`, `SRT1`) come every 5 minutes, the «Merging»
@@ -857,9 +879,9 @@ to it, never in its place.
 ## Ask an assistant, write a report
 
 **As tools for an assistant.** `dpc-radar mcp` is a server of the
-[Model Context Protocol](https://modelcontextprotocol.io/): seven tools
+[Model Context Protocol](https://modelcontextprotocol.io/): eight tools
 (`latest`, `rain_at`, `area_summary`, `storm_now`, `rain_ahead`,
-`official_alert`, `rarity`) that answer with numbers computed from a frame,
+`official_alert`, `rarity`, `radar_status`) that answer with numbers computed from a frame,
 each with the product and the time it came from.
 
 ```bash
@@ -994,6 +1016,7 @@ the others are here so you don't have to find them yourself.
 | **Not every echo is rain** | sea clutter or a radar with a problem can paint rain where there is none. But a round edge alone proves nothing: it is where a radar's range ends | look at the hourly frames: rain moves, clutter stays |
 | **A gauge can be wrong too** | on 6–8 October 2026 one gauge of the «Merging» was stuck: 126.6 mm every 3 hours for 33 hours on a dry night, 1,152 mm in `CUM24` | a jump between frames does not catch it; the radar alone (`SRT1`) read 0: `frame.quality(radar=...)` masks it |
 | **Radar alone is not the truth** | the radar-only history read between 10 % and 80 % of the gauges in Apulia in 2016; in 2026 the radar alone read 20 % *more* than the «Merging», and up to 1.7 times in Milan and Genoa | use the «Merging» when you can; `correct(frame)` for the radar alone of 2026; compare on your area |
+| **A radar "on" may not be there** | the viewer's status file gave Catania as on while its circle was empty, and Linate as off while the mosaic had data there (17 November 2026) | `radar_status()` is a hint; what counts is whether the frame has data (`NaN` is not measured) |
 | **Times are in UTC, in milliseconds** | the API speaks epoch milliseconds | `to_epoch_ms` / `from_epoch_ms`, and always aware datetimes |
 | **The `origin` header** | the API once refused requests without it; in November 2026 it no longer does | `products.HEADERS` sends it anyway |
 
@@ -1024,7 +1047,8 @@ checks; a frame-level check
 | `MergingArchive(folder).hourly(points, start, end)` | hourly rain per point from the archive: SRT1 rescaled to the CUM3 |
 | `SriHistory(zarr).hourly(points, start, end)` | the same from IT-DPC-SRI, 2010–2025, radar only (extra `history`) |
 | `reliability(lon, lat)` / `reliability_map()` | how much to trust the radar at a point: `score`, `visibility`, `coverage`, `agreement`, `beam_height`, `reliable` / the whole map, `.like(grid)` on the pixels of a frame |
-| `SITES` | the 24 radars of the mosaic: position, altitude, band, range |
+| `SITES` | the 24 radars of the mosaic: position, altitude, band, range, DPC code |
+| `await radar.radar_status(time=None)` | which radars the DPC viewer reports as on: `.off`, `.of(site)`, `.geojson()`; `ABSENT` when not known. From an undocumented file: a hint |
 | `correct(grid)` / `radar_factor(lon, lat)` / `bias_map()` | a radar-only frame times the factor «Merging» / radar of every pixel / the factor at a point (1.0: no correction) / the whole map, `.like(grid)` |
 | `rarity(window, lon, lat, mm)` / `return_level(window, lon, lat, years)` / `return_period(grid, window=None)` | how rare a rain of 1, 3, 6 or 24 hours is at a point: `return_period` with `low` and `high`, `percentile`, `years` / the rain of a return period, a `Level(mm, low, high)` / the return period of every pixel of an accumulation frame; `climatology()` is the whole map |
 | `storms(grid, threshold=)` / `track(grids, threshold=)` | the patches of rain of a frame as `Storm`s (`lon`, `lat`, `area_km2`, `peak`, `mean`, `bbox`) / followed in time as `Track`s: `duration`, `path`, `distance_km`, `speed_kmh`, `heading`, `water_m3` (extra `storms`) |
@@ -1045,6 +1069,7 @@ checks; a frame-level check
 | `DpcRadarError` | an answer the library cannot read, or a bad argument |
 | `dpc-radar archive FOLDER --days 2` | the command line: save the CUM3 and SRT1 frames the folder lacks |
 | `dpc-radar report` / `dpc-radar check` / `dpc-radar mcp` | the report of a day over a box / the numbers of a text against its facts / the MCP server |
+| `dpc-radar sites [--time …] [--out FILE]` | the radars and which are reported on, as a table or as GeoJSON |
 
 Full reference: **https://agentengineering.it/dpc-radar/api/client/**
 
@@ -1169,6 +1194,10 @@ Questions, ideas and maps you made go in the organisation's
 - **The list of rare rain** (`docs/data/rare-rain-2026.csv`) is derived from
   the DPC radar data: CC BY-SA 4.0. The names of the alert zones come from
   the criticality bulletins.
+- **The status of the radars** (`radar_status`, `dpc-radar sites`) is read
+  from a file of the DPC radar viewer that declares no licence and is not
+  part of the documented open data. The library reads it when asked and
+  ships no copy of it.
 - **Country borders** in the images: [Natural Earth](https://www.naturalearthdata.com/), public domain.
 
 This library is not affiliated with the DPC. It is not an alert system:

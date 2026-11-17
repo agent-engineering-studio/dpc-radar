@@ -1,6 +1,8 @@
 #!/bin/sh
 # Download what the demo reads from disk: the frames of the last days, which
 # the DPC deletes after about five months, and the borders drawn on the maps.
+# And the radars with their status of now, as GeoJSON, for whoever wants them
+# in a GIS (the demo asks for the status live).
 #
 #   scripts/fetch-data.sh
 #
@@ -26,5 +28,9 @@ $RUN dpc-radar archive "$DATA/archive" --days "$DAYS" ||
 echo "Borders for the maps, into $DATA/cache"
 $RUN python demo/borders.py "$DATA/cache" ||
     echo "warning: the borders were not downloaded; the maps will be drawn without" >&2
+
+echo "The radars and which are on, into $DATA/cache/sites.geojson"
+$RUN dpc-radar sites --out "$DATA/cache/sites.geojson" ||
+    echo "warning: the radar status was not downloaded; it is not known right now" >&2
 
 echo "Done."

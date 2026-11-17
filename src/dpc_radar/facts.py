@@ -19,6 +19,7 @@ can be used as it is from Python::
 * :meth:`Facts.rain_ahead`: the nowcast at a point, always labelled as a forecast.
 * :meth:`Facts.official_alert`: the level of the DPC criticality bulletin.
 * :meth:`Facts.rarity`: how rare an amount of rain is at a place.
+* :meth:`Facts.radar_status`: which radars the DPC reports on and off.
 
 The rules every answer follows:
 
@@ -56,7 +57,8 @@ from dpc_radar.nowcast import chance, motion
 from dpc_radar.nowcast import rain_ahead as forecast_sum
 from dpc_radar.products import PRODUCTS, LastProduct, Product
 from dpc_radar.quality import Quality
-from dpc_radar.reliability import reliability
+from dpc_radar.reliability import SITES, _km, reliability
+from dpc_radar.status import STATUS_CAVEAT, NetworkStatus
 from dpc_radar.storms import _pixel_km2, storms
 
 #: The product that answers "the rain of the last N hours". There is no CUM1.
@@ -459,6 +461,59 @@ class Facts:
     def rarity(self, lon: float, lat: float, hours: int, mm: float) -> dict[str, Any]:
         """How rare ``mm`` of rain in ``hours`` (1, 3, 6 or 24) are at a point."""
         return {"lon": lon, "lat": lat, **rarity_of(lon, lat, hours, mm)}
+
+    async def radar_status(
+        self, lon: float | None = None, lat: float | None = None
+    ) -> dict[str, Any]:
+        """Which radars the DPC reports on and off now (:mod:`dpc_radar.status`).
+
+        With ``lon`` and ``lat``: the radars whose range holds the point, the
+        nearest first. Without: every radar of the status file. ``known``
+        false means there is no status to read, which is not "all on".
+        """
+        ask = getattr(self._radar, "radar_status", None)
+        found = None if ask is None else await ask()
+        status = found if isinstance(found, NetworkStatus) else None
+        point = lon is not None and lat is not None
+        radars: list[dict[str, Any]] = []
+        if point:
+            assert lon is not None and lat is not None
+            near = sorted((_km(lon, lat, s.lon, s.lat), s) for s in SITES)
+            radars = [
+                {
+                    "name": site.name,
+                    "code": site.code,
+                    "band": site.band,
+                    "distance_km": round(km, 1),
+                    "range_km": site.range_km,
+                    "on": None if status is None else status.of(site),
+                }
+                for km, site in near
+                if km <= site.range_km
+            ]
+        elif status is not None:
+            radars = [
+                {
+                    "name": None if r.site is None else r.site.name,
+                    "code": r.code,
+                    "place": r.place,
+                    "province": r.province,
+                    "operator": r.operator,
+                    "on": r.on,
+                    "in_mosaic": r.site is not None,
+                }
+                for r in status.radars
+            ]
+        return {
+            "known": status is not None,
+            "time": None if status is None else stamp(status.time),
+            "asked": {"lon": lon, "lat": lat} if point else None,
+            "radars": radars,
+            "off": None if status is None else [r.code for r in status.off],
+            "note": ("on: null is not known, not off; " if point else "")
+            + ("" if status is not None else "no status file to read now: not known, not all on; ")
+            + STATUS_CAVEAT,
+        }
 
     async def _newest_bulletin(self) -> Bulletin:
         now = clock.monotonic()

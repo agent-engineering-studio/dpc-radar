@@ -48,6 +48,7 @@ async def test_the_tools_and_the_rules() -> None:
             "area_summary",
             "latest",
             "official_alert",
+            "radar_status",
             "rain_ahead",
             "rain_at",
             "rarity",
@@ -85,6 +86,9 @@ async def test_every_tool_answers_with_its_frame() -> None:
 
         rare = await call(client, "rarity", lon=15.785, lat=37.925, hours=3, mm=50.0)
         assert rare["hours"] == 3 and rare["mm"] == 50.0 and "return_period_years" in rare
+
+        radars = await call(client, "radar_status", lon=lon, lat=lat)
+        assert radars["known"] is False and radars["radars"][0]["on"] is None
 
 
 async def test_what_the_library_refuses_is_an_error_the_agent_can_read() -> None:

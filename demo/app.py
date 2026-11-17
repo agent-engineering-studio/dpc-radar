@@ -44,6 +44,7 @@ from dpc_radar import (
     Absent,
     DpcRadarError,
     LastProduct,
+    NetworkStatus,
     Product,
     RadarClient,
     RainGrid,
@@ -105,6 +106,9 @@ class Held:
     async def last_product(self, name: str | Product) -> LastProduct | None:
         return await self._radar.last_product(name)
 
+    async def radar_status(self) -> NetworkStatus | Absent:
+        return await self._radar.radar_status()
+
     async def at(self, name: str | Product, time: datetime) -> RainGrid | Absent:
         key = (name if isinstance(name, str) else name.name, time)
         if key not in self._frames:
@@ -161,6 +165,15 @@ def rain_here(lon: float, lat: float) -> dict[int, dict[str, Any]]:
 @st.cache_data(ttl=300, show_spinner=False)
 def area(box: tuple[float, float, float, float], hours: int) -> dict[str, Any]:
     return ask(lambda _, facts: facts.area_summary(*box, hours))
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def radars(lon: float | None = None, lat: float | None = None) -> dict[str, Any]:
+    """Which radars the DPC reports on and off; not known if the file cannot be read."""
+    try:
+        return ask(lambda _, facts: facts.radar_status(lon, lat))
+    except (DpcRadarError, httpx.HTTPError):
+        return {"known": False, "time": None, "radars": [], "off": None}
 
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -696,7 +709,11 @@ with trust_tab:
             lons, lats, np.ma.masked_invalid(m.score[::3, ::3]), cmap="RdYlGn", vmin=0, vmax=1,
             shading="nearest", zorder=2,
         )  # fmt: skip
-        ax.plot([s.lon for s in SITES], [s.lat for s in SITES], "k^", ms=5, zorder=5)
+        network = radars()
+        off = set(network["off"] or [])
+        for site in SITES:
+            colour = "white" if site.code in off else "black"
+            ax.plot(site.lon, site.lat, "^", ms=6, mfc=colour, mec="black", zorder=5)
         mark(ax, lon, lat)
         fig.colorbar(mesh, ax=ax, shrink=0.7, pad=0.02, label="0 = do not trust · 1 = trust")
         fig.tight_layout()
@@ -705,13 +722,40 @@ with trust_tab:
             f"Triangles: the {len(SITES)} radars of the mosaic. An estimate made from outside "
             f"(built on {m.built_on}): the DPC publishes no quality map."
         )
+        if network["known"]:
+            st.caption(
+                f"White triangles: reported off by the DPC viewer at {network['time']} "
+                f"({', '.join(sorted(off)) or 'none'}). A hint, from a file that is not "
+                "documented open data: a radar reported on may still be missing from the mosaic."
+            )
+    around_here = radars(lon, lat)
+    if around_here["radars"]:
+        words = {True: "on", False: "**off**", None: "not known"}
+        st.write(
+            "Radars whose range holds this point, as the DPC viewer reports them now: "
+            + "; ".join(
+                f"{r['name']} ({r['distance_km']:.0f} km) {words[r['on']]}"
+                for r in around_here["radars"]
+            )
+            + "."
+        )
+    else:
+        st.write("No radar of the mosaic has this point in its range.")
     behind(
         f"""from dpc_radar import reliability, radar_factor, correct
 
 reliability({lon}, {lat})      # score, its parts, beam height, nearest radar
 radar_factor({lon}, {lat})     # «Merging» / radar at this place
-correct(frame)                  # a radar-only frame brought towards the «Merging»""",
-        {"reliability": rain[1]["reliability"], "radar_factor": factor},
+correct(frame)                  # a radar-only frame brought towards the «Merging»
+
+async with RadarClient() as radar:
+    status = await radar.radar_status()   # which radars the DPC reports on and off
+    [r.code for r in status.off]""",
+        {
+            "reliability": rain[1]["reliability"],
+            "radar_factor": factor,
+            "radar_status": around_here,
+        },
     )
 
 with day_tab:

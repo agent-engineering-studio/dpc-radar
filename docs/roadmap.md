@@ -122,7 +122,9 @@ the gauges that enter the «Merging». The positions of seven radars come from
 the DPC's table; the others were found by fitting their range circles on the
 mosaic's no-data mask, and four that are always hidden under the others come
 from the literature. Coverage and agreement describe five months, not a
-climate. Limen does not
+climate. Which radars are on at a time is read from the file of the DPC
+viewer ([`radar_status`](api/status.md)): it is not documented and does not
+always agree with the mosaic, so it does not enter the score. Limen does not
 use the map yet.
 
 ### Rain climatology · [#4](https://github.com/agent-engineering-studio/dpc-radar/issues/4) · ✅ first version: eight years, in radar millimetres

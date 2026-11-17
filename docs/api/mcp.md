@@ -1,7 +1,7 @@
 # MCP server: the rain as tools
 
 `dpc-radar mcp` gives an assistant (Claude, or any client of the
-[Model Context Protocol](https://modelcontextprotocol.io/)) seven tools on
+[Model Context Protocol](https://modelcontextprotocol.io/)) eight tools on
 the rain over Italy. Someone asks "how much has it rained on Messina in the
 last three hours?" and the answer is computed from a frame, with the name of
 the product and the time of the frame: the model words it, it does not
@@ -36,6 +36,7 @@ No key: the data are open.
 | `rain_ahead(lon, lat, minutes=60, mm=20)` | the [nowcast](nowcast.md) at a point, labelled as a forecast, with the chance of at least `mm` |
 | `official_alert(lon, lat, place)` | the level of the [criticality bulletin](bulletins.md): the zone of a point, the zones of a municipality or with a name, or every zone on alert |
 | `rarity(lon, lat, hours, mm)` | the [return period](climatology.md) of an amount of radar rain at a place |
+| `radar_status(lon, lat)` | which radars the DPC viewer [reports as on](status.md): those in range of a point, or all of them. A hint from an undocumented file, `null` when not known |
 
 This is the answer of `rain_at(15.78, 37.92, hours=3)`:
 
@@ -75,6 +76,8 @@ This is the answer of `rain_at(15.78, 37.92, hours=3)`:
 - What the library refuses (a window that does not exist, half a box)
   reaches the model as an error it can read: `the DPC publishes the rain of
   [1, 3, 6, 12, 24] hours, not of 2`.
+- `radar_status` explains a hole in the data; it never says the data are
+  good. A radar reported on may be missing from the mosaic.
 - The server's instructions tell the model not to add up or estimate
   numbers itself, and that nothing here is an alert.
 

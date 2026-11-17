@@ -1,4 +1,4 @@
-.PHONY: check lint format typecheck test build docs notebooks diagrams
+.PHONY: check lint format typecheck test build docs notebooks diagrams init data demo docker
 
 check: lint typecheck test
 
@@ -30,3 +30,19 @@ notebooks:
 
 diagrams:
 	uv run --group examples python docs/make_diagrams.py
+
+# Install everything and download the data of the demo (needs uv).
+init:
+	sh scripts/init.sh
+
+# Download the newest frames again, into ./data.
+data:
+	sh scripts/fetch-data.sh
+
+# The demo, on http://localhost:8501.
+demo:
+	uv run --all-extras --group demo streamlit run demo/app.py --client.toolbarMode minimal
+
+# The same with Docker alone: build the image, download the data, run the demo.
+docker:
+	docker compose up --build

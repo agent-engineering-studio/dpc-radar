@@ -101,6 +101,22 @@ All notable changes to this project are documented here. The format follows
   names its product and time; the frame is checked with `quality` first, and
   "not measured" is `null`, never zero. `dpc_radar.facts.Facts` gives the
   same answers from Python. New extra `mcp` (#9).
+- `dpc-radar archive FOLDER --days 2`: the frames of the last days, saved
+  before the DPC deletes them. The command-line face of
+  `dpc_radar.archive.archive`: it fetches what the folder lacks and says how
+  it went in one line.
+- A demo in `demo/`: one Streamlit page with a tab for each thing the library
+  does (the rain at a place, the storms now, the next two hours, how rare a
+  rain is, how far the radar can be trusted, the report of a day), each with
+  the code that made it and the data it returned. It replaces
+  `examples/app.py`.
+- `scripts/init.sh` and `scripts/fetch-data.sh`: install everything with uv
+  and download what the demo reads from disk (two days of frames, the borders
+  of the maps) into `./data`.
+- A `Dockerfile` and a `compose.yaml`: `docker compose up` builds an image
+  with the library, every extra, the command line and the MCP server,
+  downloads the data into a volume and serves the demo on
+  http://localhost:8501. The image is built locally; none is published yet.
 - `dpc-radar report --bbox W,S,E,N --day YYYY-MM-DD --out folder`: the report
   of a day of rain over a box, from the API or from a local archive:
   `facts.json`, `report.md`, a map of the radar alone next to the «Merging»
@@ -114,6 +130,10 @@ All notable changes to this project are documented here. The format follows
   published with the documentation (#9).
 
 ### Changed
+
+- The documentation presents dpc-radar as a library on its own, no longer as
+  a part being extracted from Limen. What is still open on Limen's side is
+  tracked in limen#643.
 
 - `SriHistory.hourly` reads a corrupted frame as missing.
 

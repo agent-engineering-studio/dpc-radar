@@ -1,0 +1,50 @@
+# dpc-radar on this machine, with nothing to install but Docker.
+#
+#   docker compose up                          download the data, then the demo
+#                                              on http://localhost:8501
+#   docker compose run --rm init               download the newest frames again
+#   docker compose run --rm cli --help         the command line
+#   docker compose run --rm python             Python, with dpc_radar to import
+#
+#   DPC_RADAR_PORT   the port of the demo (default 8501)
+#   DPC_RADAR_DAYS   how many days of frames to download (default 2)
+name: dpc-radar
+
+x-radar: &radar
+  image: dpc-radar:local
+  build: .
+  volumes:
+    - radar-data:/data
+
+services:
+  # One shot: the frames of the last days and the borders of the maps.
+  init:
+    <<: *radar
+    command: ["sh", "scripts/fetch-data.sh"]
+    environment:
+      DPC_RADAR_DAYS: ${DPC_RADAR_DAYS:-2}
+
+  demo:
+    <<: *radar
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    ports:
+      - "${DPC_RADAR_PORT:-8501}:8501"
+    restart: unless-stopped
+
+  cli:
+    <<: *radar
+    profiles: [tools]
+    entrypoint: ["dpc-radar"]
+
+  python:
+    <<: *radar
+    profiles: [tools]
+    command: ["python"]
+    stdin_open: true
+    tty: true
+
+volumes:
+  # The frames, the borders and the reports: kept between one run and the next.
+  radar-data:

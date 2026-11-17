@@ -10,3 +10,6 @@ htmlcov/
 .ruff_cache/
 site/
 .cache/
+
+# What the init scripts download for the demo
+/data/

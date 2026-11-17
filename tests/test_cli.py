@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +9,7 @@ import pytest
 
 from dpc_radar import DpcRadarError, cli
 from dpc_radar import report as r
+from dpc_radar.archive import ArchiveReport
 from tests.conftest import Radar
 from tests.test_facts import bulletin
 from tests.test_report import frames
@@ -119,3 +120,31 @@ def test_mcp(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 
     monkeypatch.setattr("dpc_radar.mcp_server.run", broken)
     assert cli.main(["mcp"]) == 1
+
+
+def test_archive(offline: list[date], tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    asked: list[dict[str, Any]] = []
+
+    async def saved(folder: Path, radar: object, **how: Any) -> ArchiveReport:
+        asked.append({"folder": folder, **how})
+        return ArchiveReport(downloaded=3, present=2, lost=1, failed=0, bytes=3_400_000)
+
+    import dpc_radar.archive
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(dpc_radar.archive, "archive", saved)
+        assert cli.main(["archive", str(tmp_path), "--days", "3", "--limit", "9"]) == 0
+    said = capsys.readouterr().out
+    assert (
+        said == "3 frames saved (3 MB), 2 already there, 1 gone at the DPC, 0 to retry next time\n"
+    )
+    [how] = asked
+    assert how["folder"] == tmp_path and how["limit"] == 9
+    assert how["end"] - how["start"] == timedelta(days=3) and how["end"].minute == 0
+
+
+@pytest.mark.parametrize("days", ["0", "-1", "many"])
+def test_days_are_one_or_more(days: str, capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as stopped:
+        cli.main(["archive", "x", "--days", days])
+    assert stopped.value.code == 2 and "a number of days" in capsys.readouterr().err

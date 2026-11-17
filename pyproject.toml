@@ -73,6 +73,8 @@ docs = [
     "zensical>=0.1.0",
     "mkdocstrings[python]>=0.26",
 ]
+# What the demo in demo/ needs on top of the extras.
+demo = ["matplotlib>=3.9", "streamlit>=1.40"]
 examples = [
     "ipykernel>=6.29",
     "matplotlib>=3.9",
@@ -92,6 +94,8 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "ARG", "PTH", "RUF"]
 "tests/**" = ["ARG", "B018"]
 # The image script draws labels with typographic signs (×, –, −) on purpose.
 "docs/**" = ["RUF001"]
+# The demo writes for people: ×, – and ° are what it means.
+"demo/**" = ["RUF001"]
 # Baseline methods implement an interface: not every method uses every argument.
 "benchmarks/methods.py" = ["ARG002"]
 

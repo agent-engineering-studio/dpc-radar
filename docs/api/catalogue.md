@@ -77,11 +77,11 @@ against «Merging» 89.8, not confirmed.
 
 - **Verified events.** The issue asked for "new verified events per month".
   The catalogue gives candidates, 317 a month at 10 years and 64 at the
-  ceiling; whether one did damage is Limen's fact-check on the news, and that
-  count belongs there. Start from the confirmed ones at the ceiling (214).
+  ceiling; whether one did damage is a fact-check on the news, and that
+  count belongs to whoever does it. Start from the confirmed ones at the ceiling (214).
 - **Municipalities.** An event has a point, a box and the name of its alert
   zone. The bulletin lists the municipalities of a zone by name only, with no
-  borders; Limen has them and can join on the point.
+  borders: join on the point with the borders of ISTAT.
 - **Blind places.** Where the reliability is under 0.5 nothing is found, by
   choice: Lipari is the cost.
 - **Other seasons.** One season of SRT1. On the history (2018–2025, radar

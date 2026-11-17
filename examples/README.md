@@ -1,6 +1,7 @@
 # Example apps
 
-Four small programs, each one file, each one a starting point to copy.
+Three small programs, each one file, each one a starting point to copy. The
+fourth, a page in the browser, has grown into the [demo](../demo/).
 
 ```bash
 git clone https://github.com/agent-engineering-studio/dpc-radar
@@ -13,7 +14,6 @@ uv sync --group examples
 | [`rain_at.py`](rain_at.py) | the rain at a place: now, last 3–24 hours, and the official alert | read several products at once; `sample`; `zone_at` |
 | [`storm_watch.py`](storm_watch.py) | watches an area and prints a line when a violent shower enters it | poll with `cached=`; `peak` over a box |
 | [`nightly_archive.py`](nightly_archive.py) | keeps a local archive of the «Merging» up to date | `archive`, its report, a `limit` on requests |
-| [`app.py`](app.py) | a rain dashboard for any town, in the browser | put it all together with Streamlit; `check` before showing |
 
 ## Rain at a place
 
@@ -47,15 +47,9 @@ Run it again and it downloads only what is missing. In `cron`, once a night:
 15 3 * * *  cd /path/to/dpc-radar && uv run python examples/nightly_archive.py /data/radar --days 3
 ```
 
-Three days of Italy are about 100 frames and 100 MB.
-
-## Dashboard
-
-```bash
-uv run --group examples streamlit run examples/app.py
-```
-
-![The dashboard](../docs/images/dashboard.png)
+Three days of Italy are about 100 frames and 100 MB. The library has the
+same as a command, `dpc-radar archive ~/radar-archive --days 3`: this file is
+the code to copy when you need more than that.
 
 ## Fair use
 

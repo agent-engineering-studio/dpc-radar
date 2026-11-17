@@ -5,6 +5,9 @@
 * ``dpc-radar report --bbox W,S,E,N --day YYYY-MM-DD --out folder``: the
   report of a day of rain over a box (:mod:`dpc_radar.report`). The frames
   come from the API, or from a local archive with ``--archive folder``.
+* ``dpc-radar archive folder --days 2``: save the «Merging» frames of the last
+  days that are not in the folder yet (:mod:`dpc_radar.archive`). Safe to run
+  again, and to schedule: it downloads only what is missing.
 * ``dpc-radar check report.md facts.json``: are all the numbers of a text in
   the facts? For a text written, or rewritten, by someone else.
 """
@@ -14,8 +17,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import logging
 import sys
 from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import httpx
@@ -32,6 +37,16 @@ def _bbox(text: str) -> BBox:
     if not (west < east and south < north):
         raise argparse.ArgumentTypeError(f"a box is W,S,E,N with W < E and S < N: {text!r}")
     return (west, south, east, north)
+
+
+def _days(text: str) -> int:
+    try:
+        days = int(text)
+    except ValueError:
+        days = 0
+    if days < 1:
+        raise argparse.ArgumentTypeError(f"a number of days, 1 or more: {text!r}")
+    return days
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -56,6 +71,13 @@ def _parser() -> argparse.ArgumentParser:
         "--text", type=Path, help="a text of your own to save, if its numbers are in the facts"
     )
     report.add_argument("--no-images", action="store_true", help="write no image")
+
+    archive = commands.add_parser("archive", help="save the «Merging» frames of the last days")
+    archive.add_argument("folder", type=Path, help="where the archive lives")
+    archive.add_argument("--days", type=_days, default=2, help="how far back to look (default 2)")
+    archive.add_argument(
+        "--limit", type=int, default=200, help="most requests in one run (default 200)"
+    )
 
     check = commands.add_parser("check", help="are the numbers of a text all in the facts?")
     check.add_argument("text", type=Path)
@@ -94,6 +116,28 @@ def _report(args: argparse.Namespace) -> int:
     return 0
 
 
+async def _save(args: argparse.Namespace) -> str:
+    from dpc_radar import RadarClient
+    from dpc_radar.archive import archive
+
+    end = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
+    start = end - timedelta(days=args.days)
+    async with RadarClient() as radar:
+        done = await archive(args.folder, radar, start=start, end=end, limit=args.limit)
+    return (
+        f"{done.downloaded} frames saved ({done.bytes / 1e6:.0f} MB), "
+        f"{done.present} already there, {done.lost} gone at the DPC, "
+        f"{done.failed} to retry next time"
+    )
+
+
+def _archive(args: argparse.Namespace) -> int:
+    # Why a frame failed goes to the log; httpx would add a line for every request.
+    logging.basicConfig(level=logging.WARNING, format="%(message)s")
+    print(asyncio.run(_save(args)))
+    return 0
+
+
 def _check(args: argparse.Namespace) -> int:
     from dpc_radar.report import check_text
 
@@ -108,7 +152,7 @@ def _check(args: argparse.Namespace) -> int:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command; the exit status (0: done)."""
     args = _parser().parse_args(argv)
-    run = {"mcp": _mcp, "report": _report, "check": _check}[args.command]
+    run = {"mcp": _mcp, "report": _report, "archive": _archive, "check": _check}[args.command]
     try:
         return run(args)
     except ImportError as exc:

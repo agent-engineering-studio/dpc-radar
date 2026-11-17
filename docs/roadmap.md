@@ -243,15 +243,37 @@ false triggers and one rule for flood, wildfire and the trigger.
 
 ## Phase 2 · more lead time, a better history
 
-### Nowcasting 0–2 hours · [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) · effort M
+### Nowcasting 0–2 hours · [#7](https://github.com/agent-engineering-studio/dpc-radar/issues/7) · ✅ first version: the rain moved, not changed
 
-The SRI field moved forward along its own motion (optical flow, the method of
-[pySTEPS](https://pysteps.github.io/)), then an ensemble for probabilities.
-Always labelled as a **forecast**, never mixed with observed rain. A
-deep-learning nowcast stays a research notebook. **For Limen:** the trigger
-fires on rain that is coming, and the first two hours of the flood window use
-it instead of a ~9 km model that does not see thunderstorms. **Check:** CSI at
-30, 60, 120 minutes on the storm catalogue, then limen#345.
+[`dpc_radar.nowcast(frames)`](api/nowcast.md) moves the latest SRI frame
+forward along the motion the rain had in the last half hour, every five
+minutes up to two hours; `rain_ahead` sums it into millimetres, `chance`
+gives the chance of at least so many millimetres at every pixel, `motion` the
+speed and heading. Everything is a `Forecast`, never a `RainGrid`: a forecast
+cannot be taken for observed rain.
+
+On 120 moments of heavy rain drawn from the history of 2021–2025 it beats the
+last frame left still at every threshold and lead: for rain of 1 mm/h the CSI
+is 0.47, 0.34 and 0.23 at 30, 60 and 120 minutes (persistence: 0.38, 0.27,
+0.19); for 10 mm/h it is 0.17, 0.08 and 0.04 (0.10, 0.05, 0.03). The chance is
+reliable: of the pixels given 40–60 % of 10 mm in the next hour, 39 % got
+them. The [tables](api/nowcast.md#the-measure-in-full) are in the reference.
+
+**What is still open:**
+
+- **Growth and decay.** A storm that is born after the last frame is not in
+  the forecast. On the night of Melito di Porto Salvo the storm was born
+  again and again over the same place: the two-hour forecast for the town
+  went from 4 to 45 mm while the radar saw 21 to 39, and the chance of 20 mm
+  stayed between 0.2 and 0.55.
+- **An ensemble** (STEPS): `chance` is the share of the forecast around a
+  pixel, not a set of possible futures, and says nothing about a catchment
+  as a whole.
+- **The check on the storm catalogue**: the 2026 archive has hourly frames,
+  and a nowcast needs one every five minutes.
+- **limen#345**: whether a trigger on `chance` anticipates more events, and
+  at what cost in municipality-days on alert, is measured in Limen.
+- A deep-learning nowcast stays a research notebook.
 
 ### Radar–gauge bias model · [#8](https://github.com/agent-engineering-studio/dpc-radar/issues/8) · ✅ first version: a map, not a model, and not for the history
 
@@ -341,6 +363,6 @@ as structured data instead of prose
 | 8 verified events | candidate events from the catalogue: `rare_events` (done, 317 a month); their check in the news (open) | #5 | a denominator worth measuring |
 | radar zero read as dry where the radar is blind | a reliability map | #3 | fewer missed events |
 | a fixed 150 mm rule for bad frames | a score per frame and pixel, with the reason | #6 | fewer false alarms |
-| a trigger on rain already fallen | a trigger on rain that is coming (0–2 h) | #7 | more events anticipated |
+| a trigger on rain already fallen | the rain and the chance of rain of the next two hours: `nowcast`, `chance` (done); a trigger on them in Limen (open) | #7 | more events anticipated, to be measured |
 | a radar-only history that under-estimates | a factor for the radar alone of 2026 (done); the history needs gauges of those years (open) | #8 | radar-only rain closer to the «Merging»; backtests still on biased rain |
 | facts written into prose | facts as data, for agents and reports | #9 | — |

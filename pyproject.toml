@@ -31,6 +31,8 @@ history = ["numcodecs>=0.13"]
 bulletins = ["shapely>=2.0"]
 # Storms as objects: the labelling of the patches of a frame.
 storms = ["scipy>=1.13"]
+# The rain of the next two hours: the interpolation that moves the field.
+nowcast = ["scipy>=1.13"]
 
 [project.urls]
 Homepage = "https://github.com/agent-engineering-studio/dpc-radar"

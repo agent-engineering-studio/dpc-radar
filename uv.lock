@@ -678,6 +678,9 @@ bulletins = [
 history = [
     { name = "numcodecs" },
 ]
+nowcast = [
+    { name = "scipy" },
+]
 storms = [
     { name = "scipy" },
 ]
@@ -716,10 +719,11 @@ requires-dist = [
     { name = "numcodecs", marker = "extra == 'history'", specifier = ">=0.13" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "rasterio", specifier = ">=1.4" },
+    { name = "scipy", marker = "extra == 'nowcast'", specifier = ">=1.13" },
     { name = "scipy", marker = "extra == 'storms'", specifier = ">=1.13" },
     { name = "shapely", marker = "extra == 'bulletins'", specifier = ">=2.0" },
 ]
-provides-extras = ["history", "bulletins", "storms"]
+provides-extras = ["history", "bulletins", "storms", "nowcast"]
 
 [package.metadata.requires-dev]
 bench = [

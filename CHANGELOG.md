@@ -47,6 +47,20 @@ All notable changes to this project are documented here. The format follows
   held-out years its "10 years" came about every 7 and its "20 years" every
   13, and nothing is given beyond 50. `tools/build_climatology.py` builds and
   measures it (#4).
+- `dpc_radar.storms(grid, threshold=)`: the patches of rain of a frame as
+  objects (`Storm`: centre, area, peak, mean, box), and `track(grids,
+  threshold=)` to follow them from frame to frame (`Track`: duration, path,
+  distance, speed, heading, water). They need SciPy: the new extra `storms`.
+- `dpc_radar.rare_events(frames)`: the rain of hourly frames, summed over 1,
+  3, 6 and 24 hours, that is over the level of its place and where the radar
+  is reliable, as `Event`s ranked the rarest first; `with_merging(event,
+  archive)` adds what the «Merging» has there and whether it confirms the
+  radar. `tools/build_catalogue.py` writes the list as a CSV: on 160 days of
+  2026 it is 1,689 events over the 10-year level on land, 1,054 of them
+  confirmed by the «Merging» (`docs/data/rare-rain-2026.csv`). They are
+  candidates to check in the news, and the return period is a ranking: on
+  those frames the levels are passed two to five times more often than their
+  name says (#5).
 - `dpc_radar.history.suspect(frame)`: whether a frame of the history is
   corrupted (the disk of a radar filled with violent rain, flat patches over
   100 mm/h): 752 of 1,039,785 frames, 229 of them in 2011 and 250 in 2014.

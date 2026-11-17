@@ -326,24 +326,50 @@ around such gauges without a factor. Limen does not use `correct` yet.
 
 ## Phase 3 · AI for people and agents
 
-### MCP server, `llms.txt`, event reports · [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) · effort M
+### MCP server, `llms.txt`, event reports · [#9](https://github.com/agent-engineering-studio/dpc-radar/issues/9) · ✅ first version: facts as data, a text that is checked
 
 - **MCP server** `dpc-radar mcp`, extra `[mcp]`: `latest`, `rain_at(lon, lat, hours)`,
-  `area_summary(bbox, hours)`, `storm_now(bbox)`, `rarity(...)`,
-  `official_alert(region)`. Someone can ask "how much has it rained on
-  Messina today?" and get an answer computed from the frame, with its time.
+  `area_summary(box, hours)`, `storm_now(box)`, `rain_ahead(lon, lat, minutes)`,
+  `official_alert(lon, lat, place)`, `rarity(lon, lat, hours, mm)`. Someone
+  asks "how much has it rained on Messina in the last three hours?" and the
+  answer is computed from a frame, with its product and time, after the
+  [quality check](api/quality.md). The tools are the methods of
+  `dpc_radar.facts.Facts`: the same dicts from Python.
+  [How it works](api/mcp.md).
 - **`llms.txt`, `llms-full.txt` and an agent skill**, as in
-  [egms-client](https://agentengineering.it/egms-client/): the traps a model
-  gets wrong when it writes radar code from memory.
-- **Event reports** `dpc-radar report --bbox … --day …`: maps, the hourly
-  chart, radar against «Merging», the official bulletin, and a short text
-  written from a JSON of computed figures. Every number in the text is checked
-  against the JSON before the report is saved.
+  [egms-client](https://agentengineering.it/egms-client/), built with the
+  site: [`llms.txt`](https://agentengineering.it/dpc-radar/llms.txt), the
+  whole documentation as text, and
+  [`SKILL.md`](https://agentengineering.it/dpc-radar/skills/dpc-radar/SKILL.md)
+  with the traps a model gets wrong when it writes radar code from memory.
+- **Event reports** `dpc-radar report --bbox … --day …`, extra `[report]`:
+  the map of the radar alone next to the «Merging», the hourly chart, the
+  wettest place and how rare its rain was, the official bulletin, and a text
+  written from a JSON of computed figures. Every number in the text is
+  checked against the JSON before the report is saved.
+  [The report of Melito, 10 October 2026](api/report.md).
+
+**What is different from the plan.**
+
+- `official_alert` takes a point, a municipality or a zone name, not a
+  region: the bulletin does not name regions.
+- The text of a report comes from a template, not from a language model. The
+  check is there for a text a model writes (`--text`, `dpc-radar check`), and
+  it knows that a number is in the facts, not that it is said of the right
+  thing.
+- `rain_ahead` was added: the nowcast of #7, labelled as a forecast.
+
+**What is not there.** A measure of how faithfully a model words the tools'
+answers (Limen has one for its briefings; here the server gives the facts
+and the rules, and cannot read the answer). Reports across midnight, or of a
+whole event of several days. A hosted server: `dpc-radar mcp` runs on the
+machine of whoever asks.
 
 **For Limen:** the same facts for its assistant and briefings, which run on a
 local model (faithfulness eval: 16 of 16 briefings with no invented number),
 as structured data instead of prose
 ([limen#371](https://github.com/agent-engineering-studio/limen/issues/371)).
+Limen does not use them yet.
 
 ### In the development loop
 
@@ -365,4 +391,4 @@ as structured data instead of prose
 | a fixed 150 mm rule for bad frames | a score per frame and pixel, with the reason | #6 | fewer false alarms |
 | a trigger on rain already fallen | the rain and the chance of rain of the next two hours: `nowcast`, `chance` (done); a trigger on them in Limen (open) | #7 | more events anticipated, to be measured |
 | a radar-only history that under-estimates | a factor for the radar alone of 2026 (done); the history needs gauges of those years (open) | #8 | radar-only rain closer to the «Merging»; backtests still on biased rain |
-| facts written into prose | facts as data, for agents and reports | #9 | — |
+| facts written into prose | facts as data, each with its frame: `Facts`, the MCP tools, `facts.json` of a report (done); their use in Limen's assistant (open) | #9 | — |

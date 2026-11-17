@@ -10,6 +10,8 @@ from affine import Affine
 from rasterio.io import MemoryFile
 
 from dpc_radar import RainGrid
+from dpc_radar.client import ABSENT, Absent
+from dpc_radar.products import LastProduct, Product, product
 
 #: The CUM grid: 0.01° in EPSG:4326. A 20x20 piece whose top-left is 15°E 38°N.
 LONLAT = Affine(0.01, 0, 15.0, 0, -0.01, 38.0)
@@ -39,6 +41,36 @@ def tiff(data: np.ndarray, transform: Affine = LONLAT, crs: str = "EPSG:4326") -
 
 def grid(data: np.ndarray, name: str = "CUM24", time: datetime = T0) -> RainGrid:
     return RainGrid.from_geotiff(tiff(data), name, time)
+
+
+class Radar:
+    """A stand-in for ``RadarClient``: it holds frames, and counts what it is asked for."""
+
+    def __init__(self, frames: list[RainGrid], newest: dict[str, datetime] | None = None) -> None:
+        self.frames = {(f.product.name, f.time): f for f in frames}
+        self.newest = newest or {}
+        self.asked: list[tuple[str, datetime]] = []
+        self.closed = False
+
+    async def last_product(self, name: str | Product) -> LastProduct | None:
+        p = product(name)
+        times = [t for n, t in self.frames if n == p.name]
+        time = self.newest.get(p.name) or max(times, default=None)
+        return None if time is None else LastProduct(p, time, p.period)
+
+    async def at(self, name: str | Product, time: datetime) -> RainGrid | Absent:
+        key = (product(name).name, time)
+        self.asked.append(key)
+        return self.frames.get(key, ABSENT)
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+    async def __aenter__(self) -> Radar:
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        await self.aclose()
 
 
 @pytest.fixture

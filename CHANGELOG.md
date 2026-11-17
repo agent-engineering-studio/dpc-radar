@@ -95,6 +95,23 @@ All notable changes to this project are documented here. The format follows
 - The README explains in plain words how a radar measures rain and where it
   fails, the open data behind the library, its benefits and what can be built
   with it.
+- `dpc-radar mcp`: an MCP server with seven tools on the rain over Italy
+  (`latest`, `rain_at`, `area_summary`, `storm_now`, `rain_ahead`,
+  `official_alert`, `rarity`). Every answer is computed from a frame and
+  names its product and time; the frame is checked with `quality` first, and
+  "not measured" is `null`, never zero. `dpc_radar.facts.Facts` gives the
+  same answers from Python. New extra `mcp` (#9).
+- `dpc-radar report --bbox W,S,E,N --day YYYY-MM-DD --out folder`: the report
+  of a day of rain over a box, from the API or from a local archive:
+  `facts.json`, `report.md`, a map of the radar alone next to the «Merging»
+  and an hourly chart. Every number of the text is checked against the facts
+  before it is saved (`dpc_radar.report.check_text`, `dpc-radar check`), and
+  a text of your own with a number that is not there is refused. New extra
+  `report` (#9).
+- `bulletins.names()` and `bulletins.name_on(names, day)`: the bulletins the
+  DPC keeps, and the one issued on a day (#9).
+- `llms.txt`, `llms-full.txt` and an agent skill (`skills/dpc-radar/SKILL.md`),
+  published with the documentation (#9).
 
 ### Changed
 

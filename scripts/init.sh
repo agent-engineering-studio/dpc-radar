@@ -1,10 +1,12 @@
 #!/bin/sh
 # Set up dpc-radar on this machine, without Docker: install it with every
-# extra, download the data of the demo, say what to do next.
+# extra, install the page of the demo, download two days of frames, say what
+# to do next.
 #
 #   scripts/init.sh
 #
-# It needs uv (https://docs.astral.sh/uv/), which also installs Python.
+# It needs uv (https://docs.astral.sh/uv/), which also installs Python, and
+# Node 20 or later for the page of the demo.
 set -eu
 cd "$(dirname "$0")/.."
 
@@ -18,13 +20,20 @@ fi
 echo "Installing dpc-radar with every extra, and what the demo needs"
 uv sync --all-extras --group demo
 
+if command -v npm >/dev/null 2>&1; then
+    echo "Installing the page of the demo"
+    (cd demo/web && npm install --no-audit --no-fund)
+else
+    echo "warning: Node is not installed: everything works but 'make demo'" >&2
+fi
+
 sh scripts/fetch-data.sh
 
 cat <<'NEXT'
 
 Ready. Now:
 
-    make demo                              the demo, on http://localhost:8501
+    make demo                              the demo, on http://localhost:3000
     uv run dpc-radar --help                the command line
     uv run python                          then: import dpc_radar
 

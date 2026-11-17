@@ -1,13 +1,12 @@
 # dpc-radar on this machine, with nothing to install but Docker.
 #
-#   docker compose up                          download the data, then the demo
-#                                              on http://localhost:8501
-#   docker compose run --rm init               download the newest frames again
+#   docker compose up                          the demo, on http://localhost:3000
+#   docker compose run --rm init               download two days of frames
 #   docker compose run --rm cli --help         the command line
 #   docker compose run --rm python             Python, with dpc_radar to import
 #
-#   DPC_RADAR_PORT   the port of the demo (default 8501)
-#   DPC_RADAR_DAYS   how many days of frames to download (default 2)
+#   DPC_RADAR_PORT   the port of the demo (default 3000)
+#   DPC_RADAR_DAYS   how many days of frames `init` downloads (default 2)
 name: dpc-radar
 
 x-radar: &radar
@@ -17,21 +16,30 @@ x-radar: &radar
     - radar-data:/data
 
 services:
-  # One shot: the frames of the last days and the borders of the maps.
+  # What the page asks: the library, behind a few URLs (demo/api.py).
+  api:
+    <<: *radar
+    restart: unless-stopped
+
+  # The page: a map of Italy, and a card for whatever is clicked (demo/web).
+  web:
+    image: dpc-radar-web:local
+    build: demo/web
+    environment:
+      DPC_RADAR_API: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "${DPC_RADAR_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  # One shot: the frames of the last days, for the reports of a day.
   init:
     <<: *radar
+    profiles: [tools]
     command: ["sh", "scripts/fetch-data.sh"]
     environment:
       DPC_RADAR_DAYS: ${DPC_RADAR_DAYS:-2}
-
-  demo:
-    <<: *radar
-    depends_on:
-      init:
-        condition: service_completed_successfully
-    ports:
-      - "${DPC_RADAR_PORT:-8501}:8501"
-    restart: unless-stopped
 
   cli:
     <<: *radar
@@ -46,5 +54,5 @@ services:
     tty: true
 
 volumes:
-  # The frames, the borders and the reports: kept between one run and the next.
+  # The frames and the reports: kept between one run and the next.
   radar-data:

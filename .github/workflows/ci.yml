@@ -44,14 +44,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: docker build -t dpc-radar:local .
+      - run: docker compose build
       - name: The command line and the demo start
         run: |
-          docker run --rm dpc-radar:local dpc-radar --help
-          docker run -d --name demo -p 8501:8501 dpc-radar:local
+          docker compose run --rm cli --help
+          docker compose up -d
           for i in $(seq 30); do
-            curl -fs http://localhost:8501/_stcore/health && exit 0
+            curl -fs http://localhost:3000/api/health && curl -fs -o /dev/null http://localhost:3000/ && exit 0
             sleep 2
           done
-          docker logs demo
+          docker compose logs
           exit 1

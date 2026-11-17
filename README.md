@@ -37,8 +37,8 @@ assistant.
 and draw today's rain map of Italy in five minutes.
 
 **Or run all of it on your machine:** `docker compose up` gives you the
-library, its data and a [demo page](#run-it-on-your-machine) on
-http://localhost:8501.
+library and a [live map of the rain](#run-it-on-your-machine) on
+http://localhost:3000.
 
 ---
 
@@ -351,52 +351,53 @@ Two limits to know before you plan a project:
 ## Run it on your machine
 
 Everything in one go: the library with every extra, the command line, the MCP
-server and a demo page, with the data of the last two days already downloaded.
+server and a demo: a live map of the rain over Italy.
 
 **With Docker**, and nothing else to install:
 
 ```bash
 git clone https://github.com/agent-engineering-studio/dpc-radar
 cd dpc-radar
-docker compose up        # builds the image, downloads the data, starts the demo
+docker compose up        # builds the images, starts the demo
 ```
 
-Then open **http://localhost:8501**. The first run takes a few minutes: it
-builds the image and downloads about 70 MB of frames into a Docker volume,
-which stays there for the next run.
+Then open **http://localhost:3000**. The first run takes a few minutes, to
+build the images.
 
 **Without Docker**, with [uv](https://docs.astral.sh/uv/) (it installs Python
-too):
+too) and [Node](https://nodejs.org/) 20 or later:
 
 ```bash
 git clone https://github.com/agent-engineering-studio/dpc-radar
 cd dpc-radar
-scripts/init.sh          # installs everything, downloads the data into ./data
-make demo                # the demo, on http://localhost:8501
+scripts/init.sh          # installs everything, downloads two days of frames into ./data
+make demo                # the demo, on http://localhost:3000
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.png" alt="The demo page on the tab «Storms now»: a map of Italy with the rain intensity, the storms circled in red with an arrow for their motion, and a table with position, area, peak and speed of each one" width="100%">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.png" alt="The demo: a map of Italy on OpenStreetMap with the rain intensity, the alert zones, the storms and the radars; beside it the card of a storm, with its peak, the rain of the last 24 hours, the forecast of the next two hours and the official alert" width="100%">
 </p>
 
-The [demo](https://github.com/agent-engineering-studio/dpc-radar/blob/main/demo/app.py) is one Streamlit file. Pick a place, and each tab
-shows one thing the library does, with the lines of Python that do it and the
-data they return:
+The [demo](https://github.com/agent-engineering-studio/dpc-radar/tree/main/demo) is a map of all of Italy on
+OpenStreetMap, centred on Rome, with the rain of now or of the last 1 to 24
+hours. Click anything and a card says what the library knows about it, with
+the lines of Python that give it:
 
-| Tab | What you see | From |
+| Click | The card shows | From |
 |---|---|---|
-| **Rain here** | the rain now and in the last 1 to 24 hours, the map, the official alert, the check of the frame | `Facts.rain_at`, `area_summary`, `official_alert` |
-| **Storms now** | every storm raining on Italy, and where it is going | `Facts.storm_now` |
-| **Next two hours** | the rain to come and the chance of it, as a forecast | `Facts.rain_ahead`, `rain_ahead` |
-| **How rare** | the rain that comes back once in 2 to 50 years at that place | `return_level`, `rarity` |
-| **Can it be trusted** | how well the radar sees that place, the map for all of Italy, and the radars reported off | `reliability`, `radar_factor`, `radar_status` |
-| **A day, as a report** | a whole day from the frames on disk: totals, maps, the text | `report.build`, `MergingArchive` |
+| **any point** | the rain now and in the last 1 to 24 hours, how rare it is there, the rain of the next two hours and the chance of it, how far the radar can be trusted there | `RainGrid.sample`, `rarity`, `nowcast`, `chance`, `reliability` |
+| **an alert zone** | the official alert of the DPC bulletin, day by day, and the rain over the whole zone | `bulletins.latest`, `facts.describe` |
+| **a storm** | its peak, its area, where it is going and how fast | `storms`, `motion` |
+| **a radar** | whether it is on, and the rain inside its range | `SITES`, `radar_status` |
 
-What the init step downloads, and what you can run next:
+A small API ([`demo/api.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/demo/api.py), Starlette) asks the library; the page
+([`demo/web`](https://github.com/agent-engineering-studio/dpc-radar/tree/main/demo/web), Next.js and Leaflet) draws what it answers.
+
+What else you can run:
 
 | Command | With Docker | What it does |
 |---|---|---|
-| `scripts/fetch-data.sh` | `docker compose run --rm init` | downloads the frames of the last days, the borders of the maps and the status of the radars; run it again to get the newest |
+| `scripts/fetch-data.sh` | `docker compose run --rm init` | downloads the frames of the last days, for the reports, and the status of the radars; run it again to get the newest |
 | `uv run dpc-radar archive data/archive --days 7` | `docker compose run --rm cli archive /data/archive --days 7` | keeps the frames before the DPC deletes them |
 | `uv run dpc-radar report --bbox … --day … --out …` | `docker compose run --rm cli report …` | the report of a day over a box |
 | `uv run dpc-radar sites` | `docker compose run --rm cli sites` | which radars the DPC viewer reports as on |
@@ -404,7 +405,7 @@ What the init step downloads, and what you can run next:
 | `uv run dpc-radar mcp` | `docker run -i --rm dpc-radar:local dpc-radar mcp` | the MCP server, for an assistant |
 
 Three variables change the defaults: `DPC_RADAR_DAYS` (how many days of
-frames, 2), `DPC_RADAR_PORT` (the port of the demo with Docker, 8501) and
+frames, 2), `DPC_RADAR_PORT` (the port of the demo, 3000) and
 `DPC_RADAR_DATA` (the data folder: `./data` without Docker, the volume
 `radar-data` with it). The demo is a demo of the library, not an alert
 service.

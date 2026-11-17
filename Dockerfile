@@ -1,7 +1,8 @@
-# dpc-radar with every extra and the demo: the library, the command line, the
-# MCP server and a Streamlit page, ready to run.
+# dpc-radar with every extra: the library, the command line, the MCP server and
+# the API the demo asks (demo/api.py). The page of the demo is another image,
+# built from demo/web.
 #
-#   docker compose up            the demo, on http://localhost:8501
+#   docker compose up            the demo, on http://localhost:3000
 #   docker build -t dpc-radar:local .
 FROM python:3.13-slim
 
@@ -32,7 +33,7 @@ COPY src src
 RUN uv sync --locked --no-dev --all-extras --group demo --no-editable
 
 # Fail the build, not the first run, if a system library is missing.
-RUN python -c "import rasterio, scipy, shapely, mcp, streamlit, dpc_radar"
+RUN python -c "import rasterio, scipy, shapely, mcp, starlette, uvicorn, dpc_radar"
 
 COPY demo demo
 COPY scripts scripts
@@ -41,8 +42,8 @@ RUN useradd --create-home radar && mkdir /data && chown radar /data
 USER radar
 VOLUME /data
 
-EXPOSE 8501
+EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=4)"]
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=4)"]
 
-CMD ["streamlit", "run", "demo/app.py", "--server.address", "0.0.0.0", "--server.headless", "true", "--browser.gatherUsageStats", "false", "--client.toolbarMode", "minimal"]
+CMD ["uvicorn", "--app-dir", "demo", "api:app", "--host", "0.0.0.0", "--port", "8000"]

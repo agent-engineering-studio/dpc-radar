@@ -1,0 +1,205 @@
+{
+  "claude-opus-5-5": {
+    "melito-2026-10-10T06": {
+      "summary": "The CUM24 frame is nearly identical to the frame 30 minutes earlier. Both show a SW–NE band of heavy rain (100–200 mm) running from about 15.8°E 37.9°N to 17.3°E 38.9°N, with lighter rain elsewhere. The radar-only product shows the same band and comparable amounts, including near the isolated orange patch at about 16.1°E 39.3°N, so no gauge fault, clutter or corruption is evident.",
+      "frame": "usable",
+      "regions": [],
+      "usage": {
+        "input": 2438,
+        "output": 324
+      },
+      "model": "claude-opus-5-5"
+    },
+    "melito-2026-10-11T00": {
+      "summary": "The CUM24 frame matches the frame before closely: widespread 20–100 mm with local 100–200 mm cores near 15.8–16.1E, 37.9–38.1N and 16.0E, 39.25N. The small changes are plausible for a 24-hour window. The radar-only product shows rain everywhere, including 100–200 mm at the same heavy cores, so there are no gauge-only patches, no clutter and no corruption.",
+      "frame": "usable",
+      "regions": [],
+      "usage": {
+        "input": 2438,
+        "output": 285
+      },
+      "model": "claude-opus-5-5"
+    },
+    "bell-2026-10-11T0930": {
+      "summary": "Compared with the frame 30 minutes earlier, this CUM24 frame has a large new area of more than 500 mm centred near 13.7°E, 42.4°N, ringed by 50–200 mm. The earlier frame had only about 10–50 mm there. A 24-hour total cannot gain hundreds of millimetres in half an hour, so the frame is corrupted and cannot be used as a whole; the round 100–200 mm patch near 14.0°E, 41.7°N is the same in both frames.",
+      "frame": "rejected",
+      "regions": [],
+      "usage": {
+        "input": 2068,
+        "output": 657
+      },
+      "model": "claude-opus-5-5"
+    },
+    "after-bell-2026-10-11T10": {
+      "summary": "The frame is consistent with the field around it. The huge >500 mm block at 13.6–13.9°E, 42.2–42.55°N in the earlier frame is gone here, so that fault belonged to the earlier frame, not this one. One isolated, smooth, concentric bullseye of 100–200 mm sits at about 14.0°E, 41.7°N in both frames, inside a field of 5–20 mm; it looks like a faulty rain gauge, though there is no radar-alone panel to confirm it.",
+      "frame": "usable",
+      "regions": [
+        {
+          "kind": "faulty_gauge",
+          "west": 13.88,
+          "south": 41.6,
+          "east": 14.13,
+          "north": 41.82,
+          "reason": "Smooth, perfectly concentric 100–200 mm patch around a single point, unchanged from the frame before and isolated in a 5–20 mm field. This is the signature of a gauge gone wrong, not convective rain; it could not be checked against radar alone."
+        }
+      ],
+      "usage": {
+        "input": 2068,
+        "output": 822
+      },
+      "model": "claude-opus-5-5"
+    },
+    "bell-2026-10-09T0630": {
+      "summary": "The frame before shows moderate 24-hour rain of about 2 to 50 mm across the area. The judged frame has two blobs above 500 mm, near 13.6-13.8E 42.2-42.6N and near 14.0E 41.75N, where the frame before had only about 10 to 50 mm. Concentric ripples also run across the whole field, and half an hour of rain cannot add hundreds of millimetres to a 24-hour total, so this is a corrupted frame.",
+      "frame": "rejected",
+      "regions": [],
+      "usage": {
+        "input": 2068,
+        "output": 326
+      },
+      "model": "claude-opus-5-5"
+    },
+    "bell-2026-10-25T0630": {
+      "summary": "The frame before shows a moderate 24-hour field with a single smooth peak of about 100–200 mm near 14.0°E, 41.7°N, and 5–50 mm elsewhere. The judged CUM24 frame has a large swirling structure with a core above 500 mm and a wide ring of 50–200 mm around 13.7–14.6°E, 41.4–42.2°N, where the frame before had mostly 5–50 mm. Two CUM24 frames 30 minutes apart can differ only by half an hour of rain, so a jump of hundreds of millimetres over this area is impossible, and the frame is corrupted.",
+      "frame": "rejected",
+      "regions": [],
+      "usage": {
+        "input": 2068,
+        "output": 340
+      },
+      "model": "claude-opus-5-5"
+    },
+    "calm-2026-10-04T06": {
+      "summary": "The CUM24 frame is nearly identical to the frame 30 minutes earlier, with scattered light rain over the north-west, Sardinia, the Tyrrhenian and Sicily, and no new rain that half an hour could not bring. Three compact patches of heavy rain in central-southern Italy show no rain at all on the radar-only product: near 13.7E 42.4N (20–50 mm), around 14.0E 41.7N (up to about 20 mm, inside a ring) and near 15.4E 41.2N (10–20 mm). This pattern points to faulty rain gauges, while the rest of the rain agrees with the radar.",
+      "frame": "usable",
+      "regions": [
+        {
+          "kind": "faulty_gauge",
+          "west": 13.55,
+          "south": 42.3,
+          "east": 13.85,
+          "north": 42.6,
+          "reason": "Smooth isolated patch of 20-50 mm, present in both CUM frames, with no rain at all on the radar alone."
+        },
+        {
+          "kind": "faulty_gauge",
+          "west": 13.7,
+          "south": 41.4,
+          "east": 14.3,
+          "north": 42.05,
+          "reason": "Ring-shaped patch with a central maximum around 20 mm, with no rain at all on the radar alone."
+        },
+        {
+          "kind": "faulty_gauge",
+          "west": 15.3,
+          "south": 41.12,
+          "east": 15.52,
+          "north": 41.32,
+          "reason": "Small smooth blob of 10-20 mm, unchanged between frames, with no rain at all on the radar alone."
+        }
+      ],
+      "usage": {
+        "input": 2438,
+        "output": 1325
+      },
+      "model": "claude-opus-5-5"
+    },
+    "calm-2026-10-06T06": {
+      "summary": "The CUM24 frame matches the frame from 30 minutes earlier almost everywhere, and its main rain areas over Sardinia, the Tyrrhenian Sea and central and northern Italy agree with the radar-alone product. One small, smooth, isolated patch of 10–20 mm near 15.4°E, 41.2°N appears in both CUM frames, while the radar alone shows no rain there at all, which points to a faulty rain gauge.",
+      "frame": "usable",
+      "regions": [
+        {
+          "kind": "faulty_gauge",
+          "west": 15.2,
+          "south": 41.08,
+          "east": 15.6,
+          "north": 41.38,
+          "reason": "An isolated, smooth patch of 10–20 mm appears in both the frame and the frame before, while the radar alone shows no rain there; this is typical of a faulty gauge."
+        }
+      ],
+      "usage": {
+        "input": 2438,
+        "output": 845
+      },
+      "model": "claude-opus-5-5"
+    },
+    "steady-bump-2026-10-07T12": {
+      "summary": "The CUM24 frame matches the frame before, so it is not corrupted. A smooth, concentric patch of heavy rain, over 200 mm at its core, is centred near 13.8°E, 41.8°N. The radar-only product shows no rain over most of that area and at most 1 mm at its western edge, which points to a faulty rain gauge. The weaker rain bands around it agree reasonably with the radar.",
+      "frame": "usable",
+      "regions": [
+        {
+          "kind": "faulty_gauge",
+          "west": 13.6,
+          "south": 41.62,
+          "east": 14.0,
+          "north": 42.05,
+          "reason": "A smooth bullseye of more than 200 mm, the same in both CUM24 frames, where the radar-only product shows no rain or under 1 mm. This is the footprint of a single bad gauge."
+        }
+      ],
+      "usage": {
+        "input": 2438,
+        "output": 873
+      },
+      "model": "claude-opus-5-5"
+    },
+    "stuck-gauge-cum3-2026-10-07T06": {
+      "summary": "The CUM3 frame matches the frame 30 minutes earlier: curved bands of light to moderate rain (mostly 1–10 mm) and a smooth, round patch peaking above 100–200 mm centred near 13.8°E, 41.8°N. The radar-only product shows no rain anywhere. That absence matters most under the heavy central patch, whose smooth, single-centred shape is the signature of a faulty rain gauge. The surrounding bands are light amounts where radar underestimation is plausible, so they are kept, though that judgement is less certain.",
+      "frame": "usable",
+      "regions": [
+        {
+          "kind": "faulty_gauge",
+          "west": 13.6,
+          "south": 41.65,
+          "east": 13.93,
+          "north": 42.06,
+          "reason": "Smooth concentric patch of heavy rain (above 100 mm, peak above 200 mm) around a single point, persistent from the previous frame, with no rain at all in the radar-only product: the signature of a faulty rain gauge."
+        }
+      ],
+      "usage": {
+        "input": 2438,
+        "output": 938
+      },
+      "model": "claude-opus-5-5"
+    },
+    "stuck-gauge-srt1-2026-10-07T06": {
+      "summary": "Both SRT1 panels are dry over the whole area (13.2–14.4°E, 41.4–42.2°N): no rain anywhere. The only marks are thin grey no-data slivers along the bottom and right edges, the same in both frames, which point to a missing-data strip at the border rather than a fault. Nothing here looks wrong.",
+      "frame": "usable",
+      "regions": [],
+      "usage": {
+        "input": 2068,
+        "output": 132
+      },
+      "model": "claude-opus-5-5"
+    },
+    "melito-srt1-2026-10-10T02": {
+      "summary": "Widespread moderate rain over Calabria and the southern Tyrrhenian, with 1-hour totals mostly 2-20 mm and local cores of 20-50 mm. The frame is almost identical to the one 5 minutes earlier, with only small, plausible changes. There are no new extreme values, no isolated fixed blobs and no other artefacts; the white area in the south-east is no rain and the grey corner is outside coverage.",
+      "frame": "usable",
+      "regions": [],
+      "usage": {
+        "input": 2068,
+        "output": 164
+      },
+      "model": "claude-opus-5-5"
+    },
+    "sardinia-disks-2026-10-21T00": {
+      "summary": "The CUM24 frame is almost identical to the one 30 minutes earlier: widespread 10–50 mm rain, with a narrow band above 100 mm near 9.6–9.9°E, 40.0–40.8°N. The radar-only product shows the same structures, including the intense band, so no smooth heavy patch lacks radar support. The grey area in the south-west is only outside radar range, and nothing points to a corrupted frame, a faulty gauge or clutter.",
+      "frame": "usable",
+      "regions": [],
+      "usage": {
+        "input": 2438,
+        "output": 393
+      },
+      "model": "claude-opus-5-5"
+    },
+    "sardinia-band-srt1-2026-10-20T13": {
+      "summary": "SRT1 hourly rain over the sea west of Sardinia and Corsica, with north–south rain bands peaking at about 20–50 mm near 7.8°E 40.3°N and about 50–100 mm near 9.8°E 40.7°N. The frame is almost identical to the one 5 minutes earlier, differing only by small shifts at the band edges. The grey area in the southwest is just the edge of radar coverage, and there are no isolated spikes, fixed echo patterns or impossible jumps.",
+      "frame": "usable",
+      "regions": [],
+      "usage": {
+        "input": 2068,
+        "output": 188
+      },
+      "model": "claude-opus-5-5"
+    }
+  }
+}

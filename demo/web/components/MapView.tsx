@@ -4,16 +4,8 @@ import L from "leaflet";
 import { useEffect, useRef } from "react";
 import { ALERT } from "@/lib/format";
 import type { Text } from "@/lib/i18n";
+import { MAX_ZOOM, MIN_ZOOM, type Start, type Tiles } from "@/lib/start";
 import type { Collection, Layer, RadarProps, Selection, StormProps, ZoneDay } from "@/lib/types";
-
-// Rome, until the size of the window is known; then Italy as large as the window holds it,
-// from the Alps to Sicily: its middle is 40 km from Rome.
-const ROME: L.LatLngExpression = [41.9, 12.5];
-const ZOOM = 6;
-const ITALY: L.LatLngBoundsExpression = [
-  [36.6, 6.6],
-  [47.1, 18.55],
-];
 
 const ON = "#1a9850";
 const OFF = "#d7191c";
@@ -22,6 +14,11 @@ const UNKNOWN = "#7a8290";
 export type Shown = { rain: boolean; zones: boolean; storms: boolean; radars: boolean };
 
 type Props = {
+  /** Where the map opens: the place of whoever hosts the page, or the default one. */
+  start: Start;
+  tiles: Tiles;
+  /** Grows by one each time the map is asked to go back to where it opened. */
+  home: number;
   layer: Layer | null;
   /** The picture of an older frame, while the film plays; otherwise the one of the layer. */
   image: string | null;
@@ -58,24 +55,25 @@ export default function MapView(props: Props) {
 
   useEffect(() => {
     const m = L.map(box.current!, {
-      center: ROME,
-      zoom: ZOOM,
-      minZoom: 5,
-      maxZoom: 13,
+      center: [props.start.lat, props.start.lon],
+      zoom: props.start.zoom,
+      minZoom: MIN_ZOOM,
+      maxZoom: MAX_ZOOM,
       zoomSnap: 0.25,
+      // The map is in a page that scrolls: the wheel moves the page, the buttons zoom.
+      scrollWheelZoom: false,
       zoomControl: false,
       maxBounds: [
         [30, -4],
         [52, 29],
       ],
     });
-    m.fitBounds(ITALY, { animate: false });
     L.control.zoom({ position: "bottomright" }).addTo(m);
     L.control.scale({ imperial: false, position: "bottomright" }).addTo(m);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer(props.tiles.url, {
       maxZoom: 19,
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors · ' +
+        `${props.tiles.attribution} · ` +
         '<a href="https://www.protezionecivile.gov.it/">Dipartimento della Protezione Civile</a>, CC BY-SA 4.0',
     }).addTo(m);
     // One pane a layer, so that the rain stays under the shapes one clicks on.
@@ -85,12 +83,28 @@ export default function MapView(props: Props) {
       ["ranges", 420],
       ["storms", 430],
       ["radars", 440],
+      ["place", 445],
       ["pin", 450],
     ] as const) {
       m.createPane(name).style.zIndex = String(z);
     }
     m.getPane("ranges")!.style.pointerEvents = "none";
     m.getPane("pin")!.style.pointerEvents = "none";
+    m.getPane("place")!.style.pointerEvents = "none";
+    // The place of whoever hosts the page: always there, whatever is clicked.
+    if (props.start.given) {
+      const here = L.circleMarker([props.start.lat, props.start.lon], {
+        pane: "place",
+        radius: 8,
+        color: "#ffffff",
+        weight: 3,
+        fillColor: "#0066cc",
+        fillOpacity: 1,
+      }).addTo(m);
+      if (props.start.place) {
+        here.bindTooltip(props.start.place, { permanent: true, direction: "top", offset: [0, -8], className: "tip place" });
+      }
+    }
     m.on("click", (e) =>
       onSelect.current({ kind: "point", lon: e.latlng.lng, lat: e.latlng.lat }),
     );
@@ -99,7 +113,14 @@ export default function MapView(props: Props) {
       m.remove();
       map.current = rain.current = zones.current = null;
     };
+    // The start and the tiles are those of the page: they do not change while it is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const { home, start } = props;
+  useEffect(() => {
+    if (home) map.current?.setView([start.lat, start.lon], start.zoom);
+  }, [home, start]);
 
   // The rain: one picture over all of Italy.
   const { layer, shown, text: t } = props;

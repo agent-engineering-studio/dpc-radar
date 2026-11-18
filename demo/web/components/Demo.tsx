@@ -6,6 +6,7 @@ import Card from "@/components/Card";
 import type { Shown } from "@/components/MapView";
 import { ask, clock, failed } from "@/lib/format";
 import { LANGS, LangContext, TEXT, type Lang } from "@/lib/i18n";
+import type { Start, Tiles } from "@/lib/start";
 import type {
   AheadData,
   Collection,
@@ -93,15 +94,22 @@ function useAnswer<T>(path: string | null): T | Failed | null {
 
 const good = <T,>(value: T | Failed | null): T | null => (value === null || failed(value) ? null : value);
 
-export default function Demo() {
+const DOCS = "https://agentengineering.it/dpc-radar/";
+const CODE = "https://github.com/agent-engineering-studio/dpc-radar";
+const ALERTS = "https://rischi.protezionecivile.gov.it/it/meteo-idro/allertamento/";
+
+export default function Demo({ start, tiles }: { start: Start; tiles: Tiles }) {
   const [lang, setLang] = useLang();
   const t = TEXT[lang];
-  const [key, setKey] = useState<LayerKey>("now");
+  const [key, setKey] = useState<LayerKey>(start.layer);
   const [shown, setShown] = useState<Shown>({ rain: true, zones: true, storms: true, radars: false });
-  const [selection, setSelection] = useState<Selection | null>(null);
+  // A page about a place opens with the numbers of that place.
+  const place: Selection | null = start.given ? { kind: "point", lon: start.lon, lat: start.lat } : null;
+  const [selection, setSelection] = useState<Selection | null>(place);
+  const [home, setHome] = useState(0);
   const [, tick] = useState(0);
   // The film of the layer: null is the live map, a number the frame shown.
-  const [frame, setFrame] = useState<number | null>(null);
+  const [frame, setFrame] = useState<number | null>(start.frame);
   const [playing, setPlaying] = useState(false);
   const loaded = useRef(new Set<string>());
   const [arrived, setArrived] = useState(0);
@@ -184,134 +192,236 @@ export default function Demo() {
   };
   const problems = [layer, zones, storms, radars].filter(failed);
 
+  const atPlace =
+    place !== null && selection?.kind === "point" && selection.lon === place.lon && selection.lat === place.lat;
+  const goHome = () => {
+    setSelection(place);
+    setHome((n) => n + 1);
+  };
+
   return (
     <LangContext.Provider value={t}>
-    <title>{t.title}</title>
-    <main className={selection ? "with-card" : undefined}>
-      <MapView
-        layer={drawn}
-        image={still?.image ?? null}
-        shown={shown}
-        text={t}
-        zones={good(zones)}
-        storms={frame === null ? good(storms) : null}
-        radars={good(radars)}
-        selection={selection}
-        zone={zone}
-        onSelect={select}
-      />
+      <title>{start.place ? `${start.place} · ${t.title}` : t.title}</title>
+      <a className="visually-hidden-focusable skip" href="#content">
+        {t.skip}
+      </a>
+      <header className="it-header-wrapper">
+        <div className="it-header-slim-wrapper">
+          <div className="container-xxl">
+            <div className="it-header-slim-wrapper-content">
+              <span className="navbar-brand">{t.owner}</span>
+              <div className="it-header-slim-right-zone">
+                <div className="langs" role="radiogroup" aria-label={t.language}>
+                  {LANGS.map((one) => (
+                    <button key={one} role="radio" aria-checked={lang === one} onClick={() => setLang(one)}>
+                      {one.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="it-nav-wrapper">
+          <div className="it-header-center-wrapper">
+            <div className="container-xxl">
+              <div className="it-header-center-content-wrapper">
+                <div className="it-brand-wrapper">
+                  <div className="it-brand-text">
+                    <h1 className="it-brand-title">{start.place ?? "dpc-radar"}</h1>
+                    <div className="it-brand-tagline">{start.place ? t.taglineHere : t.tagline}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="panel controls">
-        <div className="langs" role="radiogroup" aria-label={t.language}>
-          {LANGS.map((one) => (
-            <button key={one} role="radio" aria-checked={lang === one} onClick={() => setLang(one)}>
-              {one.toUpperCase()}
-            </button>
-          ))}
-        </div>
-        <h1>
-          dpc-radar <span>{t.tagline}</span>
-        </h1>
-        <div className="segments" role="radiogroup" aria-label={t.layersLabel}>
-          {LAYERS.map((one) => (
-            <button
-              key={one}
-              role="radio"
-              aria-checked={key === one}
-              title={t.layers[one][1]}
-              onClick={() => {
-                setKey(one);
-                if (frame !== null) setFrame(0);
-              }}
-            >
-              {t.layers[one][0]}
-            </button>
-          ))}
-        </div>
-        <div className="toggles">
-          {TOGGLES.map((one) => (
-            <label key={one} data-layer={one}>
-              <input
-                type="checkbox"
-                checked={shown[one]}
-                onChange={(e) => setShown({ ...shown, [one]: e.target.checked })}
-              />
-              <span>
-                {t.toggles[one]}
-                {counts[one] && <small>{counts[one]}</small>}
-              </span>
-            </label>
-          ))}
-        </div>
-        {!selection && <p className="hint">{t.hint}</p>}
-        {problems.map((problem, k) => (
-          <p key={k} className="wrong">
-            {problem.error === "—" ? t.noAnswer : problem.error}
-          </p>
-        ))}
-      </div>
-
-      <div className="panel legend">
-        {drawn ? (
-          <>
-            <h2>
-              {t.layers[drawn.key][1]} <small>{drawn.unit}</small>
-            </h2>
-            <ol>
-              {drawn.legend.map((step) => (
-                <li key={step.from}>
-                  <i style={{ background: step.colour }} />
-                  {step.from}
-                </li>
-              ))}
-            </ol>
-            <p>
-              <span className="veil" /> {t.notMeasuredDry}
-            </p>
-            <p title={t.frameTitle(drawn.product, drawn.time, t.source(drawn.source), drawn.quality.verdict)}>
-              {t.frameOf} <b>{clock(still?.time ?? drawn.time)}</b> ({t.ago(still?.time ?? drawn.time)}) ·{" "}
-              {t.source(drawn.source)}
-            </p>
-            <div className="film">
-              <button className="play" onClick={play} title={t.playTitle} aria-pressed={playing}>
-                <i aria-hidden>{playing ? "❚❚" : "▶"}</i> {playing ? t.pause : t.play}
-              </button>
-              {frames ? (
-                <input
-                  type="range"
-                  aria-label={t.frame}
-                  min={0}
-                  max={frames.length - 1}
-                  value={frame === null ? frames.length - 1 : Math.min(frame, frames.length - 1)}
-                  onChange={(e) => {
-                    setPlaying(false);
-                    setFrame(Number(e.target.value));
-                  }}
-                />
-              ) : (
-                <span>{t.readingFrames}</span>
-              )}
-              <button className="live" onClick={live} title={t.liveTitle} aria-pressed={frame === null}>
-                {t.live}
+      <main id="content" className="container-xxl">
+        <div className="row g-3">
+          <div className="col-lg-8">
+            <div className="bar">
+              <div className="btn-group" role="radiogroup" aria-label={t.layersLabel}>
+                {LAYERS.map((one) => (
+                  <button
+                    key={one}
+                    type="button"
+                    role="radio"
+                    aria-checked={key === one}
+                    className={`btn btn-xs ${key === one ? "btn-primary" : "btn-outline-primary"}`}
+                    title={t.layers[one][1]}
+                    onClick={() => {
+                      setKey(one);
+                      if (frame !== null) setFrame(0);
+                    }}
+                  >
+                    {t.layers[one][0]}
+                  </button>
+                ))}
+              </div>
+              <div className="shown">
+                {TOGGLES.map((one) => (
+                  <div key={one} className="form-check form-check-inline" data-layer={one}>
+                    <input
+                      id={`show-${one}`}
+                      type="checkbox"
+                      checked={shown[one]}
+                      onChange={(e) => setShown({ ...shown, [one]: e.target.checked })}
+                    />
+                    <label htmlFor={`show-${one}`}>
+                      {t.toggles[one]}
+                      {counts[one] && <small>{counts[one]}</small>}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <button type="button" className="btn btn-outline-primary btn-xs home" onClick={goHome}>
+                {t.backTo(start.place ?? t.start)}
               </button>
             </div>
-          </>
-        ) : (
-          <p>{layer && failed(layer) ? t.rainUnavailable : t.readingNewest}</p>
-        )}
-      </div>
+            {problems.map((problem, k) => (
+              <div key={k} className="alert alert-danger" role="alert">
+                {problem.error === "—" ? t.noAnswer : problem.error}
+              </div>
+            ))}
 
-      {selection && (
-        <Card
-          selection={selection}
-          layer={key}
-          point={point}
-          ahead={ahead}
-          radarRain={radarRain}
-          onClose={() => setSelection(null)}
-        />
-      )}
-    </main>
+            <div className="stage">
+              <MapView
+                start={start}
+                tiles={tiles}
+                home={home}
+                layer={drawn}
+                image={still?.image ?? null}
+                shown={shown}
+                text={t}
+                zones={good(zones)}
+                storms={frame === null ? good(storms) : null}
+                radars={good(radars)}
+                selection={selection}
+                zone={zone}
+                onSelect={select}
+              />
+              <div className="panel legend">
+                {drawn ? (
+                  <>
+                    <h2>
+                      {t.layers[drawn.key][1]} <small>{drawn.unit}</small>
+                    </h2>
+                    <ol>
+                      {drawn.legend.map((step) => (
+                        <li key={step.from}>
+                          <i style={{ background: step.colour }} />
+                          {step.from}
+                        </li>
+                      ))}
+                    </ol>
+                    <p>
+                      <span className="veil" /> {t.notMeasuredDry}
+                    </p>
+                    <p title={t.frameTitle(drawn.product, drawn.time, t.source(drawn.source), drawn.quality.verdict)}>
+                      {t.frameOf} <b>{clock(still?.time ?? drawn.time)}</b> ({t.ago(still?.time ?? drawn.time)}) ·{" "}
+                      {t.source(drawn.source)}
+                    </p>
+                    <div className="film">
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-xs play"
+                        onClick={play}
+                        title={t.playTitle}
+                        aria-pressed={playing}
+                      >
+                        <i aria-hidden>{playing ? "❚❚" : "▶"}</i> {playing ? t.pause : t.play}
+                      </button>
+                      {frames ? (
+                        <input
+                          type="range"
+                          aria-label={t.frame}
+                          min={0}
+                          max={frames.length - 1}
+                          value={frame === null ? frames.length - 1 : Math.min(frame, frames.length - 1)}
+                          onChange={(e) => {
+                            setPlaying(false);
+                            setFrame(Number(e.target.value));
+                          }}
+                        />
+                      ) : (
+                        <span>{t.readingFrames}</span>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-outline-primary btn-xs live"
+                        onClick={live}
+                        title={t.liveTitle}
+                        aria-pressed={frame === null}
+                      >
+                        {t.live}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p>{layer && failed(layer) ? t.rainUnavailable : t.readingNewest}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-lg-4">
+            {selection ? (
+              <Card
+                selection={selection}
+                layer={key}
+                point={point}
+                ahead={ahead}
+                radarRain={radarRain}
+                storms={frame === null ? good(storms) : null}
+                name={atPlace ? start.place : null}
+                onClose={() => setSelection(null)}
+              />
+            ) : (
+              <div className="callout note">
+                <div className="callout-title">{t.readTitle}</div>
+                <p>{t.hint}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      <footer className="it-footer">
+        <div className="it-footer-main">
+          <div className="container-xxl">
+            <div className="row py-4">
+              <section className="col-md-4">
+                <h2 className="h6">{t.dataTitle}</h2>
+                <p>{t.dataText}</p>
+              </section>
+              <section className="col-md-4">
+                <h2 className="h6">{t.alertTitle}</h2>
+                <p>
+                  {t.alertText} <a href={ALERTS}>{t.alertLink}</a>
+                </p>
+              </section>
+              <section className="col-md-4">
+                <h2 className="h6">{t.howTitle}</h2>
+                <p>{t.howText}</p>
+              </section>
+            </div>
+          </div>
+        </div>
+        <div className="it-footer-small-prints clearfix">
+          <div className="container-xxl">
+            <ul className="it-footer-small-prints-list list-inline mb-0 d-flex flex-column flex-md-row">
+              <li className="list-inline-item">
+                <a href={DOCS}>dpc-radar · {t.docs}</a>
+              </li>
+              <li className="list-inline-item">
+                <a href={CODE}>{t.code}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </footer>
     </LangContext.Provider>
   );
 }

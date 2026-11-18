@@ -58,6 +58,8 @@ DESCRIPTIONS = {
     "examples.md": "five notebooks on real storms, the demo (a live map; Docker or uv) and three "
     "example programs",
     "benchmark.md": "real frames where the answer is known, and how each cleaning rule scores",
+    "riuso.md": "in Italian, for a public body: the map on the site of a municipality and its "
+    "variables, what stays with whoever publishes it, AI, and the Developers Italia catalogue",
     "roadmap.md": "what was built in each phase, what was measured, what is still open",
     "changelog.md": "what changed in each release",
     "contributing.md": "how to contribute",

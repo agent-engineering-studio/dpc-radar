@@ -13,3 +13,6 @@ site/
 
 # What the init scripts download for the demo
 /data/
+
+# Keys and local settings (.env.example is the list of what can go in it)
+.env

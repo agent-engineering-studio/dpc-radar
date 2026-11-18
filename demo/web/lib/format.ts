@@ -31,3 +31,15 @@ export const clock = (stamp: string) => CLOCK.format(when(stamp));
 
 export const place = (lon: number, lat: number) =>
   `${Math.abs(lat).toFixed(3)}° ${lat >= 0 ? "N" : "S"}, ${Math.abs(lon).toFixed(3)}° ${lon >= 0 ? "E" : "W"}`;
+
+/** How far, in km, and towards where, in degrees from north, the second point is from the first. */
+export function away(lon1: number, lat1: number, lon2: number, lat2: number): { km: number; degrees: number } {
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLon = (lon2 - lon1) * rad;
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+  const y = Math.sin(dLon) * Math.cos(lat2 * rad);
+  const x = Math.cos(lat1 * rad) * Math.sin(lat2 * rad) - Math.sin(lat1 * rad) * Math.cos(lat2 * rad) * Math.cos(dLon);
+  return { km: 2 * 6371 * Math.asin(Math.sqrt(a)), degrees: (Math.atan2(y, x) / rad + 360) % 360 };
+}

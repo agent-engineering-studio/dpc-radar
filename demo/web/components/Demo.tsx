@@ -112,6 +112,7 @@ export default function Demo({ start, tiles }: { start: Start; tiles: Tiles }) {
   const [frame, setFrame] = useState<number | null>(start.frame);
   const [playing, setPlaying] = useState(false);
   const loaded = useRef(new Set<string>());
+  const missing = useRef(new Set<string>());
   const [arrived, setArrived] = useState(0);
 
   const layer = useLive<Layer>(`/api/layer/${key}`);
@@ -152,6 +153,11 @@ export default function Demo({ start, tiles }: { start: Start; tiles: Tiles }) {
         loaded.current.add(one.image);
         setArrived((n) => n + 1);
       };
+      // A frame the DPC does not have: the film goes past it, it does not wait for it.
+      picture.onerror = () => {
+        missing.current.add(one.image);
+        setArrived((n) => n + 1);
+      };
       picture.src = one.image;
     }
   }, [frames, filming]);
@@ -162,7 +168,8 @@ export default function Demo({ start, tiles }: { start: Start; tiles: Tiles }) {
       () =>
         setFrame((now) => {
           if (now === null) return now;
-          const next = now >= last ? 0 : now + 1;
+          let next = now >= last ? 0 : now + 1;
+          while (next !== now && missing.current.has(frames[next].image)) next = next >= last ? 0 : next + 1;
           return loaded.current.has(frames[next].image) ? next : now;
         }),
       frame >= last ? LAST_FRAME_MS : FRAME_MS,

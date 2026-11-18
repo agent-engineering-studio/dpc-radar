@@ -90,11 +90,13 @@ Lipari miss of 10 October 2026, the corrupted :30 CUM24 series (found on
 30/09–02/10, 08–11/10 and 21/10–03/11), the clean frame right after a corrupted
 one, two calm days, a stuck rain gauge (1,152 mm in CUM24 on a dry night), a
 band of rain at sea that looked like clutter, and three hours of radar only
-(`SRT1`). Limen's rule today passes **14 of 30** checks: it has no frame-level
+(`SRT1`). Limen's rule today passes **14 of 33** checks: it has no frame-level
 decision, lets the edges of the corrupted bell through (88 mm where the truth
 is 9), throws away good pixels after a corrupted frame, and cannot see steady
-artefacts or blind spots. The library passes all 30 since the frame quality
-check (#6), which removes the stuck gauge. No case is *suspect* any more: the two that
+artefacts or blind spots. The library passes 31 since the frame quality
+check (#6), which removes the stuck gauge; the two it misses are gauges wrong
+by a few millimetres, added in November 2026, that only the series of a place
+can show. No case is *suspect* any more: the two that
 were have been settled on the hourly radar frames (one was not rain, one was).
 Still missing: a check against the rain gauges themselves, which the DPC does
 not publish.
@@ -228,7 +230,7 @@ measured on the frames kept from June to November 2026:
   radar sees well. It removes the stuck gauge, and on 1,270 three-hour frames
   it finds the same fault in 154, mostly at seven places that come back.
 
-**Check:** the benchmark, 30 of 30 (Limen today: 14); the calm days lose 0.02 %
+**Check:** the benchmark, 31 of 33 (Limen today: 14); the calm days lose 0.02 %
 of their pixels, and those are two more faulty gauges.
 
 **What is not there.** A trained model: fourteen labelled cases are too few,

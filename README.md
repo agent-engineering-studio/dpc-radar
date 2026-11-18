@@ -1047,9 +1047,11 @@ the others are here so you don't have to find them yourself.
 
 Every trap above is a case in the **[benchmark](https://agentengineering.it/dpc-radar/benchmark/)**:
 real frames where we know the answer, and how each cleaning rule scores on
-them. The rule the library started from (`limen-max-step`) passes 14 of 30
+them. The rule the library started from (`limen-max-step`) passes 14 of 33
 checks; a frame-level check
-(`jump-sign`) passes 26, 28 with the reliability map, and `quality` all 30.
+(`jump-sign`) passes 26, 28 with the reliability map, and `quality` 31: the
+two it misses are rain gauges wrong by a few millimetres, which one frame
+cannot tell from light rain.
 
 ---
 

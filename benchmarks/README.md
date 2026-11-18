@@ -17,6 +17,9 @@ improvement is an opinion. Tracked in
 | **The clean frame after it** | the :00 frame is right, but differs from the corrupted one before it | keep its pixels |
 | **Calm days, 4 and 6 October** | nothing | change nothing |
 | **A stuck rain gauge, 6–8 October** | 126.6 mm in every 3-hour frame for 33 hours on the Lazio–Abruzzo border (1,152 mm in CUM24), on a night the radar alone reads 0 | remove it: it is not rain |
+| **A gauge that fires at random, 29 September–26 October** | bursts of up to 130 mm in 3 hours north of Cassino, with a dry radar | remove it |
+| **A gauge stuck at 7 mm, 2–5 October** | 7.18 mm in 27 three-hour frames in a row east of L'Aquila, radar 0 | remove it |
+| **A gauge that always rains, 29 September–6 October** | 1 to 13 mm in 58 three-hour frames in a row in Irpinia, radar 0 | remove it |
 | **The same night, radar only (SRT1)** | nothing | change nothing |
 | **Melito, radar only (SRT1)** | one hour of the storm: 21 mm at Melito | keep it |
 | **Rain west of Sardinia, 20 October** | 59 mm at sea in round fields that do not move: it looked like sea clutter, it is a band of rain | keep it |
@@ -69,6 +72,9 @@ not see at all, where the radar sees well, is a rain gauge gone wrong.
 | `calm-2026-10-06T06` | at most 0.1% of pixels masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.01% masked |
 | `steady-bump-2026-10-07T12` | the bump (1,152 mm): 0-300 mm or not measured | ❌ 999.9 mm | ❌ 999.9 mm | ❌ 999.9 mm | ❌ 999.9 mm | ✅ not measured |
 | `stuck-gauge-cum3-2026-10-07T06` | the stuck gauge (126.6 mm in 3 h, radar 0): 0-20 mm or not measured | ❌ 126.6 mm | ❌ 126.6 mm | ❌ 126.6 mm | ❌ 126.6 mm | ✅ not measured |
+| `burst-gauge-cum3-2026-10-02T06` | the gauge (129.9 mm in 3 h, radar 0): 0-20 mm or not measured | ❌ 129.9 mm | ❌ 129.9 mm | ❌ 129.9 mm | ❌ 129.9 mm | ✅ not measured |
+| `stuck-low-cum3-2026-10-04T06` | the gauge (7.2 mm in 3 h, 27 times in a row, radar 0): 0-1 mm or not measured | ❌ 7.2 mm | ❌ 7.2 mm | ❌ 7.2 mm | ❌ 7.2 mm | ❌ 7.2 mm |
+| `drizzle-gauge-cum3-2026-10-03T06` | the gauge (12.6 mm in 3 h, radar 0): 0-1 mm or not measured | ❌ 12.6 mm | ❌ 12.6 mm | ❌ 12.6 mm | ❌ 12.6 mm | ❌ 12.6 mm |
 | `stuck-gauge-srt1-2026-10-07T06` | frame usable | ✅ usable | — no frame decision | ✅ usable | ✅ usable | ✅ usable |
 | `stuck-gauge-srt1-2026-10-07T06` | over the stuck gauge: dry: 0-1 mm | ✅ 0.0 mm | ✅ 0.0 mm | ✅ 0.0 mm | ✅ 0.0 mm | ✅ 0.0 mm |
 | `stuck-gauge-srt1-2026-10-07T06` | at most 0.1% of pixels masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked | ✅ 0.00% masked |
@@ -78,7 +84,7 @@ not see at all, where the radar sees well, is a rain gauge gone wrong.
 | `sardinia-disks-2026-10-21T00` | at sea, inside the 'disks' (59 mm): 20-120 mm | ✅ 56.2 mm | ✅ 56.2 mm | ✅ 56.2 mm | ✅ 56.2 mm | ✅ 56.2 mm |
 | `sardinia-band-srt1-2026-10-20T13` | frame usable | ✅ usable | — no frame decision | ✅ usable | ✅ usable | ✅ usable |
 | `sardinia-band-srt1-2026-10-20T13` | at sea, under the band: 10-60 mm | ✅ 21.5 mm | ✅ 21.5 mm | ✅ 21.5 mm | ✅ 21.5 mm | ✅ 21.5 mm |
-| **Score** | confirmed · suspect | confirmed: 19/30 | confirmed: 14/30 | confirmed: 26/30 | confirmed: 28/30 | confirmed: 30/30 |
+| **Score** | confirmed · suspect | confirmed: 19/33 | confirmed: 14/33 | confirmed: 26/33 | confirmed: 28/33 | confirmed: 31/33 |
 
 "—" means the method does not decide; it counts as not passed.
 
@@ -96,6 +102,12 @@ not see at all, where the radar sees well, is a rain gauge gone wrong.
 - **A stuck gauge is invisible to a jump rule**: it does not move between
   frames. Only `quality` removes it, because it looks at the radar alone: the
   «Merging» reads 126.6 mm, the radar 0, and the radar sees that valley well.
+- **Two faulty gauges pass every method.** One is stuck at 7.2 mm, one reads
+  1 to 13 mm for a week, both with a dry radar. `quality` asks for 30 mm
+  before it calls a patch a gauge fault, because under that a single frame
+  cannot tell a gauge from light rain the radar missed. What gives them away
+  is the series of the place: the same value to the hundredth 27 times, rain
+  in 58 frames in a row. No method here reads a series yet.
 - **It does not pay for it with real rain.** Melito, the band off Sardinia
   and Lipari stay as they are. Lipari is the hard one: 31 mm in the «Merging»
   and nothing on the radar, like a faulty gauge, but there the radar is blind
@@ -208,7 +220,7 @@ each). The answers are saved in `vision-answers.json`, one set per model, so
 `score` is free and repeatable. The model gets the picture and the name of the
 product: not the title of the case, not its date, not a number above the
 500 mm where the scale stops. It does not answer "can the radar be trusted
-here?", so its ceiling is 28 of 30. It is not in `METHODS` and CI does not run
+here?", so its ceiling was 28 of the 30 checks of that day. It is not in `METHODS` and CI does not run
 it: it needs a key, and the same picture can get two answers on two days.
 
 **The first run** (18 November 2026, `claude-opus-5-5`, 14 requests, 31,542
@@ -235,6 +247,10 @@ gone wrong, and the two "calm" days are not calm.
 | 13.725 E, 42.365 N | 7.2 mm in each of 27 blocks in a row, from 2 October 12 UTC to 5 October 18 UTC; then 14 to 15 mm a block until 7 October 06 UTC | 0.0 |
 | 13.985 E, 41.685 N | bursts with no pattern, up to 130 mm in 3 hours (2 October 06 UTC), from 29 September to at least 26 October: this is also the 222 mm of 11 October | 0.0 in the bursts |
 | 15.385 E, 41.215 N | rain in every block for a week, 58 in a row, 1 to 13 mm, from 29 September 09 UTC to 6 October 12 UTC, then nothing | 0.0 |
+
+The three are now cases of the benchmark, so `score` lists them as not asked:
+the saved answers are older than them. `quality` removes the second and lets
+the other two pass, as the table above says.
 
 The known stuck gauge (13.795 E, 41.805 N) was already wrong two days before
 the date of its case: 2.1 mm a block from 4 October 06 UTC.

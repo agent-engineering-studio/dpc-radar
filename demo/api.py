@@ -75,6 +75,8 @@ COLOURS = ["#a9cdf6", "#5f9fea", "#2c70d8", "#1b47a8", "#6a2fb0", "#b3289a", "#e
 VEIL = (90, 96, 110, 46)
 #: The picture: Italy in the projection of the web maps (EPSG:3857), 1 km pixels.
 WEST, SOUTH, EAST, NORTH = 5.5, 35.0, 19.5, 48.0
+#: The motion of the rain is said of a place only with rain this close to it.
+NEAR_KM = 50.0
 #: The forecasts of a click, in minutes, and the rain their chance is of, in mm.
 AHEAD = (30, 60, 120)
 CHANCE_MM, CHANCE_MINUTES = 5.0, 60
@@ -356,6 +358,12 @@ async def rain_inside(radar: Radar, area: Any) -> list[dict[str, Any]]:
     return rows
 
 
+def rain_near(grid: RainGrid, lon: float, lat: float) -> bool:
+    """Whether a frame of intensity has rain within :data:`NEAR_KM` of a point."""
+    found = inside(grid, circle(lon, lat, NEAR_KM))
+    return found is not None and (found["max_mm"] or 0.0) >= MM_H[0]
+
+
 def circle(lon: float, lat: float, km: float) -> Polygon:
     """The points ``km`` away from one, as a shape in degrees."""
     d, la, lo = km * 1000 / _R, math.radians(lat), math.radians(lon)
@@ -631,6 +639,11 @@ async def _fallen(radar: Radar, lon: float, lat: float, hours: int) -> dict[str,
 
 async def _ahead(radar: Radar, lon: float, lat: float) -> dict[str, Any]:
     ahead, wind = await radar.ahead(), await radar.motion()
+    # Far from any rain the motion is the one of the nearest storm, which may be
+    # hundreds of km away: it says nothing of this place, so it is not given.
+    now = (await radar.frame("SRI")).grid
+    if wind is not None and not await asyncio.to_thread(rain_near, now, lon, lat):
+        wind = None
     (share,) = ahead.chance.sample([(lon, lat)])
     return {
         "lon": lon,

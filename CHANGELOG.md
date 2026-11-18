@@ -22,6 +22,14 @@ All notable changes to this project are documented here. The format follows
   given, no longer on the whole of Italy; the mouse wheel scrolls the page, and the buttons zoom. The
   radars are drawn only when ticked.
 
+### Fixed
+
+- The card of a point in the demo no longer gives the motion of the rain where
+  there is none within 50 km: it was the motion of the nearest storm, which
+  could be hundreds of kilometres away.
+- The film of the demo goes past a frame the DPC does not have, instead of
+  waiting for it.
+
 ### Added
 
 - The demo is a page for the site of a public body. It is built with
@@ -41,6 +49,10 @@ All notable changes to this project are documented here. The format follows
   Claude through the Anthropic API and scored on the same checks. The first
   run passes 26 of 30 and points at three faulty rain gauges that were not
   among the cases.
+- Three more cases in the benchmark: the faulty rain gauges Claude pointed
+  at, checked on 580 three-hour frames. 33 checks; the library passes 31. The
+  two it misses read 7 and 13 mm with a dry radar, under the 30 mm of the
+  gauge rule.
 - The README says where the project calls a language model and where it does
   not, and how that meets the AgID guidelines for AI in the public
   administration.

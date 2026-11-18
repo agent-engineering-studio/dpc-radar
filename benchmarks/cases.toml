@@ -261,6 +261,68 @@ lat = 41.805
 max = 20.0
 masked_ok = true
 
+# --- Three more faulty gauges, found by Claude on the pictures of the cases -------
+#
+# benchmarks/vision.py showed the cases to Claude as pictures; it boxed four places
+# where the «Merging» has rain and the radar none. Three are real: checked on the
+# 580 frames of CUM3 and SRT1 from 29 September to 13 October and from 23 to 27
+# October 2026. The first is over the 30 mm of the gauge rule; the other two are
+# far under it, and only the series of a place can tell them from light rain.
+
+[[case]]
+id = "burst-gauge-cum3-2026-10-02T06"
+radar = true
+title = "A gauge that fires at random, north of Cassino, 29 September-26 October 2026"
+status = "confirmed"
+product = "CUM3"
+time = 2026-10-02T06:00:00Z
+bbox = [13.4, 41.3, 14.6, 42.1]
+source = "129.9 mm in 3 hours at the gauge with the radar alone (SRT1) at 0.0; the same place reads 100.3 mm on 30 September 03 UTC, 101.1 on 4 October 21 UTC, 67.0 on 10 October 15 UTC and 107.6 on 24 October 18 UTC, always with a dry radar, and it is the 222 mm of 11 October"
+
+[[case.check]]
+kind = "value"
+name = "the gauge (129.9 mm in 3 h, radar 0)"
+lon = 13.985
+lat = 41.685
+max = 20.0
+masked_ok = true
+
+[[case]]
+id = "stuck-low-cum3-2026-10-04T06"
+radar = true
+title = "A gauge stuck at 7 mm, east of L'Aquila, 2-5 October 2026"
+status = "confirmed"
+product = "CUM3"
+time = 2026-10-04T06:00:00Z
+bbox = [13.1, 42.0, 14.3, 42.8]
+source = "CUM3 reads 7.18 or 7.19 mm here in 27 windows of 3 hours in a row, from 2 October 12 UTC, while SRT1 reads 0.0 in all those hours. Rain does not repeat to the hundredth of a millimetre for three days. It is under the 30 mm of the gauge rule: a rule on one frame cannot see it"
+
+[[case.check]]
+kind = "value"
+name = "the gauge (7.2 mm in 3 h, 27 times in a row, radar 0)"
+lon = 13.725
+lat = 42.365
+max = 1.0
+masked_ok = true
+
+[[case]]
+id = "drizzle-gauge-cum3-2026-10-03T06"
+radar = true
+title = "A gauge that always rains, in Irpinia, 29 September-6 October 2026"
+status = "confirmed"
+product = "CUM3"
+time = 2026-10-03T06:00:00Z
+bbox = [14.8, 40.8, 16.0, 41.6]
+source = "CUM3 has rain here in 58 windows of 3 hours in a row, from 29 September to 6 October (1 to 13 mm, 12.6 in this one), while SRT1 reads 0.0 in all those hours. Also under the 30 mm of the gauge rule"
+
+[[case.check]]
+kind = "value"
+name = "the gauge (12.6 mm in 3 h, radar 0)"
+lon = 15.385
+lat = 41.215
+max = 1.0
+masked_ok = true
+
 # --- Radar only (SRT1): the hourly frames ---------------------------------------
 
 [[case]]

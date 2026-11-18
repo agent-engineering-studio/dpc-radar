@@ -29,6 +29,7 @@ nav = [
     { "Products and API" = "api/products.md" },
     { "Errors" = "api/errors.md" },
   ] },
+  { "Riuso nella PA" = "riuso.md" },
   { "Benchmark" = "benchmark.md" },
   { "Roadmap and AI" = "roadmap.md" },
   { "Changelog" = "changelog.md" },

@@ -123,6 +123,29 @@ const en = {
   around: (km: number | null) => `${km} km around`,
   python: "The Python that gives this",
   footer: "Radar data, not an alert: the official alert is the DPC bulletin.",
+  // The page around the map
+  skip: "Skip to the content",
+  owner: "Open data of the Italian Civil Protection Department",
+  taglineHere: "the rain here, live from the radar",
+  start: "Gioia del Colle",
+  backTo: (place: string) => `Back to ${place}`,
+  readTitle: "Read the rain at a place",
+  stormsNear: "Storms within 50 km",
+  stormsNearHint: "rain at 10 mm/h or more, now",
+  noStormsNear: "None.",
+  stormNear: (km: number, wind: string, peak: string) => `${km} km to the ${wind}, ${peak} mm/h at its peak`,
+  dataTitle: "The data",
+  dataText:
+    "Radar and rain gauges of the Dipartimento della Protezione Civile: open data, CC BY-SA 4.0. The alert zones and their levels come from its criticality bulletin, CC BY 4.0.",
+  alertTitle: "This is not an alert",
+  alertText:
+    "The page shows rain that was measured. The official alert is the criticality bulletin of the Civil Protection Department, and the civil protection of your Region.",
+  alertLink: "The official alerts",
+  howTitle: "How the numbers are made",
+  howText:
+    "Every number is computed from the radar frames by open code that anyone can check. No language model writes them. The rain of the next two hours is an automatic forecast: the last radar frame, moved along its own motion.",
+  code: "Source code (Apache-2.0)",
+  docs: "Documentation",
 };
 
 type Words = typeof en;
@@ -240,6 +263,28 @@ const it: Words = {
   around: (km) => `${km} km intorno`,
   python: "Il Python che dà questi numeri",
   footer: "Dati radar, non un'allerta: l'allerta ufficiale è il bollettino del DPC.",
+  skip: "Vai al contenuto",
+  owner: "Dati aperti del Dipartimento della Protezione Civile",
+  taglineHere: "la pioggia qui, in diretta dal radar",
+  start: "Gioia del Colle",
+  backTo: (place) => `Torna a ${place}`,
+  readTitle: "Leggi la pioggia in un punto",
+  stormsNear: "Temporali entro 50 km",
+  stormsNearHint: "pioggia a 10 mm/h o più, adesso",
+  noStormsNear: "Nessuno.",
+  stormNear: (km, wind, peak) => `a ${km} km verso ${wind}, ${peak} mm/h al picco`,
+  dataTitle: "I dati",
+  dataText:
+    "Radar e pluviometri del Dipartimento della Protezione Civile: dati aperti, CC BY-SA 4.0. Le zone di allerta e i loro livelli vengono dal suo bollettino di criticità, CC BY 4.0.",
+  alertTitle: "Non è un'allerta",
+  alertText:
+    "La pagina mostra pioggia misurata. L'allerta ufficiale è il bollettino di criticità del Dipartimento della Protezione Civile, e la protezione civile della tua Regione.",
+  alertLink: "Le allerte ufficiali",
+  howTitle: "Come nascono i numeri",
+  howText:
+    "Ogni numero è calcolato dalle immagini radar con codice aperto, che chiunque può controllare. Nessun modello linguistico li scrive. La pioggia delle prossime due ore è una previsione automatica: l'ultima immagine radar, spostata lungo il suo movimento.",
+  code: "Codice sorgente (Apache-2.0)",
+  docs: "Documentazione",
 };
 
 const WORDS: Record<Lang, Words> = { en, it };

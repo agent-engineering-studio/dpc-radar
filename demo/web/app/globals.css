@@ -1,53 +1,123 @@
-:root {
-  --ink: #111827;
-  --soft: #5b6472;
-  --line: #e4e7ec;
-  --paper: rgba(255, 255, 255, 0.94);
-  --wash: #f4f6f9;
-  --accent: #1b47a8;
-  --on: #1a9850;
-  --off: #d7191c;
-  --radius: 14px;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 8px 28px rgba(16, 24, 40, 0.16);
-  --card: 384px;
-}
+/* What Bootstrap Italia does not have: the map, its legend and the sheet of a place.
+   Colours, type and controls are the kit's. */
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  height: 100%;
-  margin: 0;
-}
-
-body {
-  background: #dfe5ec;
-  color: var(--ink);
-  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-button,
-input {
-  font: inherit;
-  color: inherit;
-}
-
-small {
-  color: var(--soft);
-  font-size: 12px;
+@font-face {
+  font-family: "Titillium Web";
   font-weight: 400;
+  font-display: swap;
+  src: url("../node_modules/bootstrap-italia/dist/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-regular.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Titillium Web";
+  font-weight: 600;
+  font-display: swap;
+  src: url("../node_modules/bootstrap-italia/dist/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-600.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Titillium Web";
+  font-weight: 700;
+  font-display: swap;
+  src: url("../node_modules/bootstrap-italia/dist/fonts/Titillium_Web/titillium-web-v10-latin-ext_latin-700.woff2")
+    format("woff2");
+}
+
+:root {
+  --ink: #17324d;
+  --soft: #5a6772;
+  --line: #d9dadb;
+  --paper: rgba(255, 255, 255, 0.95);
+  --wash: #f2f5f8;
+  --accent: #0066cc;
+  --on: #008055;
+  --off: #cc334d;
+  --radius: 8px;
+  --shadow: 0 1px 2px rgba(23, 50, 77, 0.08), 0 6px 20px rgba(23, 50, 77, 0.16);
+}
+
+.skip {
+  position: absolute;
+  z-index: 2000;
+  top: 8px;
+  left: 8px;
+  padding: 8px 12px;
+  background: #fff;
+}
+
+.it-brand-wrapper h1.it-brand-title {
+  margin: 0;
+  color: #fff;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.it-brand-wrapper .it-brand-tagline {
+  color: #fff;
+}
+
+.langs {
+  display: flex;
+  gap: 4px;
+}
+
+.langs button {
+  padding: 2px 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.langs button[aria-checked="true"] {
+  border-color: #fff;
 }
 
 main {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
+  padding-top: 16px;
+  padding-bottom: 32px;
+}
+
+/* The bar over the map: what it shows */
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin-bottom: 12px;
+}
+
+.bar .btn {
+  white-space: nowrap;
+}
+
+.bar .form-check {
+  margin: 0;
+}
+
+.bar label small {
+  margin-left: 6px;
+  color: var(--soft);
+}
+
+.bar .home {
+  margin-left: auto;
 }
 
 /* The map */
+
+.stage {
+  position: relative;
+  height: max(520px, calc(100vh - 300px));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
 
 .map {
   position: absolute;
@@ -97,136 +167,25 @@ main {
   display: none;
 }
 
-/* The panels over it */
+.leaflet-tooltip.tip.place {
+  background: #0066cc;
+  font-weight: 600;
+}
+
+/* The legend, over the map */
 
 .panel {
   position: absolute;
   z-index: 1000;
-  left: 16px;
-  width: 356px;
-  max-width: calc(100vw - 32px);
-  padding: 14px 16px;
+  left: 12px;
+  width: 340px;
+  max-width: calc(100% - 24px);
+  padding: 12px 14px;
   border-radius: var(--radius);
   background: var(--paper);
-  backdrop-filter: blur(10px);
   box-shadow: var(--shadow);
-}
-
-.controls {
-  top: 16px;
-}
-
-.langs {
-  float: right;
-  display: flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--wash);
-}
-
-.langs button {
-  padding: 2px 8px;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--soft);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.langs button[aria-checked="true"] {
-  background: #ffffff;
-  color: var(--accent);
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
-}
-
-.controls h1 {
-  margin: 0 0 12px;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.controls h1 span {
-  display: block;
-  color: var(--soft);
   font-size: 13px;
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-.segments {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 2px;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--wash);
-}
-
-.segments button {
-  padding: 7px 0;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--soft);
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.segments button:hover {
-  color: var(--ink);
-}
-
-.segments button[aria-checked="true"] {
-  background: #fff;
-  color: var(--accent);
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.16);
-}
-
-.toggles {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 6px 28px;
-  margin-top: 12px;
-  white-space: nowrap;
-}
-
-.toggles label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.toggles input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  accent-color: var(--accent);
-}
-
-.toggles small {
-  margin-left: 6px;
-}
-
-.hint {
-  margin: 12px 0 0;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-  color: var(--soft);
-  font-size: 13px;
-}
-
-.wrong {
-  margin: 8px 0 0;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: #fdecec;
-  color: #8f1a1a;
-  font-size: 13px;
+  line-height: 1.4;
 }
 
 .legend {
@@ -274,6 +233,7 @@ main {
 }
 
 /* The film of the last frames: play, the frame under the finger, and back to now */
+
 .film {
   display: flex;
   align-items: center;
@@ -283,23 +243,8 @@ main {
   border-top: 1px solid var(--line);
 }
 
-.film button {
-  border: 1px solid var(--line);
-  background: #ffffff;
-  color: var(--ink);
-  font: inherit;
-  cursor: pointer;
-}
-
-.film .play {
+.film .btn {
   flex: none;
-  min-width: 84px;
-  padding: 6px 12px;
-  border-color: var(--accent);
-  border-radius: 999px;
-  background: var(--accent);
-  color: #ffffff;
-  font-weight: 600;
 }
 
 .film .play i {
@@ -308,30 +253,10 @@ main {
   font-style: normal;
 }
 
-.film .play:hover {
-  background: #163a8a;
-}
-
-.film .live[aria-pressed="true"] {
-  border-color: var(--on);
-  color: var(--on);
-  font-weight: 600;
-}
-
-.film .live {
-  flex: none;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-.film button:hover {
-  background: #f1f3f6;
-}
-
 .film input {
   flex: 1;
   min-width: 0;
-  accent-color: #2563eb;
+  accent-color: var(--accent);
 }
 
 .veil {
@@ -345,34 +270,28 @@ main {
   vertical-align: -1px;
 }
 
-/* The card of what was clicked */
+/* The sheet of what was clicked, or of the place the page is about */
 
-.card {
-  position: absolute;
-  z-index: 1001;
-  top: 16px;
-  right: 16px;
-  bottom: 16px;
+.sheet {
+  position: sticky;
+  top: 12px;
   display: flex;
   flex-direction: column;
-  width: var(--card);
-  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 24px);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
-  box-shadow: var(--shadow);
+  font-size: 14px;
+  line-height: 1.45;
   overflow: hidden;
 }
 
-.with-card .leaflet-right {
-  right: calc(var(--card) + 16px);
-}
-
-.card header {
+.sheet header {
   padding: 16px 48px 14px 18px;
   border-bottom: 1px solid var(--line);
 }
 
-.card header small {
+.sheet header small {
   color: var(--accent);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -380,14 +299,14 @@ main {
   font-size: 11px;
 }
 
-.card h2 {
+.sheet h2 {
   margin: 2px 0;
   font-size: 19px;
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
 
-.card header p {
+.sheet header p {
   margin: 0;
   color: var(--soft);
   font-size: 13px;
@@ -418,12 +337,12 @@ main {
   overscroll-behavior: contain;
 }
 
-.card section {
+.sheet section {
   padding: 14px 18px;
   border-bottom: 1px solid var(--line);
 }
 
-.card h3 {
+.sheet h3 {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -433,7 +352,7 @@ main {
   font-weight: 700;
 }
 
-.card h3 small {
+.sheet h3 small {
   text-align: right;
 }
 
@@ -574,46 +493,46 @@ main {
   color: #3d3000;
 }
 
-.card table {
+.sheet table {
   width: 100%;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 }
 
-.card th,
-.card td {
+.sheet th,
+.sheet td {
   padding: 5px 0;
   text-align: right;
   white-space: nowrap;
 }
 
-.card thead th {
+.sheet thead th {
   color: var(--soft);
   font-size: 12px;
   font-weight: 400;
 }
 
-.card tbody tr {
+.sheet tbody tr {
   border-top: 1px solid var(--line);
 }
 
-.card th:first-child {
+.sheet th:first-child {
   text-align: left;
   font-weight: 600;
 }
 
-.card dl {
+.sheet dl {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 5px 16px;
   margin: 0;
 }
 
-.card dt {
+.sheet dt {
   color: var(--soft);
 }
 
-.card dd {
+.sheet dd {
   margin: 0;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -650,19 +569,19 @@ main {
   background: var(--off);
 }
 
-.card details {
+.sheet details {
   padding: 12px 18px;
   border-bottom: 1px solid var(--line);
 }
 
-.card summary {
+.sheet summary {
   color: var(--accent);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
 
-.card pre {
+.sheet pre {
   margin: 10px 0 0;
   padding: 12px;
   border-radius: 10px;
@@ -672,7 +591,7 @@ main {
   overflow-x: auto;
 }
 
-.card footer {
+.sheet footer {
   padding: 12px 18px 16px;
   color: var(--soft);
   font-size: 12px;
@@ -692,6 +611,17 @@ main {
   width: 60%;
 }
 
+
+.near {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.near li + li {
+  margin-top: 4px;
+}
+
 @keyframes waiting {
   to {
     background-position: -200% 0;
@@ -704,54 +634,31 @@ main {
   }
 }
 
-/* A phone: the card comes up from the bottom, the legend makes room */
+/* A phone: the sheet goes under the map */
 
-@media (max-width: 760px) {
-  .panel {
-    left: 8px;
-    width: calc(100vw - 16px);
-    max-width: 420px;
+@media (max-width: 991px) {
+  .stage {
+    height: 62vh;
   }
 
-  .controls {
-    top: 8px;
-    padding: 10px 12px;
+  .sheet {
+    position: static;
+    max-height: none;
   }
 
-  .controls h1 {
-    margin-bottom: 8px;
-    font-size: 15px;
+  .bar .home {
+    margin-left: 0;
   }
+}
 
-  .controls h1 span,
-  .hint {
-    display: none;
-  }
+/* The kit gives every paragraph its own size: here the box decides. */
+.panel p,
+.sheet p {
+  font-size: inherit;
+}
 
-  .legend {
-    bottom: 24px;
-    padding: 10px 12px;
-  }
-
-  .with-card .legend {
-    display: none;
-  }
-
-  .card {
-    top: auto;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    max-width: none;
-    height: 56vh;
-    border-radius: var(--radius) var(--radius) 0 0;
-  }
-
-  .with-card .leaflet-right {
-    right: 0;
-  }
-
-  .with-card .leaflet-bottom {
-    bottom: 56vh;
-  }
+/* The hint beside the map speaks with the voice of the page, not with the kit's serif. */
+main .callout p {
+  font-family: inherit;
+  font-size: 1rem;
 }

@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/python-3.12%20%7C%203.13-blue" alt="Python 3.12 | 3.13">
   <img src="https://img.shields.io/badge/typing-mypy%20strict-informational" alt="mypy strict">
   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="coverage 100%">
+  <a href="#ai-in-this-project"><img src="https://img.shields.io/badge/AI-Claude%20by%20Anthropic-D97757?logo=claude&logoColor=white" alt="AI: Claude by Anthropic"></a>
   <a href="https://github.com/agent-engineering-studio/dpc-radar/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-green" alt="Apache-2.0"></a>
 </p>
 
@@ -66,6 +67,7 @@ http://localhost:3000.
 - [The traps we already fell into](#the-traps-we-already-fell-into)
 - [API at a glance](#api-at-a-glance)
 - [Roadmap, and where AI helps](#roadmap-and-where-ai-helps)
+- [AI in this project](#ai-in-this-project)
 - [Contributing](#contributing)
 - [Data licence and credits](#data-licence-and-credits)
 
@@ -351,7 +353,7 @@ Two limits to know before you plan a project:
 ## Run it on your machine
 
 Everything in one go: the library with every extra, the command line, the MCP
-server and a demo: a live map of the rain over Italy.
+server and a demo: a live map of the rain, ready for the site of a public body.
 
 **With Docker**, and nothing else to install:
 
@@ -376,25 +378,38 @@ make demo                # the demo, on http://localhost:3000
 ```
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.png" alt="The demo: northern and central Italy on OpenStreetMap with the rain of the last 12 hours, the alert zones in yellow and orange, the storms in red and the radars as green and red rings" width="560">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.png" alt="The demo: a page with the header of the Italian public administration kit, central Italy on OpenStreetMap with the rain of the last 24 hours and the alert zones in yellow, and beside it the card of a point with its rain, the forecast and the storms nearby" width="100%">
 </p>
 
-The [demo](https://github.com/agent-engineering-studio/dpc-radar/tree/main/demo) is a map of all of Italy on
-OpenStreetMap, as large as the window holds it, with the rain of now or of
-the last 1 to 24 hours. **Play** shows how the rain moved: the last thirteen
-frames, one after the other.
+The [demo](https://github.com/agent-engineering-studio/dpc-radar/tree/main/demo) is a page built with
+[Bootstrap Italia](https://italia.github.io/bootstrap-italia/), the interface
+kit of the Italian public administration: a map on OpenStreetMap with the rain
+of now or of the last 1 to 24 hours, and beside it the card of a place.
+**Play** shows how the rain moved: the last thirteen frames, one after the
+other.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.gif" alt="The demo playing the last two hours of rain rate over northern Italy, one frame every ten minutes" width="720">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo.gif" alt="The demo playing the rain of the last 24 hours over central Italy, one frame every thirty minutes" width="720">
+</p>
+
+It is made for the site of a municipality. Give it the coordinates and the
+name of the place (`DPC_RADAR_LAT`, `DPC_RADAR_LON`, `DPC_RADAR_PLACE`, or
+`?lat=…&lon=…&place=…` in the address) and it opens there, with the card of
+the place already open; with none it opens on Gioia del Colle, in Apulia.
+`layer=24` in the address, or `DPC_RADAR_LAYER`, chooses what the map shows
+first.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/agent-engineering-studio/dpc-radar/main/docs/images/demo-comune.png" alt="The page opened on the Comune di Gioia del Colle: its name in the header, a marker on the town and the card with the rain there, in Italian" width="100%">
 </p>
 
 Click anything and a card says what the library knows about it, with the
 lines of Python that give it. The radars are drawn when you tick them, and
-the page is in Italian or in English (**IT | EN**, top of the panel):
+the page is in Italian or in English (**IT | EN**, top right):
 
 | Click | The card shows | From |
 |---|---|---|
-| **any point** | the rain now and in the last 1 to 24 hours, how rare it is there, the rain of the next two hours and the chance of it, how far the radar can be trusted there | `RainGrid.sample`, `rarity`, `nowcast`, `chance`, `reliability` |
+| **any point** | the rain now and in the last 1 to 24 hours, how rare it is there, the rain of the next two hours and the chance of it, the storms within 50 km, how far the radar can be trusted there | `RainGrid.sample`, `rarity`, `nowcast`, `chance`, `reliability` |
 | **an alert zone** | the official alert of the DPC bulletin, day by day, and the rain over the whole zone | `bulletins.latest`, `facts.describe` |
 | **a storm** | its peak, its area, where it is going and how fast | `storms`, `motion` |
 | **a radar** | whether it is on, and the rain inside its range | `SITES`, `radar_status` |
@@ -1119,6 +1134,66 @@ flowchart LR
 One rule holds for every AI feature: **the numbers come from the frames**,
 computed by tested code. A language model may read the news and explain the
 numbers, never invent them, and nothing here replaces the official DPC alert.
+
+---
+
+## AI in this project
+
+<a href="https://www.anthropic.com/claude"><img src="https://img.shields.io/badge/AI-Claude%20by%20Anthropic-D97757?logo=claude&logoColor=white" alt="AI: Claude by Anthropic"></a>
+
+Where this project calls a language model, the model is **Claude**, by
+Anthropic, through its API. Here is exactly where that happens, and where it
+does not.
+
+| Part | Does it call a model? | Which one |
+|---|---|---|
+| The library: frames, quality, rarity, storms, nowcast, bulletins | no | none: tested code on the DPC frames |
+| `dpc-radar report` | no | none: the text comes from a template, and every number is checked against `facts.json` |
+| `dpc-radar mcp` | no | none: it gives facts to the assistant *you* connect, whichever it is |
+| [`benchmarks/vision.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/benchmarks/README.md#an-experiment-the-cases-as-pictures) | yes, when you run it with a key | Claude (`claude-opus-5-5`): it looks at the picture of a frame and says what should not be trusted |
+
+Nothing calls a model unless you ask for it and you give it a key:
+
+```bash
+cp .env.example .env     # then write your ANTHROPIC_API_KEY in it
+uv run --env-file .env --group vision python -m benchmarks.vision ask
+```
+
+[`.env.example`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/.env.example)
+lists every variable the project reads. `.env` is never committed. With no
+key, the library, the command line, the MCP server and the demo work as they
+are.
+
+### For a public administration
+
+In Italy, a public body that adopts AI follows the *Linee Guida per l'adozione
+di IA nella Pubblica Amministrazione* of AgID (version 1.0, 9 November 2026).
+The guidelines speak to the administration, not to a library: the risk class
+of a system, its impact assessment and the notice to its users are yours to
+write, for your use. This is what the project gives you to write them with.
+
+The demo is a page for the site of a public body: built with Bootstrap Italia,
+it opens on the coordinates of a municipality (`DPC_RADAR_LAT`,
+`DPC_RADAR_LON`, `DPC_RADAR_PLACE`) or, with none, on Gioia del Colle in Apulia. How to host it, what stays
+with the body that publishes it, and the way into the software catalogue of
+Developers Italia ([`publiccode.yml`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/publiccode.yml))
+are in [Riuso nella PA](https://agentengineering.it/dpc-radar/riuso/), in
+Italian.
+
+| Principle of the guidelines | What the project does |
+|---|---|
+| **P.5 Responsibility**, **P.13 Human oversight** | A model never decides. Its answer on a frame is a proposal that a person confirms before it becomes a case of the benchmark; the rule that ships is tested code. The official alert stays the DPC's. |
+| **P.7 Transparency and documentation**, **P.8 Information** | The table above: where a model is called, which model, and where none is. The prompt and the answer schema are in the source. |
+| **P.10 Accuracy** | Every method, a model included, is scored on the same [benchmark of known cases](https://agentengineering.it/dpc-radar/benchmark/), and the failures are published. A text is checked number by number (`dpc-radar check`). |
+| **P.11 Robustness** | AI is off by default and nothing depends on it. No key, no network or a refused request leave every number as it is. |
+| **P.14 Logging** | Every answer of the model is saved with the model that gave it and the tokens it cost; every figure of a report carries the frames it came from (`facts.json`). |
+| **P.4 Personal data** | None. What goes to the model is a picture of open radar data over an area, and the name of the product. |
+| **P.9 Data quality** | The data is the DPC's, open and licensed (CC BY-SA 4.0); each frame goes through `quality` before it is used, and "not measured" is never turned into zero. |
+| **P.12 Security** | The key lives in `.env` or in your environment, never in the repository. |
+| **P.17 Open source**, **P.18 Sustainability** | The code is Apache-2.0. A model is asked about the few frames in doubt, not about each of the 288 a day. |
+
+Claude and Anthropic are trademarks of Anthropic, PBC. This project is not
+affiliated with Anthropic or endorsed by it.
 
 ---
 

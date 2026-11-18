@@ -190,6 +190,67 @@ from [`results.json`](results.json), so a change in a case or a method is
 always a visible decision. After an intended change, run it with `--record` and
 commit `results.json`.
 
+## An experiment: the cases as pictures
+
+The rules above see numbers, not shapes. [`vision.py`](vision.py) asks whether
+a model that looks at the map sees more: it draws every case as the frame
+before, the frame and the radar alone, sends the picture to the Claude API,
+and scores the answer on the same checks.
+
+```bash
+uv run --group vision python -m benchmarks.vision render out/  # the pictures: no key
+uv run --group vision python -m benchmarks.vision ask          # call the API, save the answers
+uv run --group vision python -m benchmarks.vision score        # the table, from the answers
+```
+
+`ask` needs `ANTHROPIC_API_KEY` and spends money (14 requests, one picture
+each). The answers are saved in `vision-answers.json`, one set per model, so
+`score` is free and repeatable. The model gets the picture and the name of the
+product: not the title of the case, not its date, not a number above the
+500 mm where the scale stops. It does not answer "can the radar be trusted
+here?", so its ceiling is 28 of 30. It is not in `METHODS` and CI does not run
+it: it needs a key, and the same picture can get two answers on two days.
+
+**The first run** (18 November 2026, `claude-opus-5-5`, 14 requests, 31,542
+tokens in and 7,612 out): **26 of 30**, of the 28 it can reach.
+
+- It rejected the three corrupted frames and kept the clean one after them.
+- It masked the stuck gauge in both frames, with the right reason: a smooth
+  patch the radar alone does not see.
+- It kept the rain west of Sardinia, round edges included, and every frame of
+  the Melito storm.
+- **It failed the two calm days**, where it masked 0.59 % and 0.13 % of the
+  pixels (the limit is 0.1 %). What it masked are four smooth patches of the
+  «Merging», up to 67, 66, 26 and 27 mm in 24 hours, where the radar alone
+  reads 0.0 on every pixel.
+- In the clean frame after the bell it also boxed a patch of 222 mm that the
+  case does not ask about.
+
+**Checked on the 3-hour frames** (580 frames of `CUM3` and `SRT1`, 29 September
+to 13 October and 23 to 27 October 2026): the patches are three rain gauges
+gone wrong, and the two "calm" days are not calm.
+
+| Where | What the «Merging» (`CUM3`) says | The radar alone, same hours |
+|---|---|---|
+| 13.725 E, 42.365 N | 7.2 mm in each of 27 blocks in a row, from 2 October 12 UTC to 5 October 18 UTC; then 14 to 15 mm a block until 7 October 06 UTC | 0.0 |
+| 13.985 E, 41.685 N | bursts with no pattern, up to 130 mm in 3 hours (2 October 06 UTC), from 29 September to at least 26 October: this is also the 222 mm of 11 October | 0.0 in the bursts |
+| 15.385 E, 41.215 N | rain in every block for a week, 58 in a row, 1 to 13 mm, from 29 September 09 UTC to 6 October 12 UTC, then nothing | 0.0 |
+
+The known stuck gauge (13.795 E, 41.805 N) was already wrong two days before
+the date of its case: 2.1 mm a block from 4 October 06 UTC.
+
+`quality` already removes the heart of the first two, where the «Merging» has
+30 mm or more (`GAUGE_MIN_MM`): 193 pixels on 4 October, 59 on the 6th. It
+keeps what is under 30 mm: the rim of those patches, and the whole of the
+third. A fault of 3 mm a block, every block for a week, is 26 mm in a day and
+no threshold on one frame sees it; what gives it away is that it never stops.
+That is a rule on the series, not on the frame, and it is not written yet.
+Nor are these three cases in `cases.toml` yet.
+
+So the picture did not beat the rules on the cases we knew, and it pointed at
+three faults we had not looked at. That is the use it is good for here:
+proposing cases, which a person then confirms on the numbers.
+
 ## Add a method
 
 A method answers three questions about a frame and the one before it

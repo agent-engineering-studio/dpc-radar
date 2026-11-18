@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+// Bootstrap Italia, the kit of the Italian public administration: served from here, no CDN.
+import "bootstrap-italia/dist/css/bootstrap-italia.min.css";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
 

@@ -18,11 +18,32 @@ All notable changes to this project are documented here. The format follows
   it on http://localhost:3000 (it was 8501); `make demo` now needs Node too.
   The demo reads live only: `docker compose up` no longer downloads frames
   first (`docker compose run --rm init` still does).
-- The map of the demo opens on Italy as large as the window holds it, and the
+- The map of the demo opens on Gioia del Colle, in Apulia, when no place is
+  given, no longer on the whole of Italy; the mouse wheel scrolls the page, and the buttons zoom. The
   radars are drawn only when ticked.
 
 ### Added
 
+- The demo is a page for the site of a public body. It is built with
+  Bootstrap Italia, with the header and the footer of the kit, and it opens on
+  the place it is given: `DPC_RADAR_LAT`, `DPC_RADAR_LON`, `DPC_RADAR_ZOOM`
+  and `DPC_RADAR_PLACE`, in the environment or in the address of the page
+  (`?lat=…&lon=…&place=…`). The place has its name in the header, a marker,
+  and its card open; **Back to …** returns there. `DPC_RADAR_LAYER`, or
+  `layer=` in the address, chooses what the map shows first.
+  `DPC_RADAR_TILES` changes the background map.
+- The card of a point lists the storms within 50 km.
+- `publiccode.yml`, the card for the software catalogue of Developers Italia,
+  checked by CI; `SECURITY.md`; the page "Riuso nella PA" of the site.
+- `.env.example`: every variable the project reads. `.env` is ignored by git
+  and by Docker.
+- `benchmarks/vision.py`: the cases of the benchmark as pictures, read by
+  Claude through the Anthropic API and scored on the same checks. The first
+  run passes 26 of 30 and points at three faulty rain gauges that were not
+  among the cases.
+- The README says where the project calls a language model and where it does
+  not, and how that meets the AgID guidelines for AI in the public
+  administration.
 - The demo plays how the rain moved: the last thirteen frames of the layer
   shown, with a slider to stop on one (`/api/film/{layer}` in `demo/api.py`).
 - The demo is in Italian and in English: it opens in the language of the

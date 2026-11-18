@@ -1,17 +1,22 @@
 "use client";
 
-import { ALERT, clock, failed, place } from "@/lib/format";
+import { ALERT, away, clock, failed, place } from "@/lib/format";
 import { useText } from "@/lib/i18n";
 import type {
   AheadData,
   AreaRain,
+  Collection,
   Failed,
   LayerKey,
   PointData,
   RadarRain,
   Selection,
+  StormProps,
   ZoneDay,
 } from "@/lib/types";
+
+// "Near" a place: a storm at 40 km/h is there in about an hour.
+const NEAR_KM = 50;
 
 type Props = {
   selection: Selection;
@@ -19,6 +24,10 @@ type Props = {
   point: PointData | Failed | null;
   ahead: AheadData | Failed | null;
   radarRain: RadarRain | Failed | null;
+  /** The storms of now, to say which are near. */
+  storms: Collection<StormProps> | null;
+  /** The name of the place, when what is selected is the place the page is about. */
+  name: string | null;
   onClose: () => void;
 };
 
@@ -74,7 +83,7 @@ function Risk({ zone }: { zone: ZoneDay }) {
 function AreaTable({ rows }: { rows: AreaRain[] }) {
   const t = useText();
   return (
-    <table>
+    <table className="table table-sm">
       <thead>
         <tr>
           <th>{t.last}</th>
@@ -280,7 +289,32 @@ function Trust({ point }: { point: PointData }) {
   );
 }
 
-function Header({ selection, point }: { selection: Selection; point: PointData | Failed | null }) {
+function Near({ selection, storms }: { selection: Selection; storms: Collection<StormProps> }) {
+  const t = useText();
+  const near = storms.features
+    .map(({ properties: storm }) => ({ storm, ...away(selection.lon, selection.lat, storm.peak_lon, storm.peak_lat) }))
+    .filter((one) => one.km <= NEAR_KM)
+    .sort((a, b) => a.km - b.km);
+  return (
+    <Section title={t.stormsNear} hint={t.stormsNearHint}>
+      {near.length === 0 ? (
+        <p className="note">{t.noStormsNear}</p>
+      ) : (
+        <ul className="near">
+          {near.map(({ storm, km, degrees }) => (
+            <li key={`${storm.peak_lon},${storm.peak_lat}`}>
+              <Swatch colour={storm.colour} />
+              {t.stormNear(Math.round(km), t.winds[Math.round(degrees / 45) % 8], storm.peak_mm_h.toFixed(0))}
+              {t.going(storm.moving) && <small> · {t.going(storm.moving)}</small>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function Header({ selection, point, name }: { selection: Selection; point: PointData | Failed | null; name: string | null }) {
   const t = useText();
   const zone = point && !failed(point) && point.zone && !failed(point.zone) ? point.zone.name : null;
   const [kind, title] =
@@ -288,14 +322,14 @@ function Header({ selection, point }: { selection: Selection; point: PointData |
       ? [t.storm, t.atPeak(selection.storm.peak_mm_h.toFixed(0))]
       : selection.kind === "radar"
         ? [t.radar, selection.radar.name]
-        : [t.point, zone ?? (point ? t.outsideZones : "…")];
+        : [t.point, name ?? zone ?? (point ? t.outsideZones : "…")];
   return (
     <header>
       <small>{kind}</small>
       <h2>{title}</h2>
       <p>
         {place(selection.lon, selection.lat)}
-        {selection.kind !== "point" && zone && <> · {zone}</>}
+        {(selection.kind !== "point" || name) && zone && <> · {zone}</>}
       </p>
     </header>
   );
@@ -376,18 +410,18 @@ function Radar({ selection, rain }: { selection: Extract<Selection, { kind: "rad
   );
 }
 
-export default function Card({ selection, layer, point, ahead, radarRain, onClose }: Props) {
+export default function Card({ selection, layer, point, ahead, radarRain, storms, name, onClose }: Props) {
   const t = useText();
   const code =
     point && !failed(point)
       ? [point.python, ahead && !failed(ahead) ? ahead.python : null].filter(Boolean).join("\n")
       : null;
   return (
-    <aside className="card" aria-live="polite">
+    <aside className="sheet" aria-live="polite">
       <button className="close" onClick={onClose} aria-label={t.close}>
         ×
       </button>
-      <Header selection={selection} point={point} />
+      <Header selection={selection} point={point} name={name} />
       <div className="scroll">
         {selection.kind === "storm" && <Storm selection={selection} />}
         {selection.kind === "radar" && <Radar selection={selection} rain={radarRain} />}
@@ -403,6 +437,7 @@ export default function Card({ selection, layer, point, ahead, radarRain, onClos
           <>
             <RainHere point={point} layer={layer} />
             <Ahead ahead={ahead} />
+            {selection.kind === "point" && storms && <Near selection={selection} storms={storms} />}
             <Zone zone={point.zone} />
             <Trust point={point} />
           </>

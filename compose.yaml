@@ -6,6 +6,9 @@
 #   docker compose run --rm python             Python, with dpc_radar to import
 #
 #   DPC_RADAR_PORT   the port of the demo (default 3000)
+#   DPC_RADAR_LAT, DPC_RADAR_LON, DPC_RADAR_PLACE
+#                    where the map opens, and the name shown: the municipality
+#                    that hosts the page (default: Gioia del Colle). See .env.example.
 #   DPC_RADAR_DAYS   how many days of frames `init` downloads (default 2)
 name: dpc-radar
 
@@ -29,6 +32,13 @@ services:
     build: demo/web
     environment:
       DPC_RADAR_API: http://api:8000
+      DPC_RADAR_LAT: ${DPC_RADAR_LAT:-}
+      DPC_RADAR_LON: ${DPC_RADAR_LON:-}
+      DPC_RADAR_ZOOM: ${DPC_RADAR_ZOOM:-}
+      DPC_RADAR_PLACE: ${DPC_RADAR_PLACE:-}
+      DPC_RADAR_LAYER: ${DPC_RADAR_LAYER:-}
+      DPC_RADAR_TILES: ${DPC_RADAR_TILES:-}
+      DPC_RADAR_TILES_CREDIT: ${DPC_RADAR_TILES_CREDIT:-}
     depends_on:
       - api
     ports:

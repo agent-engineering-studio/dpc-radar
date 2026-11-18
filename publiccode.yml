@@ -1,0 +1,88 @@
+# The card of dpc-radar for the software catalogue of Developers Italia.
+# Check it with: docker run --rm -i italia/publiccode-parser-go /dev/stdin < publiccode.yml
+publiccodeYmlVersion: "0"
+name: dpc-radar
+url: "https://github.com/agent-engineering-studio/dpc-radar.git"
+landingURL: "https://agentengineering.it/dpc-radar/"
+releaseDate: "2026-11-17"
+softwareVersion: "0.3.0"
+platforms: [web, linux, mac, windows]
+categories: [geographic-information-systems, data-visualization, data-analytics]
+usedBy: []
+developmentStatus: beta
+softwareType: library
+intendedAudience:
+  scope: [environment, emergency-services, local-authorities, science-and-technology]
+  countries: [IT]
+description:
+  it:
+    shortDescription: La pioggia misurata dai radar della Protezione Civile, in Python e su una mappa per il sito del Comune
+    longDescription: >
+      dpc-radar legge i dati aperti della rete radar del Dipartimento della Protezione Civile: una
+      mappa della pioggia su tutta l'Italia ogni cinque minuti, e il «Merging», che corregge il radar
+      con migliaia di pluviometri. È una libreria Python con riga di comando, e una pagina web pronta
+      da mettere sul sito di un ente: una mappa che si apre sulle coordinate del Comune, con la
+      pioggia di adesso e delle ultime 1, 3, 6, 12 e 24 ore, quanto è rara quella pioggia in quel
+      posto, la previsione automatica delle prossime due ore, i temporali vicini, l'allerta
+      ufficiale del bollettino di criticità e quanto ci si può fidare del radar in quel punto. La
+      pagina usa Bootstrap Italia, è in italiano e in inglese e si configura con variabili
+      d'ambiente. I numeri sono calcolati dai dati radar con codice aperto e verificato su un
+      benchmark pubblico di casi noti; dove nessuno ha misurato la risposta è «non misurato», mai
+      zero. Non usa dati personali e non richiede chiavi o account. Non è un sistema di allerta:
+      l'allerta ufficiale resta il bollettino del Dipartimento della Protezione Civile.
+    features:
+      - Mappa della pioggia in tempo reale centrata sul Comune, con Bootstrap Italia
+      - Pioggia di adesso e delle ultime 1, 3, 6, 12 e 24 ore in ogni punto
+      - Rarità della pioggia rispetto al clima del posto (tempo di ritorno)
+      - Previsione automatica delle prossime due ore e temporali vicini
+      - Allerta ufficiale del bollettino di criticità, zona per zona
+      - Controllo di qualità dei dati e mappa di affidabilità del radar
+      - Archivio locale dei dati, che il Dipartimento conserva per circa cinque mesi
+      - Libreria Python, riga di comando e server MCP per gli assistenti
+    screenshots:
+      - docs/images/demo-comune.png
+      - docs/images/rain-24h.png
+  en:
+    shortDescription: The rain measured by the Italian Civil Protection radars, in Python and on a map for a municipality's site
+    longDescription: >
+      dpc-radar reads the open data of the radar network of the Italian Civil Protection
+      Department: a map of the rain over all of Italy every five minutes, and the «Merging», which
+      corrects the radar with thousands of rain gauges. It is a Python library with a command line,
+      and a web page ready for the site of a public body: a map that opens on the coordinates of
+      the municipality, with the rain of now and of the last 1, 3, 6, 12 and 24 hours, how rare
+      that rain is there, the automatic forecast of the next two hours, the storms nearby, the
+      official alert of the criticality bulletin and how far the radar can be trusted at that
+      place. The page uses Bootstrap Italia, is in Italian and in English, and is set up with
+      environment variables. The numbers are computed from the radar data by open code, checked on
+      a public benchmark of known cases; where nobody measured, the answer is "not measured", never
+      zero. It uses no personal data and needs no key or account. It is not an alert system: the
+      official alert stays the bulletin of the Civil Protection Department.
+    features:
+      - Live rain map centred on the municipality, built with Bootstrap Italia
+      - Rain of now and of the last 1, 3, 6, 12 and 24 hours at any point
+      - How rare the rain is for the place (return period)
+      - Automatic forecast of the next two hours and storms nearby
+      - Official alert of the criticality bulletin, zone by zone
+      - Data quality check and a reliability map of the radar
+      - A local archive of the data, which the Department keeps for about five months
+      - Python library, command line and MCP server for assistants
+    screenshots:
+      - docs/images/demo-comune.png
+      - docs/images/rain-24h.png
+organisation:
+  name: Agent Engineering Studio
+  uri: "https://github.com/agent-engineering-studio"
+legal:
+  license: Apache-2.0
+  mainCopyrightOwner: Agent Engineering Studio
+maintenance:
+  type: community
+  contacts:
+    - name: Giuseppe Zileni
+localisation:
+  localisationReady: true
+  availableLanguages: [it, en]
+IT:
+  countryExtensionVersion: "1.0"
+  riuso:
+    codiceIPA: ""   # empty until the software belongs to a public administration

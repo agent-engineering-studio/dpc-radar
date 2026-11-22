@@ -25,13 +25,17 @@ scorer, not of a model.
 **A model's answers.** ``ask`` sends each question with its facts to a model
 and saves the text; ``label`` asks a second model what each number of a text is
 said of, and saves its ``said``. The paths of a model are an opinion: the hand
-answers are labelled by both, and ``score`` prints how often the reader agrees
-with the hand. Both commands need ``ANTHROPIC_API_KEY`` and spend money (one
-request per case and answer); ``score`` is free and repeatable.
+answers are labelled by both, and ``score`` prints how often the reader's labels
+give a number the same score as the hand's. Both commands need
+``ANTHROPIC_API_KEY`` and spend money (one request per case and answer);
+``score`` is free and repeatable.
 
 **The score** of a number, given what it is said of:
 
-* ``faithful``: the fact, to the decimals written (``118`` and ``118.0`` for 118.04);
+* ``faithful``: the fact, to the decimals written (``118`` and ``118.0`` for 118.04),
+  or the key it is said of (20 in "205.1 km² got 20 mm or more");
+* ``approximate``: a round number, the fact rounded to its zeros (``3,000``
+  for 3002): not a fault;
 * ``question``: said of nothing in the facts, and written in the question;
 * ``rounded``: not the fact, but within one unit of its last digit (``118.1``
   for 118.04, ``191`` for 191.84): a wrong rounding or a cut;
@@ -57,14 +61,16 @@ from pathlib import Path
 from typing import Any
 
 from dpc_radar.report import check_text
+from dpc_radar.report import numbers as numbers_of
 
 HERE = Path(__file__).parent
 SET = HERE / "faithful.json"
 MODEL = "claude-opus-5-5"
 READER = "claude-sonnet-5-5"
-KINDS = ("faithful", "question", "rounded", "swapped", "invented")
+KINDS = ("faithful", "approximate", "question", "rounded", "swapped", "invented")
+#: The kinds that are faults.
+FAULTS = ("rounded", "swapped", "invented")
 
-NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?!\w)")
 _DIGITS = re.compile(r"\d+(?:\.\d+)?")
 
 WRITER = (
@@ -104,8 +110,8 @@ LABELS: dict[str, Any] = {
 
 
 def numbers(text: str) -> list[str]:
-    """The numbers of a text as written; digits inside a word (``CUM3``) are not numbers."""
-    return NUMBER.findall(text.replace("**", ""))
+    """The numbers of a text as written (:func:`dpc_radar.report.numbers`), bold or not."""
+    return numbers_of(text.replace("**", ""))
 
 
 def at(facts: Any, path: str) -> Any:
@@ -139,13 +145,31 @@ def values(fact: Any) -> Iterator[float]:
 
 def same(token: str, value: float) -> bool:
     decimals = len(token.partition(".")[2])
-    return round(value, decimals) == float(token)
+    return round(value, decimals) == float(token.replace(",", ""))
 
 
 def near(token: str, value: float) -> bool:
     """Within one unit of the last digit written, and not the same."""
     decimals = len(token.partition(".")[2])
-    return abs(value - float(token)) < 10**-decimals and not same(token, value)
+    return abs(value - float(token.replace(",", ""))) < 10**-decimals and not same(token, value)
+
+
+def round_number(token: str, value: float) -> bool:
+    """``3,000`` for 3002, ``600`` for 646: a round number, the fact rounded to its zeros."""
+    digits = token.replace(",", "")
+    zeros = len(digits) - len(digits.rstrip("0"))
+    if "." in digits or not zeros or zeros == len(digits):
+        return False
+    return round(value, -zeros) == float(digits)
+
+
+def is_key(token: str, of: str, facts: dict[str, Any]) -> bool:
+    """The number is the key the path ends with: 20 in ``km2_over.20`` ("20 mm or more")."""
+    parent, _, last = of.rpartition(".")
+    held = at(facts, parent) if parent else facts
+    if not isinstance(held, dict) or last not in held or not _DIGITS.fullmatch(last):
+        return False
+    return float(last) == float(token.replace(",", ""))
 
 
 def kind(token: str, of: str | None, facts: dict[str, Any], question: str) -> str:
@@ -156,8 +180,10 @@ def kind(token: str, of: str | None, facts: dict[str, Any], question: str) -> st
             return "question"
         return "swapped" if any(same(token, v) for v in everything) else "invented"
     own = list(values(at(facts, of)))
-    if any(same(token, v) for v in own):
+    if any(same(token, v) for v in own) or is_key(token, of, facts):
         return "faithful"
+    if any(round_number(token, v) for v in own):
+        return "approximate"
     if any(near(token, v) for v in own):
         return "rounded"
     if any(same(token, v) for v in everything):
@@ -205,12 +231,12 @@ def table(data: dict[str, Any]) -> tuple[str, list[str]]:
             got = Counter(k for _, _, k in scored)
             totals.setdefault(answer["by"], Counter()).update(got)
             totals[answer["by"]]["answers"] += 1
-            if not got.keys() <= {"faithful", "question"}:
+            if any(got[k] for k in FAULTS):
                 strangers = set(check_text(answer["text"], case["facts"]))
                 totals[answer["by"]]["missed"] += sum(
-                    k in KINDS[2:] and n not in strangers for n, _, k in scored
+                    k in FAULTS and n not in strangers for n, _, k in scored
                 )
-                wrong = [f"{n} ({k}, said of {of})" for n, of, k in scored if k in KINDS[2:]]
+                wrong = [f"{n} ({k}, said of {of})" for n, of, k in scored if k in FAULTS]
                 details.append(f"- {case['id']}, {answer['by']}: " + "; ".join(wrong))
             expect = answer.get("expect")
             if expect is not None and {k: got[k] for k in KINDS if got[k]} != expect:
@@ -220,7 +246,7 @@ def table(data: dict[str, Any]) -> tuple[str, list[str]]:
     for by, got in totals.items():
         count = sum(got[k] for k in KINDS)
         cells = [str(got[k]) for k in KINDS]
-        faults_ = sum(got[k] for k in KINDS[2:])
+        faults_ = sum(got[k] for k in FAULTS)
         missed = f"{got['missed']} of {faults_}" if faults_ else "-"
         lines.append(
             f"| {by} | {got['answers']} | {count} | " + " | ".join(cells) + f" | {missed} |"
@@ -234,20 +260,28 @@ def table(data: dict[str, Any]) -> tuple[str, list[str]]:
 
 
 def _reader_agreement(data: dict[str, Any]) -> str:
-    """How often the reading of a model gives a number the path of the hand."""
-    agree = total = 0
+    """How often the reading of a model gives a hand-labelled number the same score."""
+    same_kind = same_verdict = total = 0
+    reader = ""
     for case in data["cases"]:
         for answer in case["answers"]:
+            hand = answer.get("said") or []
             for model, said in (answer.get("read_by") or {}).items():
-                hand = answer.get("said") or []
                 if [s["number"] for s in said] != [s["number"] for s in hand]:
                     continue
-                total += len(hand)
-                agree += sum(a["of"] == b["of"] for a, b in zip(said, hand, strict=True))
                 reader = model
+                for a, b in zip(said, hand, strict=True):
+                    ka = kind(a["number"], a["of"], case["facts"], case["question"])
+                    kb = kind(b["number"], b["of"], case["facts"], case["question"])
+                    total += 1
+                    same_kind += ka == kb
+                    same_verdict += (ka in FAULTS) == (kb in FAULTS)
     if not total:
         return ""
-    return f"The reader ({reader}) gave the path of the hand to {agree} of {total} numbers."
+    return (
+        f"Read by {reader}, the hand answers score the same on {same_kind} of {total} "
+        f"numbers, and the verdict (a fault or not) is the same on {same_verdict}."
+    )
 
 
 # The facts, recorded once from a local archive.
@@ -369,7 +403,8 @@ def _label(args: argparse.Namespace, data: dict[str, Any]) -> int:
     for case in data["cases"]:
         for answer in case["answers"]:
             said = None
-            if answer.get("said") is None:
+            labels = [x["number"] for x in answer.get("said") or []]
+            if answer.get("expect") is None and labels != numbers(answer["text"]):
                 said = answer["said"] = _read(client, args.model, case, answer["text"])
                 answer["labelled_by"] = args.model
             elif answer.get("expect") is not None and args.model not in answer.get("read_by", {}):

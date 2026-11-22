@@ -389,3 +389,11 @@ def test_a_text_in_other_words_is_not_read_by_the_claims() -> None:
         "hourly[07:00].mean_mm",
         "hourly[07:00].km2_over",
     ]
+
+
+def test_numbers_with_thousands_and_ordinals() -> None:
+    text = "3,510 km², 1,100 m, the 99.99th percentile, 1,2 and 3rd; CUM3 at 03:00."
+    assert r.numbers(text) == ["3,510", "1,100", "99.99", "1", "2", "3", "03", "00"]
+    facts = {"area_km2": 3510.0, "beam": 1100.0, "p": 99.99, "t": "2026-10-10T03:00Z"}
+    assert r.check_text("3,510 km² and the 99.99th percentile at 03:00", facts) == []
+    assert r.check_text("1,100 m, not 3,511 km²", facts) == ["3,511"]

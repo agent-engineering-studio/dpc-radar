@@ -111,7 +111,12 @@ words ("twice as much", "a record"). A text from a model still needs a
 reader. How often a model quotes the facts faithfully is measured in
 [`benchmarks/faithful.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/benchmarks/faithful.py):
 on its hand-written answers with known faults, `check_text` lets through 8
-of 17 wrong numbers, all of them swapped.
+of 17 wrong numbers, all of them swapped. Claude Opus 5.5, asked the same
+five questions, quoted 111 numbers and got 110 right; the one left is a 95th
+percentile read as "the wettest 5 %".
+
+`check_text` reads numbers as a model writes them: "3,510" is one number,
+and "99.99th" is 99.99 (`dpc_radar.report.numbers`).
 
 ## What is in the facts
 

@@ -1,0 +1,968 @@
+{
+  "about": "Questions, the facts the tools of dpc-radar gave, and answers scored on how they quote them. See benchmarks/faithful.py. Facts recorded from the frames of the DPC (CC BY-SA 4.0).",
+  "cases": [
+    {
+      "id": "melito-3h",
+      "question": "How much rain fell on Melito di Porto Salvo (15.78 E, 37.92 N) in the 3 hours to 06:00 UTC on 10 October 2026?",
+      "tool": "rain_at",
+      "args": {
+        "lon": 15.78,
+        "lat": 37.92,
+        "hours": 3
+      },
+      "now": "2026-10-10T06:00",
+      "facts": {
+        "lon": 15.78,
+        "lat": 37.92,
+        "hours": 3,
+        "mm": 13.4,
+        "measured": true,
+        "method": "median of the 3x3 pixels around the point",
+        "frame": {
+          "product": "CUM3",
+          "time": "2026-10-10T06:00Z",
+          "unit": "mm",
+          "hours": 3,
+          "source": "radar and rain gauges («Merging»)"
+        },
+        "quality": {
+          "verdict": null,
+          "trusted_share": 1.0,
+          "masked_pixels": 0,
+          "reasons": {
+            "jump": 0,
+            "beyond_record": 0,
+            "outlier": 0,
+            "gauge_only": 0
+          },
+          "newest_frame_rejected": null
+        },
+        "reliability": {
+          "score": 0.77,
+          "reliable": true,
+          "beam_height_m": 1100.0,
+          "nearest_radar": "Catania Fontanarossa",
+          "distance_km": 81.7
+        },
+        "note": "radar data, not an alert: the official alert is the DPC bulletin"
+      },
+      "answers": [
+        {
+          "by": "hand, faithful",
+          "text": "In the 3 hours to 06:00 UTC on 10 October 2026 the «Merging» (radar and rain gauges) gave 13.4 mm at Melito di Porto Salvo. The radar can be trusted there: its reliability is 0.77, and the nearest radar, Catania Fontanarossa, is 81.7 km away.",
+          "said": [
+            {
+              "number": "3",
+              "of": "hours"
+            },
+            {
+              "number": "06",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "10",
+              "of": "frame.time"
+            },
+            {
+              "number": "2026",
+              "of": "frame.time"
+            },
+            {
+              "number": "13.4",
+              "of": "mm"
+            },
+            {
+              "number": "0.77",
+              "of": "reliability.score"
+            },
+            {
+              "number": "81.7",
+              "of": "reliability.distance_km"
+            }
+          ],
+          "expect": {
+            "faithful": 8
+          }
+        },
+        {
+          "by": "hand, with faults",
+          "text": "Melito di Porto Salvo got 13.5 mm in the 3 hours to 06:00 UTC. The lowest radar beam passes 81.7 m above the ground there, its reliability is 0.8, and that much rain comes about once in 36 years.",
+          "said": [
+            {
+              "number": "13.5",
+              "of": "mm"
+            },
+            {
+              "number": "3",
+              "of": "hours"
+            },
+            {
+              "number": "06",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "81.7",
+              "of": "reliability.beam_height_m"
+            },
+            {
+              "number": "0.8",
+              "of": "reliability.score"
+            },
+            {
+              "number": "36",
+              "of": "return_period_years"
+            }
+          ],
+          "expect": {
+            "faithful": 4,
+            "rounded": 1,
+            "swapped": 1,
+            "invented": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "melito-1h",
+      "question": "How much rain did the radar see at Melito di Porto Salvo (15.78 E, 37.92 N) in the hour to 03:00 UTC on 10 October 2026?",
+      "tool": "rain_at",
+      "args": {
+        "lon": 15.78,
+        "lat": 37.92,
+        "hours": 1
+      },
+      "now": "2026-10-10T03:00",
+      "facts": {
+        "lon": 15.78,
+        "lat": 37.92,
+        "hours": 1,
+        "mm": 8.3,
+        "measured": true,
+        "method": "median of the 3x3 pixels around the point",
+        "frame": {
+          "product": "SRT1",
+          "time": "2026-10-10T03:00Z",
+          "unit": "mm",
+          "hours": 1,
+          "source": "radar only"
+        },
+        "quality": {
+          "verdict": null,
+          "trusted_share": 1.0,
+          "masked_pixels": 0,
+          "reasons": {
+            "jump": 0,
+            "beyond_record": 0,
+            "outlier": 0,
+            "gauge_only": 0
+          },
+          "newest_frame_rejected": null
+        },
+        "reliability": {
+          "score": 0.77,
+          "reliable": true,
+          "beam_height_m": 1100.0,
+          "nearest_radar": "Catania Fontanarossa",
+          "distance_km": 81.7
+        },
+        "note": "radar data, not an alert: the official alert is the DPC bulletin"
+      },
+      "answers": [
+        {
+          "by": "hand, faithful",
+          "text": "The radar alone saw 8.3 mm at Melito di Porto Salvo in the hour to 03:00 UTC on 10 October 2026.",
+          "said": [
+            {
+              "number": "8.3",
+              "of": "mm"
+            },
+            {
+              "number": "03",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "10",
+              "of": "frame.time"
+            },
+            {
+              "number": "2026",
+              "of": "frame.time"
+            }
+          ],
+          "expect": {
+            "faithful": 5
+          }
+        },
+        {
+          "by": "hand, with faults",
+          "text": "In the 1 hour to 03:00 UTC the radar alone saw 8.4 mm at Melito, and the rain gauges 13.4 mm. The nearest radar, Catania Fontanarossa, is 1100 km away.",
+          "said": [
+            {
+              "number": "1",
+              "of": "hours"
+            },
+            {
+              "number": "03",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "8.4",
+              "of": "mm"
+            },
+            {
+              "number": "13.4",
+              "of": null
+            },
+            {
+              "number": "1100",
+              "of": "reliability.distance_km"
+            }
+          ],
+          "expect": {
+            "faithful": 3,
+            "rounded": 1,
+            "swapped": 1,
+            "invented": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "reggio-area",
+      "question": "Over the south of Calabria (15.5 to 16.2 E, 37.8 to 38.3 N), how much rain fell in the 3 hours to 06:00 UTC on 10 October 2026, and over how much land?",
+      "tool": "area_summary",
+      "args": {
+        "west": 15.5,
+        "south": 37.8,
+        "east": 16.2,
+        "north": 38.3,
+        "hours": 3
+      },
+      "now": "2026-10-10T06:00",
+      "facts": {
+        "bbox": [
+          15.5,
+          37.8,
+          16.2,
+          38.3
+        ],
+        "hours": 3,
+        "area_km2": 3510.0,
+        "measured_share": 1.0,
+        "max_mm": 26.7,
+        "max_lon": 16.035,
+        "max_lat": 37.795,
+        "mean_mm": 11.8,
+        "median_mm": 11.3,
+        "p95_mm": 20.7,
+        "km2_over": {
+          "1": 3510.0,
+          "5": 3498.4,
+          "10": 2177.2,
+          "20": 205.1,
+          "50": 0.0,
+          "100": 0.0
+        },
+        "frame": {
+          "product": "CUM3",
+          "time": "2026-10-10T06:00Z",
+          "unit": "mm",
+          "hours": 3,
+          "source": "radar and rain gauges («Merging»)"
+        },
+        "quality": {
+          "verdict": null,
+          "trusted_share": 1.0,
+          "masked_pixels": 0,
+          "reasons": {
+            "jump": 0,
+            "beyond_record": 0,
+            "outlier": 0,
+            "gauge_only": 0
+          },
+          "newest_frame_rejected": null
+        },
+        "note": "the maximum is one pixel; km2_over is the area at each mm or more. radar data, not an alert: the official alert is the DPC bulletin"
+      },
+      "answers": [
+        {
+          "by": "hand, faithful",
+          "text": "Over the box from 15.5 to 16.2 E and 37.8 to 38.3 N, the «Merging» gave a mean of 11.8 mm in the 3 hours to 06:00 UTC, and 26.7 mm at its wettest pixel (16.035 E, 37.795 N). 205.1 km² got 20 mm or more, and 2177.2 km² got 10 mm or more.",
+          "said": [
+            {
+              "number": "15.5",
+              "of": "bbox.0"
+            },
+            {
+              "number": "16.2",
+              "of": "bbox.2"
+            },
+            {
+              "number": "37.8",
+              "of": "bbox.1"
+            },
+            {
+              "number": "38.3",
+              "of": "bbox.3"
+            },
+            {
+              "number": "11.8",
+              "of": "mean_mm"
+            },
+            {
+              "number": "3",
+              "of": "hours"
+            },
+            {
+              "number": "06",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "26.7",
+              "of": "max_mm"
+            },
+            {
+              "number": "16.035",
+              "of": "max_lon"
+            },
+            {
+              "number": "37.795",
+              "of": "max_lat"
+            },
+            {
+              "number": "205.1",
+              "of": "km2_over.20"
+            },
+            {
+              "number": "20",
+              "of": "km2_over"
+            },
+            {
+              "number": "2177.2",
+              "of": "km2_over.10"
+            },
+            {
+              "number": "10",
+              "of": "km2_over"
+            }
+          ],
+          "expect": {
+            "faithful": 15
+          }
+        },
+        {
+          "by": "hand, with faults",
+          "text": "In the 3 hours to 06:00 UTC the «Merging» gave a mean of 11.3 mm over the box, about 4000 km², and a maximum of 27 mm; 2177.2 km² got 20 mm or more, and half of the box had less than 20.7 mm.",
+          "said": [
+            {
+              "number": "3",
+              "of": "hours"
+            },
+            {
+              "number": "06",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "11.3",
+              "of": "mean_mm"
+            },
+            {
+              "number": "4000",
+              "of": "area_km2"
+            },
+            {
+              "number": "27",
+              "of": "max_mm"
+            },
+            {
+              "number": "2177.2",
+              "of": "km2_over.20"
+            },
+            {
+              "number": "20",
+              "of": "km2_over"
+            },
+            {
+              "number": "20.7",
+              "of": "median_mm"
+            }
+          ],
+          "expect": {
+            "faithful": 5,
+            "swapped": 3,
+            "invented": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "melito-rarity",
+      "question": "How rare are 92.6 mm in 6 hours at Melito di Porto Salvo (15.78 E, 37.92 N)?",
+      "tool": "rarity",
+      "args": {
+        "lon": 15.78,
+        "lat": 37.92,
+        "hours": 6,
+        "mm": 92.6
+      },
+      "now": "2026-10-10T06:00",
+      "facts": {
+        "lon": 15.78,
+        "lat": 37.92,
+        "hours": 6,
+        "mm": 92.6,
+        "return_period_years": 36.1,
+        "low_years": 11.2,
+        "high_years": 50.0,
+        "percentile": 99.99,
+        "max_return_years": 50,
+        "at_least": false,
+        "years_of_radar": 8,
+        "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+      },
+      "answers": [
+        {
+          "by": "hand, faithful",
+          "text": "At Melito di Porto Salvo, 92.6 mm in 6 hours come about once in 36 years (between 11 and 50 years), on 8 years of radar history.",
+          "said": [
+            {
+              "number": "92.6",
+              "of": "mm"
+            },
+            {
+              "number": "6",
+              "of": "hours"
+            },
+            {
+              "number": "36",
+              "of": "return_period_years"
+            },
+            {
+              "number": "11",
+              "of": "low_years"
+            },
+            {
+              "number": "50",
+              "of": "high_years"
+            },
+            {
+              "number": "8",
+              "of": "years_of_radar"
+            }
+          ],
+          "expect": {
+            "faithful": 6
+          }
+        },
+        {
+          "by": "hand, with faults",
+          "text": "92.6 mm in 6 hours at Melito come once in 37 years, at the 99.9 percentile, between 11.2 and 50 years, from 18 years of radar.",
+          "said": [
+            {
+              "number": "92.6",
+              "of": "mm"
+            },
+            {
+              "number": "6",
+              "of": "hours"
+            },
+            {
+              "number": "37",
+              "of": "return_period_years"
+            },
+            {
+              "number": "99.9",
+              "of": "percentile"
+            },
+            {
+              "number": "11.2",
+              "of": "low_years"
+            },
+            {
+              "number": "50",
+              "of": "high_years"
+            },
+            {
+              "number": "18",
+              "of": "years_of_radar"
+            }
+          ],
+          "expect": {
+            "faithful": 4,
+            "rounded": 2,
+            "invented": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "reggio-day",
+      "question": "Write a short account of the rain of 10 October 2026 over the south of Calabria (15.5 to 16.2 E, 37.8 to 38.3 N).",
+      "tool": "report",
+      "args": {
+        "bbox": [
+          15.5,
+          37.8,
+          16.2,
+          38.3
+        ],
+        "day": "2026-10-10"
+      },
+      "now": "2026-10-11T00:00",
+      "facts": {
+        "event": {
+          "day": "2026-10-10",
+          "from": "2026-10-10T00:00Z",
+          "to": "2026-10-11T00:00Z",
+          "bbox": [
+            15.5,
+            37.8,
+            16.2,
+            38.3
+          ],
+          "times": "UTC"
+        },
+        "frames": {
+          "radar": {
+            "product": "SRT1",
+            "expected": 24,
+            "used": 24,
+            "missing": [],
+            "rejected": [],
+            "masked_pixels": 0
+          },
+          "merging": {
+            "product": "CUM3",
+            "expected": 8,
+            "used": 8,
+            "missing": [],
+            "rejected": [],
+            "masked_pixels": 0
+          }
+        },
+        "radar": {
+          "complete": true,
+          "area_km2": 3776.0,
+          "measured_share": 1.0,
+          "max_mm": 176.4,
+          "max_lon": 16.1096,
+          "max_lat": 37.9053,
+          "mean_mm": 73.4,
+          "median_mm": 65.8,
+          "p95_mm": 137.7,
+          "km2_over": {
+            "20": 3776.0,
+            "50": 3002.0,
+            "100": 646.0,
+            "200": 0.0
+          }
+        },
+        "merging": {
+          "complete": true,
+          "area_km2": 3510.0,
+          "measured_share": 1.0,
+          "max_mm": 206.7,
+          "max_lon": 15.785,
+          "max_lat": 37.925,
+          "mean_mm": 73.9,
+          "median_mm": 67.3,
+          "p95_mm": 127.2,
+          "km2_over": {
+            "20": 3509.0,
+            "50": 2789.5,
+            "100": 579.2,
+            "200": 1.0
+          }
+        },
+        "hourly_threshold_mm": 10,
+        "hourly": [
+          {
+            "time": "2026-10-10T01:00Z",
+            "max_mm": 28.6,
+            "mean_mm": 9.0,
+            "km2_over": 1608.0
+          },
+          {
+            "time": "2026-10-10T02:00Z",
+            "max_mm": 35.5,
+            "mean_mm": 8.7,
+            "km2_over": 1286.0
+          },
+          {
+            "time": "2026-10-10T03:00Z",
+            "max_mm": 23.6,
+            "mean_mm": 6.3,
+            "km2_over": 547.0
+          },
+          {
+            "time": "2026-10-10T04:00Z",
+            "max_mm": 25.9,
+            "mean_mm": 10.1,
+            "km2_over": 1575.0
+          },
+          {
+            "time": "2026-10-10T05:00Z",
+            "max_mm": 36.0,
+            "mean_mm": 11.4,
+            "km2_over": 2007.0
+          },
+          {
+            "time": "2026-10-10T06:00Z",
+            "max_mm": 23.6,
+            "mean_mm": 6.0,
+            "km2_over": 671.0
+          },
+          {
+            "time": "2026-10-10T07:00Z",
+            "max_mm": 6.8,
+            "mean_mm": 1.4,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T08:00Z",
+            "max_mm": 0.3,
+            "mean_mm": 0.0,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T09:00Z",
+            "max_mm": 1.5,
+            "mean_mm": 0.1,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T10:00Z",
+            "max_mm": 15.3,
+            "mean_mm": 3.0,
+            "km2_over": 119.0
+          },
+          {
+            "time": "2026-10-10T11:00Z",
+            "max_mm": 9.3,
+            "mean_mm": 1.7,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T12:00Z",
+            "max_mm": 3.6,
+            "mean_mm": 0.1,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T13:00Z",
+            "max_mm": 12.6,
+            "mean_mm": 0.3,
+            "km2_over": 4.0
+          },
+          {
+            "time": "2026-10-10T14:00Z",
+            "max_mm": 19.4,
+            "mean_mm": 2.2,
+            "km2_over": 115.0
+          },
+          {
+            "time": "2026-10-10T15:00Z",
+            "max_mm": 16.6,
+            "mean_mm": 2.3,
+            "km2_over": 62.0
+          },
+          {
+            "time": "2026-10-10T16:00Z",
+            "max_mm": 15.4,
+            "mean_mm": 3.6,
+            "km2_over": 50.0
+          },
+          {
+            "time": "2026-10-10T17:00Z",
+            "max_mm": 24.7,
+            "mean_mm": 3.8,
+            "km2_over": 445.0
+          },
+          {
+            "time": "2026-10-10T18:00Z",
+            "max_mm": 27.4,
+            "mean_mm": 1.8,
+            "km2_over": 263.0
+          },
+          {
+            "time": "2026-10-10T19:00Z",
+            "max_mm": 24.4,
+            "mean_mm": 1.4,
+            "km2_over": 174.0
+          },
+          {
+            "time": "2026-10-10T20:00Z",
+            "max_mm": 9.4,
+            "mean_mm": 0.1,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T21:00Z",
+            "max_mm": 0.6,
+            "mean_mm": 0.0,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T22:00Z",
+            "max_mm": 4.2,
+            "mean_mm": 0.0,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-10T23:00Z",
+            "max_mm": 1.0,
+            "mean_mm": 0.0,
+            "km2_over": 0.0
+          },
+          {
+            "time": "2026-10-11T00:00Z",
+            "max_mm": 0.4,
+            "mean_mm": 0.0,
+            "km2_over": 0.0
+          }
+        ],
+        "radar_over_merging": 0.99,
+        "peak": {
+          "lon": 15.785,
+          "lat": 37.925,
+          "of": "merging",
+          "method": "median of the 3x3 pixels around the place of the maximum",
+          "radar_mm": 115.1,
+          "merging_mm": 190.8,
+          "hourly_radar_mm": [
+            16.0,
+            21.2,
+            8.3,
+            20.3,
+            17.7,
+            5.4,
+            0.3,
+            0.0,
+            0.3,
+            6.2,
+            0.0,
+            0.0,
+            0.6,
+            1.9,
+            3.0,
+            8.4,
+            1.1,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            3.9,
+            0.0,
+            0.0
+          ],
+          "wettest": [
+            {
+              "ended": "2026-10-10T02:00Z",
+              "hours": 1,
+              "mm": 21.2,
+              "return_period_years": 2.4,
+              "low_years": 1.6,
+              "high_years": 4.6,
+              "percentile": 99.99,
+              "max_return_years": 50,
+              "at_least": false,
+              "years_of_radar": 8,
+              "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+            },
+            {
+              "ended": "2026-10-10T04:00Z",
+              "hours": 3,
+              "mm": 49.8,
+              "return_period_years": 6.7,
+              "low_years": 3.4,
+              "high_years": 15.1,
+              "percentile": 99.99,
+              "max_return_years": 50,
+              "at_least": false,
+              "years_of_radar": 8,
+              "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+            },
+            {
+              "ended": "2026-10-10T06:00Z",
+              "hours": 6,
+              "mm": 88.9,
+              "return_period_years": 31.3,
+              "low_years": 10.2,
+              "high_years": 50.0,
+              "percentile": 99.99,
+              "max_return_years": 50,
+              "at_least": false,
+              "years_of_radar": 8,
+              "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+            },
+            {
+              "ended": "2026-10-11T00:00Z",
+              "hours": 24,
+              "mm": 114.6,
+              "return_period_years": 41.8,
+              "low_years": 13.9,
+              "high_years": 50.0,
+              "percentile": 99.99,
+              "max_return_years": 50,
+              "at_least": false,
+              "years_of_radar": 8,
+              "basis": "radar-only rain, IT-DPC-SRI history; outside it the answer is None"
+            }
+          ],
+          "reliability": {
+            "score": 0.77,
+            "reliable": true,
+            "beam_height_m": 1100.0,
+            "nearest_radar": "Catania Fontanarossa",
+            "distance_km": 82.4
+          }
+        },
+        "bulletins": [],
+        "notes": [
+          "a point is the median of the 3x3 pixels around it; a maximum is one pixel",
+          "the radar alone and the «Merging» are on different grids: 1 km and 0.01 degrees",
+          "each total is over the rectangle of its own grid that holds the box, so the two areas differ a little",
+          "radar data, not an alert: the official alert is the DPC bulletin"
+        ]
+      },
+      "answers": [
+        {
+          "by": "hand, faithful",
+          "text": "On 10 October 2026 the «Merging» put 190.8 mm at the wettest place of the box (15.785 E, 37.925 N), where the radar alone read 115.1 mm. Over the whole box the two agree: the radar read 0.99 times the «Merging». The wettest 6 hours there, in radar rain, gave 88.9 mm by 06:00 UTC, about a 31-year rain.",
+          "said": [
+            {
+              "number": "10",
+              "of": "event.day"
+            },
+            {
+              "number": "2026",
+              "of": "event.day"
+            },
+            {
+              "number": "190.8",
+              "of": "peak.merging_mm"
+            },
+            {
+              "number": "15.785",
+              "of": "peak.lon"
+            },
+            {
+              "number": "37.925",
+              "of": "peak.lat"
+            },
+            {
+              "number": "115.1",
+              "of": "peak.radar_mm"
+            },
+            {
+              "number": "0.99",
+              "of": "radar_over_merging"
+            },
+            {
+              "number": "6",
+              "of": "peak.wettest.2.hours"
+            },
+            {
+              "number": "88.9",
+              "of": "peak.wettest.2.mm"
+            },
+            {
+              "number": "06",
+              "of": "peak.wettest.2.ended"
+            },
+            {
+              "number": "00",
+              "of": "peak.wettest.2.ended"
+            },
+            {
+              "number": "31",
+              "of": "peak.wettest.2.return_period_years"
+            }
+          ],
+          "expect": {
+            "faithful": 12
+          }
+        },
+        {
+          "by": "hand, with faults",
+          "text": "On 10 October 2026 the «Merging» put 115.1 mm at the wettest place, where the radar alone read 190.8 mm. The maximum of the «Merging» was 206.7 mm, and 579.2 km² got 50 mm or more. The wettest hour, to 02:00 UTC, gave 21.2 mm: a 120-year rain.",
+          "said": [
+            {
+              "number": "10",
+              "of": "event.day"
+            },
+            {
+              "number": "2026",
+              "of": "event.day"
+            },
+            {
+              "number": "115.1",
+              "of": "peak.merging_mm"
+            },
+            {
+              "number": "190.8",
+              "of": "peak.radar_mm"
+            },
+            {
+              "number": "206.7",
+              "of": "merging.max_mm"
+            },
+            {
+              "number": "579.2",
+              "of": "merging.km2_over.50"
+            },
+            {
+              "number": "50",
+              "of": "merging.km2_over"
+            },
+            {
+              "number": "02",
+              "of": "peak.wettest.0.ended"
+            },
+            {
+              "number": "00",
+              "of": "peak.wettest.0.ended"
+            },
+            {
+              "number": "21.2",
+              "of": "peak.wettest.0.mm"
+            },
+            {
+              "number": "120",
+              "of": "peak.wettest.0.return_period_years"
+            }
+          ],
+          "expect": {
+            "faithful": 7,
+            "swapped": 3,
+            "invented": 1
+          }
+        }
+      ]
+    }
+  ]
+}

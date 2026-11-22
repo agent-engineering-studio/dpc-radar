@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Iterator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -69,16 +69,21 @@ def sees_well() -> np.ndarray:
     return seen
 
 
-def windows(folder: Path) -> Iterator[tuple[datetime, np.ndarray, np.ndarray, np.ndarray]]:
+def windows(
+    folder: Path, skip: tuple[date, date] | None = None
+) -> Iterator[tuple[datetime, np.ndarray, np.ndarray, np.ndarray]]:
     """Every CUM3 frame with its three SRT1 hours: time, radar, «Merging», where to compare.
 
     Both on the 1 km grid, in mm over the same three hours. The last array is
     False where either has no data and around a rain gauge gone wrong.
+    ``skip``: the days (first and last) whose windows are left out.
     """
     arc = MergingArchive(folder, cache_frames=8)
     have = set(stored(folder, "SRT1"))
     sees = sees_well()
     for t in stored(folder, "CUM3"):
+        if skip and skip[0] <= t.date() <= skip[1]:
+            continue
         three = [t - timedelta(hours=h) for h in range(3)]
         if not all(h in have for h in three):
             continue
@@ -109,10 +114,10 @@ def windows(folder: Path) -> Iterator[tuple[datetime, np.ndarray, np.ndarray, np
         yield t, radar, merged, both & ~fault
 
 
-def sums(folder: Path) -> Sums:
+def sums(folder: Path, skip: tuple[date, date] | None = None) -> Sums:
     """Per month: the rain of the radar and of the «Merging», and the wet and dry windows."""
     out: Sums = {}
-    for t, radar, merged, ok in windows(folder):
+    for t, radar, merged, ok in windows(folder, skip):
         month = out.setdefault(
             f"{t:%Y-%m}",
             {
@@ -305,7 +310,8 @@ def write(values: np.ndarray, built_on: str, out: Path) -> None:
         )
 
 
-def load(folder: Path, cache: Path | None) -> Sums:
+def load(folder: Path, cache: Path | None, skip: tuple[date, date] | None = None) -> Sums:
+    """The sums of :func:`sums`, from ``cache`` if it is there (made with any ``skip``)."""
     if cache and cache.exists():
         out: Sums = {}
         with np.load(cache) as z:
@@ -313,7 +319,7 @@ def load(folder: Path, cache: Path | None) -> Sums:
                 month, part = key.split("/")
                 out.setdefault(month, {})[part] = z[key]
         return out
-    s = sums(folder)
+    s = sums(folder, skip)
     if cache:
         flat = {f"{m}/{p}": a for m, parts in s.items() for p, a in parts.items()}
         np.savez_compressed(cache, **flat)

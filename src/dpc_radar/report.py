@@ -29,9 +29,11 @@ a template, with no language model, and before anything is saved
 figures of ``facts.json``, to the decimals it is written with. The same check
 is there for a text written by someone else, a model included
 (``report.save(folder, text=...)``, or ``dpc-radar check report.md
-facts.json``): a text with a number of its own is refused. The check knows
-that a number exists, not that it is said of the right thing: it catches an
-invented figure, not a swapped one.
+facts.json``): a text with a number of its own is refused. That check knows
+that a number exists, not what it is said of; :func:`check_claims` reads the
+sentences of the template and ties each number to its fact, so two figures
+swapped between the «Merging» and the radar alone are refused too. A sentence
+in other words gets only the first check.
 
 The frames come from a local archive (:class:`dpc_radar.archive.MergingArchive`)
 or, for the last five months, from the API (:func:`download`). The images need
@@ -107,7 +109,8 @@ class Report:
         """Write ``facts.json``, ``report.md`` and the two images; the paths written.
 
         ``text`` replaces the text of the template: it goes through
-        :func:`check_text`, and a number that is not in the facts is a
+        :func:`check_text` and :func:`check_claims`, and a number that is not
+        in the facts, or that is said of a fact that holds another, is a
         :class:`DpcRadarError` with nothing written.
         """
         words = self.text() if text is None else text
@@ -115,6 +118,11 @@ class Report:
         if strangers:
             raise DpcRadarError(
                 "the text holds numbers that are not in the facts: " + ", ".join(strangers)
+            )
+        misquotes = check_claims(words, self.facts)
+        if misquotes:
+            raise DpcRadarError(
+                "the text says numbers of the wrong fact: " + "; ".join(map(str, misquotes))
             )
         folder.mkdir(parents=True, exist_ok=True)
         written = [folder / "facts.json", folder / "report.md"]
@@ -142,6 +150,128 @@ def check_text(text: str, facts: dict[str, Any]) -> list[str]:
         if not any(round(value, decimals) == float(token) for value in known):
             strangers.append(token)
     return strangers
+
+
+@dataclass(frozen=True)
+class Misquote:
+    """A number said of a fact that holds another one.
+
+    ``said`` is the piece of the text, ``key`` the fact it speaks of (a path
+    into ``facts.json``: ``peak.merging_mm``, ``hourly[03:00].max_mm``), and
+    ``fact`` what the facts hold there (``None`` when nothing).
+    """
+
+    said: str
+    key: str
+    fact: Any
+
+    def __str__(self) -> str:
+        return f"«{self.said}»: {self.key} is {self.fact}"
+
+
+_N = r"(\d+(?:\.\d+)?)"
+_HHMM = r"(\d\d:\d\d)"
+_PLACE = rf"{_N}° E, {_N}° N"
+_SUBJECTS = {"The «Merging»": "merging", "The radar alone": "radar"}
+#: The sentences of a total, inside the paragraph that names its product.
+_TOTAL_CLAIMS = (
+    (rf"the sum of {_N} \w+ frames out of {_N}", ("frames.{s}.used", "frames.{s}.expected")),
+    (rf"The maximum is {_N} mm, at {_PLACE}", ("{s}.max_mm", "{s}.max_lon", "{s}.max_lat")),
+    (rf"the mean is {_N} mm and the median {_N} mm", ("{s}.mean_mm", "{s}.median_mm")),
+    (r"Only a share of " + _N, ("{s}.measured_share",)),
+)
+#: The sentences that name their own fact.
+_CLAIMS = (
+    (rf"the radar alone read {_N} times the «Merging»", ("radar_over_merging",)),
+    (rf"At {_PLACE}, read as the median", ("peak.lon", "peak.lat")),
+    (rf"the «Merging» gives {_N} mm in the day", ("peak.merging_mm",)),
+    (rf"the radar alone gives {_N} mm", ("peak.radar_mm",)),
+    (rf"its reliability is {_N}", ("peak.reliability.score",)),
+    (rf"The nearest radar is [^,]+, {_N} km", ("peak.reliability.distance_km",)),
+    (rf"Area at {_N} mm or more", ("hourly_threshold_mm",)),
+)
+
+
+def check_claims(text: str, facts: dict[str, Any]) -> list[Misquote]:
+    """The numbers of ``text`` said of the wrong fact (empty: none found).
+
+    :func:`check_text` asks whether a number is in the facts; this asks
+    whether it is the number *of what the sentence says*. It reads the
+    sentences of the template (:meth:`Report.text`): the totals of each
+    product, the wettest place, its hours, the reliability, the hourly table,
+    the frames. "The «Merging» gives 95.2 mm" where the facts give 95.2 mm to
+    the radar alone is a misquote, and so is a figure rounded the wrong way
+    ("118.1" for 118.04). A sentence written in other words is not read: a
+    model that rephrases goes through :func:`check_text` only.
+    """
+    plain = text.replace("**", "")
+    out: list[Misquote] = []
+
+    def claim(found: re.Match[str], keys: Iterable[str], first: int = 1) -> None:
+        for token, key in zip(found.groups()[first - 1 :], keys, strict=True):
+            fact = _at(facts, key)
+            if not _same(token, fact):
+                out.append(Misquote(found.group().strip(), key, fact))
+
+    for paragraph in re.split(r"\n\s*\n", plain):
+        subject = next((s for name, s in _SUBJECTS.items() if paragraph.startswith(name)), None)
+        if subject is None or not isinstance(facts.get(subject), dict):
+            continue
+        for pattern, keys in _TOTAL_CLAIMS:
+            for found in re.finditer(pattern, paragraph):
+                claim(found, [k.format(s=subject) for k in keys])
+        for found in re.finditer(rf"{_N} km² got {_N} mm or more", paragraph):
+            fact = _at(facts, f"{subject}.km2_over.{found.group(2)}")
+            if not _same(found.group(1), fact):
+                out.append(Misquote(found.group(), f"{subject}.km2_over.{found.group(2)}", fact))
+    for pattern, keys in _CLAIMS:
+        for found in re.finditer(pattern, plain):
+            claim(found, keys)
+    for found in re.finditer(rf"^- (\w+): {_N} of {_N} frames used", plain, re.M):
+        source = next(
+            (k for k, f in facts.get("frames", {}).items() if f.get("product") == found.group(1)),
+            None,
+        )
+        if source is None:
+            out.append(Misquote(found.group(), f"frames[{found.group(1)}]", None))
+        else:
+            claim(found, (f"frames.{source}.used", f"frames.{source}.expected"), first=2)
+    hourly = {_hhmm(h["time"]): h for h in facts.get("hourly") or [] if isinstance(h, dict)}
+    row = rf"^\| {_HHMM} \| {_N} mm \| {_N} mm \| {_N} km² \|"
+    for found in re.finditer(row, plain, re.M):
+        hour = hourly.get(found.group(1), {})
+        for token, part in zip(found.groups()[1:], ("max_mm", "mean_mm", "km2_over"), strict=True):
+            if not _same(token, hour.get(part)):
+                key = f"hourly[{found.group(1)}].{part}"
+                out.append(Misquote(found.group(), key, hour.get(part)))
+    peak = facts.get("peak") or {}
+    wettest = {w["hours"]: w for w in peak.get("wettest") or [] if isinstance(w, dict)}
+    for found in re.finditer(rf"^\| {_N} \| {_N} mm \| {_HHMM} \|", plain, re.M):
+        window = wettest.get(int(float(found.group(1))), {})
+        key = f"peak.wettest[{found.group(1)} hours]"
+        if not _same(found.group(2), window.get("mm")):
+            out.append(Misquote(found.group(), f"{key}.mm", window.get("mm")))
+        ended = window.get("ended")
+        if ended is None or _hhmm(ended) != found.group(3):
+            out.append(Misquote(found.group(), f"{key}.ended", ended))
+    return out
+
+
+def _at(facts: Any, key: str) -> Any:
+    """The fact at a dotted path; ``None`` when there is none."""
+    for part in key.split("."):
+        if not isinstance(facts, dict) or part not in facts:
+            return None
+        facts = facts[part]
+    return facts
+
+
+def _same(token: str, fact: Any) -> bool:
+    """Is ``fact`` the number written as ``token``, to the decimals written?"""
+    if isinstance(fact, bool) or not isinstance(fact, int | float):
+        return False
+    decimals = len(token.partition(".")[2])
+    return round(float(fact), decimals) == float(token)
 
 
 def _figures(value: Any) -> Iterator[float]:
@@ -602,10 +732,12 @@ __all__ = [
     "HOURLY_MM",
     "THRESHOLDS",
     "WINDOWS",
+    "Misquote",
     "Read",
     "Report",
     "build",
     "bulletins_for",
+    "check_claims",
     "check_text",
     "day_of",
     "download",

@@ -35,7 +35,8 @@ What it does not do, and where it is 1 (no correction):
 * over the sea there are no gauges, and the «Merging» is the radar: factor 1;
 * where a rain gauge reports rain under a dry sky most of the time (near Foggia
   one did so in 504 of 573 wet windows) the comparison says nothing: factor 1,
-  on 2,660 km² in all;
+  on 2,660 km² in all. The ``agreement`` of :mod:`dpc_radar.reliability` is
+  not known there, for the same reason;
 * the «Merging» contains the radar: it is the best field there is, not an
   independent truth;
 * it describes the months it was built on (:attr:`BiasMap.built_on`). The hour

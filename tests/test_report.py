@@ -319,3 +319,73 @@ async def test_the_bulletins_of_a_day() -> None:
         ]
         assert await r.bulletins_for(DAY + timedelta(days=2), client=client) == []
     assert b.name_on(["20261010_0900_today.json", NAME], DAY) == NAME
+
+
+def test_the_template_says_every_number_of_its_own_fact() -> None:
+    report = r.build(reader(frames()), BOX, DAY, bulletins=[bulletin()])
+    text = report.text()
+    assert r.check_claims(text, report.facts) == []
+    peak = report.facts["peak"]
+    merging, radar = f"{peak['merging_mm']} mm", f"{peak['radar_mm']} mm"
+    assert merging != radar
+    # The two totals of the wettest place, swapped: both numbers are in the facts.
+    swapped = (
+        text.replace(f"gives **{merging}** in", "gives **@M** in")
+        .replace(f"gives **{radar}**.", f"gives **{merging}**.")
+        .replace("@M", radar)
+    )
+    assert r.check_text(swapped, report.facts) == []
+    found = r.check_claims(swapped, report.facts)
+    assert [m.key for m in found] == ["peak.merging_mm", "peak.radar_mm"]
+    assert found[0].fact == peak["merging_mm"]
+    assert str(found[0]).endswith(f"peak.merging_mm is {peak['merging_mm']}")
+
+
+def test_misquotes_in_the_totals_the_tables_and_the_frames() -> None:
+    report = r.build(reader(frames()), BOX, DAY)
+    text = report.text()
+    facts = report.facts
+    hour = facts["hourly"][2]
+    row = f"| 03:00 | {hour['max_mm']} mm | {hour['mean_mm']} mm | {hour['km2_over']} km² |"
+    assert row in text
+    wrong = text.replace(
+        row, f"| 03:00 | {hour['max_mm'] + 1} mm | {hour['mean_mm']} mm | 9.0 km² |"
+    )
+    wrong = wrong.replace("- SRT1: 24 of 24 frames used.", "- SRT1: 8 of 24 frames used.")
+    first = facts["peak"]["wettest"][0]
+    good = f"| 1 | {first['mm']} mm |"
+    assert good in text
+    wrong = wrong.replace(good, f"| 1 | {round(first['mm'] + 0.1, 1)} mm |")
+    total = facts["merging"]
+    wrong = wrong.replace(
+        f"the mean is {total['mean_mm']} mm and the median {total['median_mm']} mm",
+        f"the mean is {total['median_mm']} mm and the median {total['mean_mm']} mm",
+        1,
+    )
+    keys = {m.key for m in r.check_claims(wrong, facts)}
+    assert {
+        "hourly[03:00].max_mm",
+        "hourly[03:00].km2_over",
+        "frames.radar.used",
+        "peak.wettest[1 hours].mm",
+    } <= keys
+    if total["mean_mm"] != total["median_mm"]:
+        assert {"merging.mean_mm", "merging.median_mm"} <= keys
+
+
+def test_a_text_in_other_words_is_not_read_by_the_claims() -> None:
+    facts = {"peak": {"merging_mm": 118.04, "radar_mm": 95.2}}
+    assert r.check_claims("The gauges put 95.2 mm there, the radar 118.0.", facts) == []
+    said = "the «Merging» gives 118.0 mm in the day"
+    assert r.check_claims(said, facts) == []
+    assert [m.key for m in r.check_claims("the «Merging» gives 118.1 mm in the day", facts)] == [
+        "peak.merging_mm"
+    ]
+    # A product the facts do not hold, and an hour that is not in the table.
+    odd = "- CUM6: 3 of 4 frames used.\n| 07:00 | 1.0 mm | 1.0 mm | 0.0 km² |"
+    assert [m.key for m in r.check_claims(odd, {"frames": {}, "hourly": []})] == [
+        "frames[CUM6]",
+        "hourly[07:00].max_mm",
+        "hourly[07:00].mean_mm",
+        "hourly[07:00].km2_over",
+    ]

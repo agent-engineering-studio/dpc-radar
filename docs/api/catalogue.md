@@ -70,8 +70,13 @@ The first of the list is the night of 20–21 October on the coast south of
 Rome («Bacini Costieri Sud», 12.90°E 41.45°N): 145.1 mm in 6 hours against a
 level of 32.0 (4.5 times), over 2,153 km², «Merging» 148.9 mm. An example of
 what the «Merging» column is for is rank 31, 1 November over Lessinia
-(11.01°E 45.57°N): 234.6 mm in 3 hours on a known clutter pixel, radar 354.1
-against «Merging» 89.8, not confirmed.
+(11.01°E 45.57°N): 234.6 mm in 3 hours, radar 354.1 against «Merging» 89.8,
+not confirmed. It was first read as a fixed clutter pixel; the hourly frames
+say otherwise: a core of 140–180 mm in an hour that moves 8 km south in four hours,
+and over the season the place is wet as often as the land around it. The
+radar reads too much there, not something that is not there: the
+`agreement` of the [reliability map](reliability.md) is 0.52 at that point
+(the radar alone read about twice the «Merging» from June to November).
 
 ### What is not there
 

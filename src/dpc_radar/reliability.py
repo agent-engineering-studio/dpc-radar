@@ -17,8 +17,12 @@ between 0 and 1 and the parts it is made of:
   data, as in the west of Sicily, it is 0 and so is the score;
 * ``agreement``: how close the radar alone (SRT1) is to the «Merging» of radar
   and rain gauges (CUM3) over the same months, as the smaller of the two
-  ratios. ``None`` where too little rain fell to tell, and over the open sea,
-  where there are no gauges to compare with.
+  ratios. ``None`` where too little rain fell to tell, over the open sea,
+  where there are no gauges to compare with, and around a rain gauge that
+  reports rain under a dry radar most of the time (near Foggia, in 504 of 573
+  wet windows): such a gauge says nothing about the radar. A window in which a
+  gauge went wrong (the ``gauge_only`` rule of :mod:`dpc_radar.quality`) is
+  left out around it, as in :mod:`dpc_radar.bias`.
 
 The score is the lowest of the parts that are known: a point is as good as its
 weakest side. ``visibility`` is drawn with every radar on; the months a radar

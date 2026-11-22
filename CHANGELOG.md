@@ -23,8 +23,20 @@ All notable changes to this project are documented here. The format follows
   key). On the hand answers `check_text` lets through 8 of 17 wrong numbers,
   all swapped (#44).
 
+- `benchmarks/faithful.py` measured on a model: Claude Opus 5.5 answered the
+  five questions with 111 numbers, 110 right (5 of them rounded on purpose to
+  a round number, a new kind, `approximate`) and none invented; the one
+  counted as swapped is a 95th percentile read as "the wettest 5 %". Claude
+  Sonnet 5.5, the reader, gives the hand-labelled numbers the same verdict on
+  86 of 86. A threshold said as the key it is ("20 mm or more") now counts as
+  faithful.
+- `dpc_radar.report.numbers(text)`: the numbers of a text as written.
+
 ### Changed
 
+- `check_text` reads a number with thousands separators as one number
+  ("3,510", no longer 3 and 510) and a number with an ordinal ("99.99th", no
+  longer 99), as a model writes them.
 - The `agreement` of the reliability map leaves out the rain gauges that went
   wrong, as the bias map does: the windows of a `gauge_only` fault, and the
   2,660 km² around gauges that report rain under a dry radar most of the

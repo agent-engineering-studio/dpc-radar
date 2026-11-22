@@ -71,7 +71,10 @@ HOURLY_MM: Final = 10
 #: The windows (hours) whose wettest sum is compared with the climatology.
 WINDOWS: Final = (1, 3, 6, 24)
 
-_NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?!\w)")
+# A number as written: 3,510 with its thousands, 99.99th with its ordinal.
+_NUMBER = re.compile(
+    r"(?<![\w.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?:st|nd|rd|th)?(?!\w)"
+)
 _DIGITS = re.compile(r"\d+(?:\.\d+)?")
 
 
@@ -143,13 +146,17 @@ def check_text(text: str, facts: dict[str, Any]) -> list[str]:
     word (``CUM3``) are not numbers.
     """
     known = set(_figures(facts))
-    strangers = []
-    for found in _NUMBER.finditer(text):
-        token = found.group()
-        decimals = len(token.partition(".")[2])
-        if not any(round(value, decimals) == float(token) for value in known):
-            strangers.append(token)
-    return strangers
+    return [token for token in numbers(text) if not any(_same(token, v) for v in known)]
+
+
+def numbers(text: str) -> list[str]:
+    """The numbers of a text, as written and in order.
+
+    ``3,510`` is one number (a comma between groups of three digits is a
+    thousands separator), ``99.99th`` is 99.99, ``03:00`` is two numbers, and
+    digits inside a word (``CUM3``) are not a number.
+    """
+    return _NUMBER.findall(text)
 
 
 @dataclass(frozen=True)
@@ -271,7 +278,7 @@ def _same(token: str, fact: Any) -> bool:
     if isinstance(fact, bool) or not isinstance(fact, int | float):
         return False
     decimals = len(token.partition(".")[2])
-    return round(float(fact), decimals) == float(token)
+    return round(float(fact), decimals) == float(token.replace(",", ""))
 
 
 def _figures(value: Any) -> Iterator[float]:
@@ -742,4 +749,5 @@ __all__ = [
     "day_of",
     "download",
     "hours_of",
+    "numbers",
 ]

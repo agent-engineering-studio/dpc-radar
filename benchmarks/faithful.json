@@ -86,6 +86,42 @@
           ],
           "expect": {
             "faithful": 8
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "3",
+                "of": "hours"
+              },
+              {
+                "number": "06",
+                "of": "frame.time"
+              },
+              {
+                "number": "00",
+                "of": "frame.time"
+              },
+              {
+                "number": "10",
+                "of": "frame.time"
+              },
+              {
+                "number": "2026",
+                "of": "frame.time"
+              },
+              {
+                "number": "13.4",
+                "of": "mm"
+              },
+              {
+                "number": "0.77",
+                "of": "reliability.score"
+              },
+              {
+                "number": "81.7",
+                "of": "reliability.distance_km"
+              }
+            ]
           }
         },
         {
@@ -126,7 +162,90 @@
             "rounded": 1,
             "swapped": 1,
             "invented": 1
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "13.5",
+                "of": "mm"
+              },
+              {
+                "number": "3",
+                "of": "hours"
+              },
+              {
+                "number": "06",
+                "of": "frame.time"
+              },
+              {
+                "number": "00",
+                "of": "frame.time"
+              },
+              {
+                "number": "81.7",
+                "of": "reliability.beam_height_m"
+              },
+              {
+                "number": "0.8",
+                "of": "reliability.score"
+              },
+              {
+                "number": "36",
+                "of": null
+              }
+            ]
           }
+        },
+        {
+          "by": "claude-opus-5-5",
+          "text": "About **13.4 mm of rain** fell on Melito di Porto Salvo in the 3 hours to 06:00 UTC on 10 October 2026. That figure comes from radar combined with rain gauges, and it is the middle value of the 3×3 grid of map squares around the town, so one odd square doesn't skew it.\n\nThe data look sound. None of the squares were flagged or thrown out by the quality checks, and the estimate has a reliability score of 0.77, which the system rates as reliable. The nearest radar is Catania Fontanarossa, 81.7 km away, and its beam passes about 1,100 m above the area. That's why the reading is good but not perfect.\n\nThis is a radar measurement, not a warning. For official alerts, check the Civil Protection Department (DPC) bulletin.",
+          "said": [
+            {
+              "number": "13.4",
+              "of": "mm"
+            },
+            {
+              "number": "3",
+              "of": "hours"
+            },
+            {
+              "number": "06",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "10",
+              "of": "frame.time"
+            },
+            {
+              "number": "2026",
+              "of": "frame.time"
+            },
+            {
+              "number": "3",
+              "of": "method"
+            },
+            {
+              "number": "3",
+              "of": "method"
+            },
+            {
+              "number": "0.77",
+              "of": "reliability.score"
+            },
+            {
+              "number": "81.7",
+              "of": "reliability.distance_km"
+            },
+            {
+              "number": "1,100",
+              "of": "reliability.beam_height_m"
+            }
+          ],
+          "labelled_by": "claude-sonnet-5-5"
         }
       ]
     },
@@ -203,6 +322,30 @@
           ],
           "expect": {
             "faithful": 5
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "8.3",
+                "of": "mm"
+              },
+              {
+                "number": "03",
+                "of": "frame.time"
+              },
+              {
+                "number": "00",
+                "of": "frame.time"
+              },
+              {
+                "number": "10",
+                "of": "frame.time"
+              },
+              {
+                "number": "2026",
+                "of": "frame.time"
+              }
+            ]
           }
         },
         {
@@ -239,7 +382,86 @@
             "rounded": 1,
             "swapped": 1,
             "invented": 1
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "1",
+                "of": "hours"
+              },
+              {
+                "number": "03",
+                "of": "frame.time"
+              },
+              {
+                "number": "00",
+                "of": "frame.time"
+              },
+              {
+                "number": "8.4",
+                "of": "mm"
+              },
+              {
+                "number": "13.4",
+                "of": null
+              },
+              {
+                "number": "1100",
+                "of": "reliability.distance_km"
+              }
+            ]
           }
+        },
+        {
+          "by": "claude-opus-5-5",
+          "text": "**The radar estimated about 8.3 mm of rain at Melito di Porto Salvo in the hour ending at 03:00 UTC on 10 October 2026.** That's the median value of the 3×3 block of radar pixels around the point, from radar alone (no rain gauges mixed in).\n\n**How far to trust it:** The data looks clean. All of the pixels passed the quality checks (trusted share 1.0), and none were masked out. The reliability score is 0.77, which the tool rates as reliable. The nearest radar is at Catania Fontanarossa, 81.7 km away. At that distance its beam passes about 1,100 m above the ground, so it sees the rain from above rather than right at ground level.\n\nThis is radar data, not an alert. For official warnings, check the Civil Protection Department (DPC) bulletin.",
+          "said": [
+            {
+              "number": "8.3",
+              "of": "mm"
+            },
+            {
+              "number": "03",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "10",
+              "of": "frame.time"
+            },
+            {
+              "number": "2026",
+              "of": "frame.time"
+            },
+            {
+              "number": "3",
+              "of": "method"
+            },
+            {
+              "number": "3",
+              "of": "method"
+            },
+            {
+              "number": "1.0",
+              "of": "quality.trusted_share"
+            },
+            {
+              "number": "0.77",
+              "of": "reliability.score"
+            },
+            {
+              "number": "81.7",
+              "of": "reliability.distance_km"
+            },
+            {
+              "number": "1,100",
+              "of": "reliability.beam_height_m"
+            }
+          ],
+          "labelled_by": "claude-sonnet-5-5"
         }
       ]
     },
@@ -368,11 +590,75 @@
           ],
           "expect": {
             "faithful": 15
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "15.5",
+                "of": "bbox.0"
+              },
+              {
+                "number": "16.2",
+                "of": "bbox.2"
+              },
+              {
+                "number": "37.8",
+                "of": "bbox.1"
+              },
+              {
+                "number": "38.3",
+                "of": "bbox.3"
+              },
+              {
+                "number": "11.8",
+                "of": "mean_mm"
+              },
+              {
+                "number": "3",
+                "of": "hours"
+              },
+              {
+                "number": "06",
+                "of": "frame.time"
+              },
+              {
+                "number": "00",
+                "of": "frame.time"
+              },
+              {
+                "number": "26.7",
+                "of": "max_mm"
+              },
+              {
+                "number": "16.035",
+                "of": "max_lon"
+              },
+              {
+                "number": "37.795",
+                "of": "max_lat"
+              },
+              {
+                "number": "205.1",
+                "of": "km2_over.20"
+              },
+              {
+                "number": "20",
+                "of": "km2_over.20"
+              },
+              {
+                "number": "2177.2",
+                "of": "km2_over.10"
+              },
+              {
+                "number": "10",
+                "of": "km2_over.10"
+              }
+            ]
           }
         },
         {
           "by": "hand, with faults",
-          "text": "In the 3 hours to 06:00 UTC the «Merging» gave a mean of 11.3 mm over the box, about 4000 km², and a maximum of 27 mm; 2177.2 km² got 20 mm or more, and half of the box had less than 20.7 mm.",
+          "text": "In the 3 hours to 06:00 UTC the «Merging» gave a mean of 11.3 mm over the box, about 4200 km², and a maximum of 27 mm; 2177.2 km² got 20 mm or more, and half of the box had less than 20.7 mm.",
           "said": [
             {
               "number": "3",
@@ -391,7 +677,7 @@
               "of": "mean_mm"
             },
             {
-              "number": "4000",
+              "number": "4200",
               "of": "area_km2"
             },
             {
@@ -415,7 +701,166 @@
             "faithful": 5,
             "swapped": 3,
             "invented": 1
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "3",
+                "of": "hours"
+              },
+              {
+                "number": "06",
+                "of": "frame.time"
+              },
+              {
+                "number": "00",
+                "of": "frame.time"
+              },
+              {
+                "number": "11.3",
+                "of": "mean_mm"
+              },
+              {
+                "number": "4200",
+                "of": "area_km2"
+              },
+              {
+                "number": "27",
+                "of": "max_mm"
+              },
+              {
+                "number": "2177.2",
+                "of": "km2_over.20"
+              },
+              {
+                "number": "20",
+                "of": "km2_over.20"
+              },
+              {
+                "number": "20.7",
+                "of": "median_mm"
+              }
+            ]
           }
+        },
+        {
+          "by": "claude-opus-5-5",
+          "text": "**Rain fell over the whole area. A typical spot got about 11 to 12 mm, and the wettest spot got 26.7 mm.**\n\nThis covers the 3 hours ending at 06:00 UTC on 10 October 2026, over 3,510 km² of southern Calabria. The figures come from radar combined with rain gauges, and the whole area was measured (measured share 1.0).\n\n- **How much rain:** The average across the area was 11.8 mm. The median was 11.3 mm, so half the area got more than that and half got less. Only the wettest 5% of the area got more than 20.7 mm.\n- **Wettest spot:** 26.7 mm, at about 16.035 E, 37.795 N, on the southern edge of the area. That figure is a single radar pixel, not a wide zone.\n- **How widespread:**\n  - At least 1 mm: all 3,510 km².\n  - At least 5 mm: 3,498.4 km², almost all of it.\n  - At least 10 mm: 2,177.2 km², roughly two-thirds.\n  - At least 20 mm: 205.1 km².\n  - At least 50 mm: none.\n- **Data quality:** No pixels were removed or flagged as suspicious, and all of the data counted as trusted (trusted share 1.0).\n\nThe data also don't say how much of the 3,510 km² is land rather than sea.\n\nThis is radar data, not a weather warning. For official alerts, check the Civil Protection Department (DPC) bulletin.",
+          "said": [
+            {
+              "number": "11",
+              "of": "median_mm"
+            },
+            {
+              "number": "12",
+              "of": "mean_mm"
+            },
+            {
+              "number": "26.7",
+              "of": "max_mm"
+            },
+            {
+              "number": "3",
+              "of": "hours"
+            },
+            {
+              "number": "06",
+              "of": "frame.time"
+            },
+            {
+              "number": "00",
+              "of": "frame.time"
+            },
+            {
+              "number": "10",
+              "of": "frame.time"
+            },
+            {
+              "number": "2026",
+              "of": "frame.time"
+            },
+            {
+              "number": "3,510",
+              "of": "area_km2"
+            },
+            {
+              "number": "1.0",
+              "of": "measured_share"
+            },
+            {
+              "number": "11.8",
+              "of": "mean_mm"
+            },
+            {
+              "number": "11.3",
+              "of": "median_mm"
+            },
+            {
+              "number": "5",
+              "of": "p95_mm"
+            },
+            {
+              "number": "20.7",
+              "of": "p95_mm"
+            },
+            {
+              "number": "26.7",
+              "of": "max_mm"
+            },
+            {
+              "number": "16.035",
+              "of": "max_lon"
+            },
+            {
+              "number": "37.795",
+              "of": "max_lat"
+            },
+            {
+              "number": "1",
+              "of": "km2_over.1"
+            },
+            {
+              "number": "3,510",
+              "of": "km2_over.1"
+            },
+            {
+              "number": "5",
+              "of": "km2_over.5"
+            },
+            {
+              "number": "3,498.4",
+              "of": "km2_over.5"
+            },
+            {
+              "number": "10",
+              "of": "km2_over.10"
+            },
+            {
+              "number": "2,177.2",
+              "of": "km2_over.10"
+            },
+            {
+              "number": "20",
+              "of": "km2_over.20"
+            },
+            {
+              "number": "205.1",
+              "of": "km2_over.20"
+            },
+            {
+              "number": "50",
+              "of": "km2_over.50"
+            },
+            {
+              "number": "1.0",
+              "of": "quality.trusted_share"
+            },
+            {
+              "number": "3,510",
+              "of": "area_km2"
+            }
+          ],
+          "labelled_by": "claude-sonnet-5-5"
         }
       ]
     },
@@ -476,6 +921,34 @@
           ],
           "expect": {
             "faithful": 6
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "92.6",
+                "of": "mm"
+              },
+              {
+                "number": "6",
+                "of": "hours"
+              },
+              {
+                "number": "36",
+                "of": "return_period_years"
+              },
+              {
+                "number": "11",
+                "of": "low_years"
+              },
+              {
+                "number": "50",
+                "of": "high_years"
+              },
+              {
+                "number": "8",
+                "of": "years_of_radar"
+              }
+            ]
           }
         },
         {
@@ -515,7 +988,86 @@
             "faithful": 4,
             "rounded": 2,
             "invented": 1
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "92.6",
+                "of": "mm"
+              },
+              {
+                "number": "6",
+                "of": "hours"
+              },
+              {
+                "number": "37",
+                "of": "return_period_years"
+              },
+              {
+                "number": "99.9",
+                "of": "percentile"
+              },
+              {
+                "number": "11.2",
+                "of": "low_years"
+              },
+              {
+                "number": "50",
+                "of": "high_years"
+              },
+              {
+                "number": "18",
+                "of": "years_of_radar"
+              }
+            ]
           }
+        },
+        {
+          "by": "claude-opus-5-5",
+          "text": "**92.6 mm in 6 hours is very rare at Melito di Porto Salvo.** A 6-hour total this large is expected about **once every 36.1 years** on average. That figure is the \"return period,\" a long-run average spacing, not a schedule, so it could still happen in two consecutive years.\n\n**The estimate is uncertain.** The plausible range runs from about **once every 11.2 years** to **once every 50 years**. The upper end is held down by a built-in limit: the tool can't report return periods longer than **50 years**, so the true upper value could be higher.\n\nPut another way, this amount sits at the **99.99th percentile**: almost every 6-hour stretch at this spot gets less rain than this.\n\n**The record behind it is short.** The estimate comes from only **8 years** of radar rainfall data from the Italian Civil Protection Department (IT-DPC-SRI), not from rain gauges. That short record is a large part of why the range is so wide.",
+          "said": [
+            {
+              "number": "92.6",
+              "of": "mm"
+            },
+            {
+              "number": "6",
+              "of": "hours"
+            },
+            {
+              "number": "6",
+              "of": "hours"
+            },
+            {
+              "number": "36.1",
+              "of": "return_period_years"
+            },
+            {
+              "number": "11.2",
+              "of": "low_years"
+            },
+            {
+              "number": "50",
+              "of": "high_years"
+            },
+            {
+              "number": "50",
+              "of": "max_return_years"
+            },
+            {
+              "number": "99.99",
+              "of": "percentile"
+            },
+            {
+              "number": "6",
+              "of": "hours"
+            },
+            {
+              "number": "8",
+              "of": "years_of_radar"
+            }
+          ],
+          "labelled_by": "claude-sonnet-5-5"
         }
       ]
     },
@@ -905,6 +1457,58 @@
           ],
           "expect": {
             "faithful": 12
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "10",
+                "of": null
+              },
+              {
+                "number": "2026",
+                "of": null
+              },
+              {
+                "number": "190.8",
+                "of": "peak.merging_mm"
+              },
+              {
+                "number": "15.785",
+                "of": "peak.lon"
+              },
+              {
+                "number": "37.925",
+                "of": "peak.lat"
+              },
+              {
+                "number": "115.1",
+                "of": "peak.radar_mm"
+              },
+              {
+                "number": "0.99",
+                "of": "radar_over_merging"
+              },
+              {
+                "number": "6",
+                "of": "peak.wettest.2.hours"
+              },
+              {
+                "number": "88.9",
+                "of": "peak.wettest.2.mm"
+              },
+              {
+                "number": "06",
+                "of": "peak.wettest.2.ended"
+              },
+              {
+                "number": "00",
+                "of": "peak.wettest.2.ended"
+              },
+              {
+                "number": "31",
+                "of": "peak.wettest.2.return_period_years"
+              }
+            ]
           }
         },
         {
@@ -960,7 +1564,266 @@
             "faithful": 7,
             "swapped": 3,
             "invented": 1
+          },
+          "read_by": {
+            "claude-sonnet-5-5": [
+              {
+                "number": "10",
+                "of": "event.day"
+              },
+              {
+                "number": "2026",
+                "of": "event.day"
+              },
+              {
+                "number": "115.1",
+                "of": "peak.merging_mm"
+              },
+              {
+                "number": "190.8",
+                "of": "peak.radar_mm"
+              },
+              {
+                "number": "206.7",
+                "of": "merging.max_mm"
+              },
+              {
+                "number": "579.2",
+                "of": "merging.km2_over.50"
+              },
+              {
+                "number": "50",
+                "of": "merging.km2_over.50"
+              },
+              {
+                "number": "02",
+                "of": "peak.wettest.0.ended"
+              },
+              {
+                "number": "00",
+                "of": "peak.wettest.0.ended"
+              },
+              {
+                "number": "21.2",
+                "of": "peak.wettest.0.mm"
+              },
+              {
+                "number": "120",
+                "of": "peak.wettest.0.return_period_years"
+              }
+            ]
           }
+        },
+        {
+          "by": "claude-opus-5-5",
+          "text": "## Rain over southern Calabria, 10 October 2026\n\n**How much fell:** It rained across the whole box. No radar or \"Merging\" images were missing. The Merging product combines radar with other measurements. On average, the box received about **74 mm** over the day (73.4 mm radar, 73.9 mm Merging). About **3,000 km²** of the roughly 3,500–3,800 km² area got more than 50 mm. Around **600 km²** got more than 100 mm. The wettest single spot in the Merging data had **206.7 mm**, near 15.785 E, 37.925 N in the south-west of the box. Only about **1 km²** went over 200 mm. The radar alone put its wettest spot at **176.4 mm**, further east.\n\n**When it fell:** There were two main bursts. The heaviest was overnight, from about 00:00 to 06:00 UTC. In the hour to 05:00 UTC, about **2,000 km²** got more than 10 mm in that one hour. Some spots had up to **36 mm** that hour. The rain nearly stopped through the morning. A second, patchier round came between about 13:00 and 19:00 UTC, with up to **27.4 mm** in an hour at its worst spot. By 20:00 UTC it was essentially over.\n\n**How unusual:** At the wettest place, the two products disagree. Merging gives **190.8 mm** and the radar alone **115.1 mm**. Using the radar alone, the wettest 6 hours there brought **88.9 mm**, ending at 06:00 UTC. That amount is expected roughly once every **31 years**, with a plausible range of about 10 to 50 years. The wettest 24 hours brought **114.6 mm**, expected about once every **42 years** (range about 14 to 50 years). These estimates rest on only **8 years** of radar history, so treat them as rough.\n\n**Caveats:** The data quality is rated reliable, with a score of **0.77**. The nearest radar, Catania Fontanarossa, is **82.4 km** away, and its beam passes about **1,100 m** above the ground here. There were no official bulletins in the data. These are radar measurements, not an alert; official warnings come from the DPC (Italy's Civil Protection Department).",
+          "said": [
+            {
+              "number": "10",
+              "of": "event.day"
+            },
+            {
+              "number": "2026",
+              "of": "event.day"
+            },
+            {
+              "number": "74",
+              "of": "merging.mean_mm"
+            },
+            {
+              "number": "73.4",
+              "of": "radar.mean_mm"
+            },
+            {
+              "number": "73.9",
+              "of": "merging.mean_mm"
+            },
+            {
+              "number": "3,000",
+              "of": "radar.km2_over.50"
+            },
+            {
+              "number": "3,500",
+              "of": "merging.area_km2"
+            },
+            {
+              "number": "3,800",
+              "of": "radar.area_km2"
+            },
+            {
+              "number": "50",
+              "of": "radar.km2_over.50"
+            },
+            {
+              "number": "600",
+              "of": "radar.km2_over.100"
+            },
+            {
+              "number": "100",
+              "of": "radar.km2_over.100"
+            },
+            {
+              "number": "206.7",
+              "of": "merging.max_mm"
+            },
+            {
+              "number": "15.785",
+              "of": "merging.max_lon"
+            },
+            {
+              "number": "37.925",
+              "of": "merging.max_lat"
+            },
+            {
+              "number": "1",
+              "of": "merging.km2_over.200"
+            },
+            {
+              "number": "200",
+              "of": "merging.km2_over.200"
+            },
+            {
+              "number": "176.4",
+              "of": "radar.max_mm"
+            },
+            {
+              "number": "00",
+              "of": "event.from"
+            },
+            {
+              "number": "00",
+              "of": "event.from"
+            },
+            {
+              "number": "06",
+              "of": "hourly.5.time"
+            },
+            {
+              "number": "00",
+              "of": "hourly.5.time"
+            },
+            {
+              "number": "05",
+              "of": "hourly.4.time"
+            },
+            {
+              "number": "00",
+              "of": "hourly.4.time"
+            },
+            {
+              "number": "2,000",
+              "of": "hourly.4.km2_over"
+            },
+            {
+              "number": "10",
+              "of": "hourly_threshold_mm"
+            },
+            {
+              "number": "36",
+              "of": "hourly.4.max_mm"
+            },
+            {
+              "number": "13",
+              "of": "hourly.12.time"
+            },
+            {
+              "number": "00",
+              "of": "hourly.12.time"
+            },
+            {
+              "number": "19",
+              "of": "hourly.18.time"
+            },
+            {
+              "number": "00",
+              "of": "hourly.18.time"
+            },
+            {
+              "number": "27.4",
+              "of": "hourly.17.max_mm"
+            },
+            {
+              "number": "20",
+              "of": "hourly.19.time"
+            },
+            {
+              "number": "00",
+              "of": "hourly.19.time"
+            },
+            {
+              "number": "190.8",
+              "of": "peak.merging_mm"
+            },
+            {
+              "number": "115.1",
+              "of": "peak.radar_mm"
+            },
+            {
+              "number": "6",
+              "of": "peak.wettest.2.hours"
+            },
+            {
+              "number": "88.9",
+              "of": "peak.wettest.2.mm"
+            },
+            {
+              "number": "06",
+              "of": "peak.wettest.2.ended"
+            },
+            {
+              "number": "00",
+              "of": "peak.wettest.2.ended"
+            },
+            {
+              "number": "31",
+              "of": "peak.wettest.2.return_period_years"
+            },
+            {
+              "number": "10",
+              "of": "peak.wettest.2.low_years"
+            },
+            {
+              "number": "50",
+              "of": "peak.wettest.2.high_years"
+            },
+            {
+              "number": "24",
+              "of": "peak.wettest.3.hours"
+            },
+            {
+              "number": "114.6",
+              "of": "peak.wettest.3.mm"
+            },
+            {
+              "number": "42",
+              "of": "peak.wettest.3.return_period_years"
+            },
+            {
+              "number": "14",
+              "of": "peak.wettest.3.low_years"
+            },
+            {
+              "number": "50",
+              "of": "peak.wettest.3.high_years"
+            },
+            {
+              "number": "8",
+              "of": "peak.wettest.2.years_of_radar"
+            },
+            {
+              "number": "0.77",
+              "of": "peak.reliability.score"
+            },
+            {
+              "number": "82.4",
+              "of": "peak.reliability.distance_km"
+            },
+            {
+              "number": "1,100",
+              "of": "peak.reliability.beam_height_m"
+            }
+          ],
+          "labelled_by": "claude-sonnet-5-5"
         }
       ]
     }

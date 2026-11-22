@@ -279,7 +279,8 @@ says it is (a path into the facts), and the score is arithmetic:
 
 | Kind | The number, against the fact it is said of |
 |---|---|
-| `faithful` | the fact, to the decimals written |
+| `faithful` | the fact, to the decimals written, or the key it is said of (20 in "205.1 km² got 20 mm or more") |
+| `approximate` | a round number, the fact rounded to its zeros ("about 3,000 km²" for 3,002): not a fault |
 | `question` | not a fact: it repeats the question |
 | `rounded` | within one unit of the last digit, and not the fact (118.1 for 118.04) |
 | `swapped` | another figure of the same facts |
@@ -293,20 +294,42 @@ uv run --group vision python -m benchmarks.faithful label   # a second model rea
 
 Ten answers are written by hand, one faithful and one with known faults per
 question; `score --check` fails if they do not score as written, and runs in
-CI. Today:
+CI. Then a model: Claude Opus 5.5 answered the five questions (`ask`), and
+Claude Sonnet 5.5 read what each number is said of (`label`), on 22 November
+2026:
 
-| Author | Answers | Numbers | faithful | rounded | swapped | invented | faults `check_text` misses |
-|---|---|---|---|---|---|---|---|
-| hand, faithful | 5 | 46 | 46 | 0 | 0 | 0 | - |
-| hand, with faults | 5 | 40 | 23 | 4 | 8 | 5 | 8 of 17 |
+| Author | Answers | Numbers | faithful | approximate | rounded | swapped | invented | faults `check_text` misses |
+|---|---|---|---|---|---|---|---|---|
+| hand, faithful | 5 | 46 | 46 | 0 | 0 | 0 | 0 | - |
+| hand, with faults | 5 | 40 | 23 | 0 | 4 | 8 | 5 | 8 of 17 |
+| claude-opus-5-5 | 5 | 111 | 105 | 5 | 0 | 1 | 0 | 1 of 1 |
 
-`check_text` refuses the invented and the badly rounded numbers, and lets
-every swapped one through: that is what the set is for. `ask` adds the
-answers of a model; `label` asks a second model what each of its numbers is
-said of, and reads the hand answers too, so the table says how often that
-reader agrees with the hand. No model has answered yet: there was no key
-when the set was made. As in Limen's reviewer (`fedelta`), the model only
-says what a number is about; whether it is right is arithmetic.
+**What the table says.** On the hand answers `check_text` refuses the
+invented and the badly rounded numbers, and lets every swapped one through:
+that is what the set is for. The model quoted 111 numbers and got 110 right:
+105 as they are in the facts, 5 rounded to a round number on purpose ("about
+3,000 km²" of land over 50 mm, for 3,002; "around 600 km²" for 646). The one
+counted as swapped is not a fault: "only the wettest 5 % of the area got more
+than 20.7 mm" reads the 95th percentile from the other side, and the score
+knows the 95 only as the name of a fact. No invented number, no wrong
+rounding, no swap. Five questions are few: this says the model can be
+faithful, not that it always is.
+
+**The reader.** Sonnet's labels give the 86 numbers of the hand answers the
+same score as the hand's on 84, and the same verdict (a fault or not) on all
+86. The two that differ are a date read as part of the question instead of
+as a fact: both are no fault. Once, on the rarity answer, it gave one label
+too many; `label` reads again any answer whose labels do not follow its
+numbers.
+
+**Found on the way.** The model writes thousands with a comma (3,510 km²)
+and ordinals (99.99th): `check_text` read "3,510" as 3 and 510, and
+"99.99th" as 99. `dpc_radar.report.numbers` now reads them as written, and
+`check_text` with it.
+
+As in Limen's reviewer (`fedelta`), the reader only says what a number is
+about; whether it is right is arithmetic. Running `ask` and `label` again
+costs about 20 short requests.
 
 ## Add a method
 

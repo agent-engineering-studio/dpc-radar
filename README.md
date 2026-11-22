@@ -683,7 +683,7 @@ The score is the lowest of three parts, each between 0 and 1:
 |---|---|---|
 | `visibility` | the height of the lowest beam that reaches the point without being cut by a mountain (1 up to 1,500 m, 0 from 5,000 m) | far from every radar, behind the Alps and Etna, the islands |
 | `coverage` | the share of the hourly frames in which the mosaic has data there | Calabria and Apulia (radars on about half of the time, June–November 2026); the west of Sicily, never covered: score 0 |
-| `agreement` | the rain of the radar alone (SRT1) against the «Merging» (CUM3), as the smaller of the two ratios | around Palermo the radar read 11 % of the gauge-corrected rain |
+| `agreement` | the rain of the radar alone (SRT1) against the «Merging» (CUM3), as the smaller of the two ratios; not known around a rain gauge that reports rain under a dry radar most of the time | around Palermo the radar read 29 % of the gauge-corrected rain |
 
 `reliability_map().like(grid)` gives the score on the pixels of any frame, and
 `SITES` lists the 24 radars. The map is an estimate made from outside: the DPC
@@ -1082,7 +1082,7 @@ cannot tell from light rain.
 | `rare_events(frames, years=10)` / `with_merging(event, archive)` | the rain of hourly frames over the level of its place, as `Event`s, the rarest first: `start`, `time`, `window`, `mm`, `level_mm`, `times_level`, `return_period`, `area_km2` / the same with `radar_mm`, `merging_mm`, `confirmed` (extra `storms`) |
 | `nowcast(frames, minutes=120)` / `rain_ahead(frames, minutes=60)` / `chance(frames, mm=, minutes=60)` / `motion(frames)` | the SRI moved along its motion, as `Forecast`s (`issued`, `lead`, `time`, `unit`, `data`, `.sample(points)`): mm/h every five minutes / the mm of the next minutes / the chance of at least `mm` / speed and heading of the rain, `.at(lon, lat)` (extra `nowcast`) |
 | `Facts(radar)` (`dpc_radar.facts`) | the facts as dicts, each with its frame: `rain_at`, `area_summary`, `storm_now`, `rain_ahead`, `official_alert`, `rarity`, `latest`; the tools of `dpc-radar mcp` (extra `mcp`) |
-| `report.build(read, bbox, day)` / `check_text(text, facts)` | the report of a day over a box: `.facts`, `.text()`, `.save(folder, text=None)` / the numbers of a text that are not in the facts; `dpc-radar report`, `dpc-radar check` (extra `report`) |
+| `report.build(read, bbox, day)` / `check_text(text, facts)` / `check_claims(text, facts)` | the report of a day over a box: `.facts`, `.text()`, `.save(folder, text=None)` / the numbers of a text that are not in the facts / those the template's sentences say of the wrong fact; `dpc-radar report`, `dpc-radar check` (extra `report`) |
 | `bulletins.latest()` / `bulletins.fetch(name)` | the official criticality bulletin: `Bulletin.zones`, `.alerts()`, `.zone_at(lon, lat)` (extra `bulletins`) |
 | `SRI`, `SRT1`, `CUM3`, `CUM6`, `CUM12`, `CUM24` | the products: `name`, `hours` (`None` for an intensity), `merging`, `description` |
 | `PRODUCTS`, `product(name)` | every product by name; `product("cum24")` → `CUM24` |

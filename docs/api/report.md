@@ -80,12 +80,38 @@ from dpc_radar.report import check_text
 check_text("It rained 250 mm.", report.facts)  # ["250"]: the numbers that are not there
 ```
 
-**What the check does not do.** It knows that a number exists in the facts,
-not that it is said of the right thing: "the radar alone read 206.7 mm"
-passes, because 206.7 is there, as the maximum of the «Merging». It catches
-an invented figure, not a swapped one. Small whole numbers nearly always
-pass (the facts hold a 2, a 3 and a 10 somewhere), and it does not read
-words ("twice as much", "a record"). A text from a model still needs a reader.
+## A number said of the wrong thing
+
+`check_text` knows that a number exists in the facts, not what it is said
+of: "the radar alone read 206.7 mm" passes, because 206.7 is there, as the
+maximum of the «Merging». `check_claims` reads the sentences of the template
+and ties each number to its fact: the totals of each product, the wettest
+place and its hours, the reliability, the hourly table, the frames. Two
+figures swapped between the «Merging» and the radar alone, or one rounded
+the wrong way, are refused, by `save` and by `dpc-radar check` alike:
+
+```python
+from dpc_radar.report import check_claims
+
+check_claims("the «Merging» gives 115.1 mm in the day", report.facts)
+# [Misquote(said='the «Merging» gives 115.1 mm in the day', key='peak.merging_mm', fact=190.8)]
+```
+
+```bash
+dpc-radar check mine.md melito/facts.json
+# numbers said of the wrong fact:
+#   «the «Merging» gives 115.1 mm in the day»: peak.merging_mm is 190.8
+```
+
+**What the checks do not do.** `check_claims` reads the template's own
+sentences: a model that writes in other words gets `check_text` only, and a
+swap in its sentences passes. Small whole numbers nearly always pass
+`check_text` (the facts hold a 2, a 3 and a 10 somewhere), and neither reads
+words ("twice as much", "a record"). A text from a model still needs a
+reader. How often a model quotes the facts faithfully is measured in
+[`benchmarks/faithful.py`](https://github.com/agent-engineering-studio/dpc-radar/blob/main/benchmarks/faithful.py):
+on its hand-written answers with known faults, `check_text` lets through 8
+of 17 wrong numbers, all of them swapped.
 
 ## What is in the facts
 

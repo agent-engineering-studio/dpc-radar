@@ -113,7 +113,11 @@ not publish.
   2026 the radars of Calabria and Apulia were on 36–61 % of the time, and the
   west of Sicily was never covered;
 - **agreement**: the radar alone (SRT1) against the «Merging» (CUM3) over the
-  same months: around Palermo the radar read 11 % of the gauge-corrected rain.
+  same months: around Palermo the radar read 29 % of the gauge-corrected rain.
+  Since [#44](https://github.com/agent-engineering-studio/dpc-radar/issues/44)
+  it leaves out the windows of a rain gauge gone wrong, and is not known on
+  the 2,660 km² around gauges that report rain under a dry radar most of the
+  time (Foggia went from 0.18 to 0.93).
 
 **Check:** Lipari scores 0.42 (beam at 3,500 m), Melito 0.90; the benchmark
 case passes, with a second check that a map calling everything unreliable
@@ -239,8 +243,8 @@ rain over the sea against the land nearby: the one case we had for them turned
 out to be rain. A check against the gauges themselves, which the DPC does not
 publish: that a gauge is faulty is the radar's word, confirmed by hand once.
 A faulty gauge where the radar is blind is kept. The `agreement` part of the
-reliability map was built before this check and still counts those gauges as
-rain the radar missed. Limen does not use `quality` yet. **For Limen:** fewer
+reliability map leaves those gauges out since
+[#44](https://github.com/agent-engineering-studio/dpc-radar/issues/44). Limen does not use `quality` yet. **For Limen:** fewer
 false triggers and one rule for flood, wildfire and the trigger.
 
 ### Foundations: the code that comes from Limen

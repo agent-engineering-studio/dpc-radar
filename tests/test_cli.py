@@ -52,7 +52,7 @@ def test_a_report_from_an_archive(
     assert facts["bulletins"][0]["zone"]["colour"] == "orange"
 
     assert cli.main(["check", str(out / "report.md"), str(out / "facts.json")]) == 0
-    assert "every number of the text is in the facts" in capsys.readouterr().out
+    assert "none is said of the wrong one" in capsys.readouterr().out
 
 
 def test_a_report_from_the_api_with_a_text_of_ones_own(
@@ -74,6 +74,15 @@ def test_a_report_from_the_api_with_a_text_of_ones_own(
 
     assert cli.main(["check", str(text), str(tmp_path / "out" / "facts.json")]) == 1
     assert "numbers that are not in the facts: 250" in capsys.readouterr().err
+
+    facts = json.loads((tmp_path / "out" / "facts.json").read_text())
+    radar = facts["peak"]["radar_mm"]
+    text.write_text(f"At the wettest place the «Merging» gives {radar} mm in the day.")
+    assert cli.main(["check", str(text), str(tmp_path / "out" / "facts.json")]) == 1
+    err = capsys.readouterr().err
+    assert "numbers said of the wrong fact:" in err and "peak.merging_mm is" in err
+    assert cli.main([*args, "--no-bulletin", "--no-images", "--text", str(text)]) == 1
+    assert "dpc-radar: the text says numbers of the wrong fact" in capsys.readouterr().err
 
 
 def test_what_goes_wrong_is_said_in_one_line(

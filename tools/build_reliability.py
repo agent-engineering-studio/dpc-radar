@@ -16,7 +16,14 @@ The parts (see :mod:`dpc_radar.reliability`):
   in the mosaic);
 * agreement: the sum of SRT1 against the sum of CUM3 over the same three hours,
   both smoothed on 9 km, as the smaller of the two ratios, where the «Merging»
-  measured at least ``MIN_RAIN_MM`` on land.
+  measured at least ``MIN_RAIN_MM`` on land. The sums are those of
+  ``tools/build_bias.py``: a window with a rain gauge gone wrong (the
+  ``gauge_only`` rule) is left out within 15 km of it, and where a gauge reports
+  rain under a dry radar most of the time the agreement is not known. Such a
+  gauge says nothing of the radar, and before this it made the radar look
+  blind around Foggia. ``--cache`` shares the file of those sums with the bias
+  build; the bias build reads the visibility and the coverage of the map
+  already shipped, which the agreement does not change.
 
 ``--skip`` leaves out a period in which the cumulates are known to be wrong.
 """
@@ -24,7 +31,7 @@ The parts (see :mod:`dpc_radar.reliability`):
 from __future__ import annotations
 
 import argparse
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import httpx
@@ -135,57 +142,46 @@ def frame(arc: MergingArchive, product: str, time: datetime) -> np.ndarray:
     return np.full(SHAPE, np.nan) if grid is None else grid.data
 
 
-def from_archive(
-    folder: Path, skip: tuple[date, date] | None
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, str]:
-    """Coverage, and the sums of SRT1 and CUM3 over the same hours, from the local archive."""
+def coverage_of(folder: Path) -> tuple[np.ndarray, str]:
+    """The share of the SRT1 frames with data at every pixel, and the days they span."""
     arc = MergingArchive(folder, cache_frames=8)
     hours = stored(folder, "SRT1")
     seen = np.zeros(SHAPE, dtype="float64")
     for t in hours:
         seen += np.isfinite(frame(arc, "SRT1", t))
-    radar = np.zeros(SHAPE, dtype="float64")
-    merged = np.zeros(SHAPE, dtype="float64")
-    have = set(hours)
-    for t in stored(folder, "CUM3"):
-        if skip and skip[0] <= t.date() <= skip[1]:
-            continue
-        three = [t - timedelta(hours=h) for h in range(3)]
-        if not all(h in have for h in three):
-            continue
-        cum = arc.read("CUM3", t)
-        if cum is None:
-            continue
-        on_tm = np.full(SHAPE, np.nan, dtype="float32")
-        reproject(
-            cum.data.astype("float32"),
-            on_tm,
-            src_transform=cum.transform,
-            src_crs=cum.crs,
-            src_nodata=np.nan,
-            dst_transform=TRANSFORM,
-            dst_crs=CRS_TM,
-            dst_nodata=np.nan,
-            resampling=Resampling.bilinear,
-        )
-        srt = np.stack([frame(arc, "SRT1", h) for h in three])
-        both = np.isfinite(on_tm) & np.isfinite(srt).all(0)
-        radar += np.where(both, srt.sum(0), 0)
-        merged += np.where(both, on_tm, 0)
-    built_on = f"{hours[0]:%Y-%m-%d}/{hours[-1]:%Y-%m-%d}"
-    return seen / len(hours), radar, merged, built_on
+    return seen / len(hours), f"{hours[0]:%Y-%m-%d}/{hours[-1]:%Y-%m-%d}"
 
 
-def build(archive: Path, dem_folder: Path, skip: tuple[date, date] | None) -> dict[str, np.ndarray]:
-    terrain = dem(dem_folder)
-    beam = beam_height(terrain)
-    visibility = np.clip((NONE_ABOVE_M - beam) / (NONE_ABOVE_M - FULL_BELOW_M), 0, 1)
-    coverage, radar, merged, built_on = from_archive(archive, skip)
-    r, m = box(radar, SMOOTH), box(merged, SMOOTH)
+def agreement_of(
+    folder: Path, terrain: np.ndarray, skip: tuple[date, date] | None, cache: Path | None
+) -> tuple[np.ndarray, np.ndarray]:
+    """The agreement of SRT1 with CUM3, and where a chronic gauge fault leaves it unknown."""
+    from tools.build_bias import chronic, load, total  # it imports this module
+
+    sums = load(folder, cache, skip)
+    months = sorted(sums)
+    bad = chronic(sums, months)
+    r = box(np.where(bad, 0, total(sums, "radar", months)), SMOOTH)
+    m = box(np.where(bad, 0, total(sums, "merged", months)), SMOOTH)
     with np.errstate(divide="ignore", invalid="ignore"):
         ratio = r / m
         agreement = np.minimum(ratio, 1 / ratio)
-    agreement[(m < MIN_RAIN_MM) | (box((terrain > 0).astype(float), SMOOTH) < 0.5)] = np.nan
+    sea = box((terrain > 0).astype(float), SMOOTH) < 0.5
+    agreement[(m < MIN_RAIN_MM) | sea | bad] = np.nan
+    return agreement, bad
+
+
+def build(
+    archive: Path,
+    dem_folder: Path,
+    skip: tuple[date, date] | None,
+    cache: Path | None = None,
+) -> dict[str, np.ndarray]:
+    terrain = dem(dem_folder)
+    beam = beam_height(terrain)
+    visibility = np.clip((NONE_ABOVE_M - beam) / (NONE_ABOVE_M - FULL_BELOW_M), 0, 1)
+    coverage, built_on = coverage_of(archive)
+    agreement, bad = agreement_of(archive, terrain, skip, cache)
     in_mosaic = coverage >= MIN_COVERAGE
     for part in (visibility, agreement, beam):
         part[~in_mosaic] = np.nan
@@ -199,6 +195,7 @@ def build(archive: Path, dem_folder: Path, skip: tuple[date, date] | None) -> di
         "agreement": agreement,
         "beam_height": beam,
         "built_on": np.array(built_on),
+        "gauge_faults": bad,
     }
 
 
@@ -237,13 +234,17 @@ def main() -> None:
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--dem", type=Path, required=True)
     parser.add_argument("--skip", nargs=2, type=date.fromisoformat, metavar=("FROM", "TO"))
+    parser.add_argument("--cache", type=Path, help="the sums of tools/build_bias.py, kept here")
     parser.add_argument(
         "--out", type=Path, default=Path(__file__).parents[1] / "src/dpc_radar/data" / MAP_FILE
     )
     args = parser.parse_args()
-    parts = build(args.archive, args.dem, tuple(args.skip) if args.skip else None)
+    parts = build(args.archive, args.dem, tuple(args.skip) if args.skip else None, args.cache)
     write(parts, args.out)
-    print(f"{args.out}: {args.out.stat().st_size / 1024:.0f} kB, built on {parts['built_on']}")
+    print(
+        f"{args.out}: {args.out.stat().st_size / 1024:.0f} kB, built on {parts['built_on']}, "
+        f"agreement left unknown on {int(parts['gauge_faults'].sum())} km² of gauge faults"
+    )
 
 
 if __name__ == "__main__":

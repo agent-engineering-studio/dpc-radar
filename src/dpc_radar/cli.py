@@ -94,7 +94,9 @@ def _parser() -> argparse.ArgumentParser:
     sites.add_argument("--time", type=_time, metavar="YYYY-MM-DDTHH:MM", help="a UTC time")
     sites.add_argument("--out", type=Path, help="save the status as GeoJSON in this file")
 
-    check = commands.add_parser("check", help="are the numbers of a text all in the facts?")
+    check = commands.add_parser(
+        "check", help="are the numbers of a text in the facts, each of its own?"
+    )
     check.add_argument("text", type=Path)
     check.add_argument("facts", type=Path)
     return parser
@@ -180,13 +182,20 @@ def _sites(args: argparse.Namespace) -> int:
 
 
 def _check(args: argparse.Namespace) -> int:
-    from dpc_radar.report import check_text
+    from dpc_radar.report import check_claims, check_text
 
-    strangers = check_text(args.text.read_text(), json.loads(args.facts.read_text()))
+    text, facts = args.text.read_text(), json.loads(args.facts.read_text())
+    strangers = check_text(text, facts)
     if strangers:
         print("numbers that are not in the facts: " + ", ".join(strangers), file=sys.stderr)
         return 1
-    print("every number of the text is in the facts")
+    misquotes = check_claims(text, facts)
+    if misquotes:
+        print("numbers said of the wrong fact:", file=sys.stderr)
+        for m in misquotes:
+            print(f"  {m}", file=sys.stderr)
+        return 1
+    print("every number of the text is in the facts, and none is said of the wrong one")
     return 0
 
 

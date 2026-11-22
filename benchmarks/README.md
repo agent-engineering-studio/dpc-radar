@@ -267,6 +267,47 @@ So the picture did not beat the rules on the cases we knew, and it pointed at
 three faults we had not looked at. That is the use it is good for here:
 proposing cases, which a person then confirms on the numbers.
 
+## How faithfully a text quotes the facts
+
+The tools of the MCP server answer with facts; a model turns them into words.
+[`faithful.py`](faithful.py) measures what it does with the numbers. The set,
+[`faithful.json`](faithful.json), holds five questions on the night of Melito
+(the rain at a point over one and three hours, over a box, how rare it is, the
+report of the day), the facts the tools gave, recorded once from the archive,
+and answers. For every number of an answer the set says what the sentence
+says it is (a path into the facts), and the score is arithmetic:
+
+| Kind | The number, against the fact it is said of |
+|---|---|
+| `faithful` | the fact, to the decimals written |
+| `question` | not a fact: it repeats the question |
+| `rounded` | within one unit of the last digit, and not the fact (118.1 for 118.04) |
+| `swapped` | another figure of the same facts |
+| `invented` | none of these |
+
+```bash
+uv run python -m benchmarks.faithful score --check          # free, no network
+uv run --group vision python -m benchmarks.faithful ask     # a model writes (API key)
+uv run --group vision python -m benchmarks.faithful label   # a second model reads
+```
+
+Ten answers are written by hand, one faithful and one with known faults per
+question; `score --check` fails if they do not score as written, and runs in
+CI. Today:
+
+| Author | Answers | Numbers | faithful | rounded | swapped | invented | faults `check_text` misses |
+|---|---|---|---|---|---|---|---|
+| hand, faithful | 5 | 46 | 46 | 0 | 0 | 0 | - |
+| hand, with faults | 5 | 40 | 23 | 4 | 8 | 5 | 8 of 17 |
+
+`check_text` refuses the invented and the badly rounded numbers, and lets
+every swapped one through: that is what the set is for. `ask` adds the
+answers of a model; `label` asks a second model what each of its numbers is
+said of, and reads the hand answers too, so the table says how often that
+reader agrees with the hand. No model has answered yet: there was no key
+when the set was made. As in Limen's reviewer (`fedelta`), the model only
+says what a number is about; whether it is right is arithmetic.
+
 ## Add a method
 
 A method answers three questions about a frame and the one before it

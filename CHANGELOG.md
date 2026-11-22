@@ -6,8 +6,41 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `check_claims(text, facts)` in `dpc_radar.report`: the numbers of a text
+  said of the wrong fact. It reads the sentences of the report template and
+  ties each number to its key in `facts.json`, so two figures swapped between
+  the «Merging» and the radar alone, or one rounded the wrong way, are
+  refused. `Report.save(text=...)` and `dpc-radar check` run it after
+  `check_text`. A sentence in other words gets `check_text` only (#44).
+- `benchmarks/faithful.py` and `faithful.json`: how faithfully a text quotes
+  the facts of the tools. Five questions on the night of Melito, the facts
+  recorded from the archive, and answers whose numbers are scored as
+  faithful, rounded the wrong way, swapped or invented. Ten answers are
+  written by hand with known faults; `score --check` runs in CI. `ask` and
+  `label` add a model's answers and a second model's reading of them (API
+  key). On the hand answers `check_text` lets through 8 of 17 wrong numbers,
+  all swapped (#44).
+
 ### Changed
 
+- The `agreement` of the reliability map leaves out the rain gauges that went
+  wrong, as the bias map does: the windows of a `gauge_only` fault, and the
+  2,660 km² around gauges that report rain under a dry radar most of the
+  time, where it is now not known. Around Foggia the score goes from 0.18 to
+  0.93, at 13.99E 41.69N from 0.35 to 1.00. The map was rebuilt on the same
+  months, June to November 2026; visibility and coverage are the same to the
+  pixel, but the agreement moves elsewhere too (median change 0.02; it is
+  known on 418,188 km² against 408,641, so the first build seems to have read
+  fewer «Merging» windows): around Palermo it is 0.29, no longer 0.11.
+  643,792 km² are reliable, 6,002 more. `tools/build_reliability.py` reads the
+  sums of `tools/build_bias.py` (`--cache` shares them) (#44).
+- The pixel near 11.02E 45.59N, reported from Limen as fixed clutter, is not
+  masked: hour by hour it is a core of rain that moves, and over the season it
+  is wet as often as the land around it. The radar reads about twice the
+  «Merging» there, and the new `agreement` says so (0.52). The catalogue page
+  no longer calls it a clutter pixel (#44).
 - The demo is a map, no longer a Streamlit page: all of Italy on OpenStreetMap,
   centred on Rome, with the rain of now or of the last 1 to 24 hours, the alert
   zones, the storms and the radars. A click on a point, a zone, a storm or a

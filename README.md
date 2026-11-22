@@ -1166,6 +1166,13 @@ lists every variable the project reads. `.env` is never committed. With no
 key, the library, the command line, the MCP server and the demo work as they
 are.
 
+**What it found.** On the first run (18 November 2026) Claude passed 26 of the
+30 checks of that day, and it boxed four patches where the «Merging» had rain
+and the radar alone had none. Checked on 580 three-hour frames, three of them
+are rain gauges gone wrong, and they are now cases of the benchmark. The model
+pointed, and the frames said whether it was right: no number of the library
+comes from it.
+
 ### For a public administration
 
 In Italy, a public body that adopts AI follows the *Linee Guida per l'adozione

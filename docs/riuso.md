@@ -31,7 +31,7 @@ cp .env.example .env
 # nel file .env:
 #   DPC_RADAR_LAT=40.7997
 #   DPC_RADAR_LON=16.9236
-#   DPC_RADAR_PLACE=Comune di Gioia del Colle
+#   DPC_RADAR_PLACE="Comune di Gioia del Colle"
 docker compose up
 ```
 

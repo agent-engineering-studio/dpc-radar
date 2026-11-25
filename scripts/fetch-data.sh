@@ -7,6 +7,8 @@
 #   scripts/fetch-data.sh
 #
 #   DPC_RADAR_DATA   where to put them (default: ./data)
+#   DATA_ROOT        the root shared with Limen and the other libraries: the
+#                    frames then go to $DATA_ROOT/dpc-radar (default: $DPC_RADAR_DATA)
 #   DPC_RADAR_DAYS   how many days of frames (default: 2, about 70 MB)
 #   DPC_RADAR_RUN    what to run Python with (default: uv; empty inside Docker)
 #
@@ -19,10 +21,12 @@ DATA="${DPC_RADAR_DATA:-$PWD/data}"
 DAYS="${DPC_RADAR_DAYS:-2}"
 RUN="${DPC_RADAR_RUN-uv run --all-extras --group demo}"
 
-mkdir -p "$DATA/archive" "$DATA/cache" "$DATA/reports"
+ROOT="${DATA_ROOT:-$DATA}"
 
-echo "Frames of the last $DAYS days, into $DATA/archive"
-$RUN dpc-radar archive "$DATA/archive" --days "$DAYS" ||
+mkdir -p "$ROOT/dpc-radar" "$DATA/cache" "$DATA/reports"
+
+echo "Frames of the last $DAYS days, into $ROOT/dpc-radar/merging"
+$RUN dpc-radar init "$ROOT/dpc-radar" --days "$DAYS" ||
     echo "warning: the frames were not downloaded; run this script again later" >&2
 
 echo "The radars and which are on, into $DATA/cache/sites.geojson"

@@ -422,7 +422,7 @@ What else you can run:
 | Command | With Docker | What it does |
 |---|---|---|
 | `scripts/fetch-data.sh` | `docker compose run --rm init` | downloads the frames of the last days, for the reports, and the status of the radars; run it again to get the newest |
-| `uv run dpc-radar archive data/archive --days 7` | `docker compose run --rm cli archive /data/archive --days 7` | keeps the frames before the DPC deletes them |
+| `uv run dpc-radar init data/dpc-radar --days 7` | `docker compose run --rm cli init --days 7` | keeps the frames before the DPC deletes them |
 | `uv run dpc-radar report --bbox … --day … --out …` | `docker compose run --rm cli report …` | the report of a day over a box |
 | `uv run dpc-radar sites` | `docker compose run --rm cli sites` | which radars the DPC viewer reports as on |
 | `uv run python` | `docker compose run --rm python` | Python, with `dpc_radar` to import |
@@ -431,7 +431,8 @@ What else you can run:
 Three variables change the defaults: `DPC_RADAR_DAYS` (how many days of
 frames, 2), `DPC_RADAR_PORT` (the port of the demo, 3000) and
 `DPC_RADAR_DATA` (the data folder: `./data` without Docker, the volume
-`radar-data` with it). The demo is a demo of the library, not an alert
+`radar-data` with it). The frames go to `dpc-radar/` inside it, or inside
+`DATA_ROOT` when it is set (see [Where the data lives](#where-the-data-lives)). The demo is a demo of the library, not an alert
 service.
 
 ## Notebooks and example apps
@@ -652,6 +653,42 @@ than one frame in a thousand is corrupted, and `hourly` reads those as
 missing. And it is **not one series**: until 2017 the mosaic read about two
 thirds of what it reads since 2018, so do not carry a threshold across that
 year.
+
+### Where the data lives
+
+With no folder given, the library keeps its data in one place:
+`$DATA_ROOT/dpc-radar` when `DATA_ROOT` is set (the root shared with
+[Limen](https://github.com/agent-engineering-studio/limen) and the other
+libraries, each in a folder of its own), otherwise `$XDG_CACHE_HOME/dpc-radar`
+or `~/.cache/dpc-radar`. `default_directory()` says which.
+
+```text
+dpc-radar/
+├── merging/      the «Merging» frames: CUM3/ and SRT1/, as archive() writes them
+└── it_dpc_sri/   the IT-DPC-SRI Zarr store, 2010-2025, only if asked (~51 GB)
+```
+
+`init` fills it, and can be run again: it downloads only what is missing.
+`MergingArchive()` and `SriHistory()` with no argument read from there.
+
+```python
+from dpc_radar import init
+
+report = await init(days=2)  # the «Merging» of the last two days
+report = await init(days=2, history=True)  # and IT-DPC-SRI from ECMWF, a few hours
+```
+
+```bash
+dpc-radar init --days 2              # into the default folder
+dpc-radar init /srv/data/dpc-radar --history
+```
+
+`init(directory=None, *, days=2, history=False, client=None, retries=3,
+concurrency=32)` takes your `httpx.AsyncClient`, and `retries=0` leaves the
+retrying to you. A file that fails is counted in the `InitReport` and fetched
+on the next run; only a disk that cannot be written raises. IT-DPC-SRI comes
+file by file from ECMWF's object store (`history.mirror`), the same store as on
+Zenodo, a frame in about 0.14 s instead of a single 50 GB download at 0.1 MB/s.
 
 ---
 
@@ -1070,9 +1107,10 @@ cannot tell from light rain.
 | `grid.quality(previous=None, radar=None)` | `Quality(grid, mask, reasons, score, verdict)`: what to trust pixel by pixel, and why |
 | `radar_total(frames)` | the radar-only rain over a window: the sum of its hourly `SRT1` frames |
 | `ABSENT` | a frame the DPC no longer keeps |
+| `init(directory=None, days=2, history=False)` / `default_directory()` | download what the library needs offline into its folder: the «Merging» of the last days, and IT-DPC-SRI if asked; an `InitReport` / that folder, `$DATA_ROOT/dpc-radar` or `~/.cache/dpc-radar` |
 | `archive(folder, radar, start=, end=, limit=)` | download the CUM3 and SRT1 frames the archive lacks; an `ArchiveReport` |
-| `MergingArchive(folder).hourly(points, start, end)` | hourly rain per point from the archive: SRT1 rescaled to the CUM3 |
-| `SriHistory(zarr).hourly(points, start, end)` | the same from IT-DPC-SRI, 2010–2025, radar only (extra `history`) |
+| `MergingArchive(folder=None).hourly(points, start, end)` | hourly rain per point from the archive: SRT1 rescaled to the CUM3 |
+| `SriHistory(zarr=None).hourly(points, start, end)` / `history.mirror(folder)` | the same from IT-DPC-SRI, 2010–2025, radar only (extra `history`) / copy the store from ECMWF's object store |
 | `reliability(lon, lat)` / `reliability_map()` | how much to trust the radar at a point: `score`, `visibility`, `coverage`, `agreement`, `beam_height`, `reliable` / the whole map, `.like(grid)` on the pixels of a frame |
 | `SITES` | the 24 radars of the mosaic: position, altitude, band, range, DPC code |
 | `await radar.radar_status(time=None)` | which radars the DPC viewer reports as on: `.off`, `.of(site)`, `.geojson()`; `ABSENT` when not known. From an undocumented file: a hint |
@@ -1094,7 +1132,8 @@ cannot tell from light rain.
 | `products.HEADERS`, `products.NODATA` | the `origin` header; `-9999.0`, the no-data value of every product |
 | `products.to_epoch_ms`, `from_epoch_ms`, `parse_period` | the API's times and periods (`PT5M`, `PT30M`) |
 | `DpcRadarError` | an answer the library cannot read, or a bad argument |
-| `dpc-radar archive FOLDER --days 2` | the command line: save the CUM3 and SRT1 frames the folder lacks |
+| `dpc-radar archive [FOLDER] --days 2` | the command line: save the CUM3 and SRT1 frames the folder lacks |
+| `dpc-radar init [DIRECTORY] --days 2 [--history]` | the command line: what `init` downloads |
 | `dpc-radar report` / `dpc-radar check` / `dpc-radar mcp` | the report of a day over a box / the numbers of a text against its facts / the MCP server |
 | `dpc-radar sites [--time …] [--out FILE]` | the radars and which are reported on, as a table or as GeoJSON |
 
@@ -1230,7 +1269,8 @@ dpc-radar/
 │   ├── grid.py       # RainGrid: read a frame, sample, peak, crop, check, quality
 │   ├── client.py     # RadarClient: latest, at, download, ABSENT
 │   ├── archive.py    # archive the «Merging», hourly rain from it
-│   ├── history.py    # IT-DPC-SRI 2010-2025 (extra [history])
+│   ├── history.py    # IT-DPC-SRI 2010-2025 (extra [history]), and its mirror
+│   ├── local.py      # the library's data folder ($DATA_ROOT/dpc-radar) and init()
 │   ├── bulletins.py  # the official criticality bulletin (extra [bulletins])
 │   ├── reliability.py  # where the radar can be trusted: a map and its parts
 │   ├── quality.py    # what to trust in a frame, pixel by pixel, and why

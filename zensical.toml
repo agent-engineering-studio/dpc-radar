@@ -15,6 +15,7 @@ nav = [
     { "Rain grid" = "api/grid.md" },
     { "Archive" = "api/archive.md" },
     { "History (IT-DPC-SRI)" = "api/history.md" },
+    { "Data folder and init" = "api/local.md" },
     { "Reliability map" = "api/reliability.md" },
     { "Radar status" = "api/status.md" },
     { "Frame quality" = "api/quality.md" },

@@ -10,6 +10,7 @@ import pytest
 from dpc_radar import ABSENT, DpcRadarError, cli
 from dpc_radar import report as r
 from dpc_radar.archive import ArchiveReport
+from dpc_radar.local import InitReport
 from tests.conftest import Radar, status
 from tests.test_facts import bulletin
 from tests.test_report import frames
@@ -180,3 +181,47 @@ def test_days_are_one_or_more(days: str, capsys: pytest.CaptureFixture[str]) -> 
     with pytest.raises(SystemExit) as stopped:
         cli.main(["archive", "x", "--days", days])
     assert stopped.value.code == 2 and "a number of days" in capsys.readouterr().err
+
+
+def test_archive_into_the_library_folder(
+    offline: list[date], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    asked: list[Path] = []
+
+    async def saved(folder: Path, radar: object, **how: Any) -> ArchiveReport:
+        asked.append(folder)
+        return ArchiveReport()
+
+    monkeypatch.setenv("DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr("dpc_radar.archive.archive", saved)
+    assert cli.main(["archive"]) == 0
+    assert asked == [tmp_path / "dpc-radar" / "merging"]
+
+
+def test_init(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: Any) -> None:
+    asked: list[dict[str, Any]] = []
+
+    async def downloaded(directory: Path, **how: Any) -> InitReport:
+        asked.append({"directory": directory, **how})
+        return InitReport(ArchiveReport(downloaded=3, present=2, bytes=3_400_000))
+
+    monkeypatch.setenv("DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr("dpc_radar.local.init", downloaded)
+    assert cli.main(["init"]) == 0
+    root = tmp_path / "dpc-radar"
+    said = capsys.readouterr().out
+    assert said == (
+        f"{root}: 3 files saved (3 MB), 2 already there, 0 gone at the source, "
+        "0 to retry next time\n"
+    )
+    assert cli.main(["init", "x", "--days", "5", "--history", "--retries", "0"]) == 0
+    first, second = asked
+    assert first == {
+        "directory": root,
+        "days": 2,
+        "history": False,
+        "retries": 3,
+        "concurrency": 32,
+    }
+    assert second["directory"] == Path("x") and second["days"] == 5
+    assert second["history"] and second["retries"] == 0

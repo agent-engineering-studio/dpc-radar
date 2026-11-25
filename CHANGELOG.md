@@ -6,6 +6,30 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `default_directory()` (`dpc_radar.local`): the library's own data folder,
+  `$DATA_ROOT/dpc-radar`, otherwise `$XDG_CACHE_HOME/dpc-radar` or
+  `~/.cache/dpc-radar`. `DATA_ROOT` is the root shared with Limen and the other
+  libraries of agent-engineering-studio. Inside it, `merging/` and
+  `it_dpc_sri/`.
+- `init(directory=None, *, days=2, history=False, client=None, retries=3,
+  concurrency=32)` and `dpc-radar init`: download what the library needs to
+  work offline, the «Merging» of the last days and, with `history`, the
+  IT-DPC-SRI store (~51 GB). Safe to run again; a file that fails is counted
+  in the `InitReport`, not raised.
+- `history.mirror(folder)`: copy IT-DPC-SRI file by file from ECMWF's object
+  store, resumable, with the frames the store lacks written to `missing.txt`.
+
+### Changed
+
+- `MergingArchive()`, `SriHistory()` and `dpc-radar archive` take no folder:
+  they default to the library's folder. A folder passed is used as before.
+- `scripts/fetch-data.sh` and `docker compose run --rm init` run `dpc-radar
+  init` into `data/dpc-radar/` (or `$DATA_ROOT/dpc-radar`), no longer
+  `data/archive/`: move an archive you want to keep to `data/dpc-radar/merging`.
+  Compose mounts `${DATA_ROOT:-./data}/dpc-radar` into the containers.
+
 ## [0.4.0] - 2026-11-23
 
 ### Added

@@ -10,13 +10,19 @@
 #                    where the map opens, and the name shown: the municipality
 #                    that hosts the page (default: Gioia del Colle). See .env.example.
 #   DPC_RADAR_DAYS   how many days of frames `init` downloads (default 2)
+#   DATA_ROOT        the data folder shared with Limen and the other libraries:
+#                    the library's own folder is $DATA_ROOT/dpc-radar (default
+#                    ./data/dpc-radar). Create it first, so that it is yours.
 name: dpc-radar
 
 x-radar: &radar
   image: dpc-radar:local
   build: .
+  environment:
+    DATA_ROOT: /data
   volumes:
     - radar-data:/data
+    - ${DATA_ROOT:-./data}/dpc-radar:/data/dpc-radar
 
 services:
   # What the page asks: the library, behind a few URLs (demo/api.py).
@@ -51,6 +57,7 @@ services:
     profiles: [tools]
     command: ["sh", "scripts/fetch-data.sh"]
     environment:
+      DATA_ROOT: /data
       DPC_RADAR_DAYS: ${DPC_RADAR_DAYS:-2}
 
   cli:

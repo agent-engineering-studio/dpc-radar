@@ -6,8 +6,12 @@ national SRI mosaic, rain intensity in mm/h from the radar alone, as one
 Zarr v2 store: one chunk per time step, 1400 x 1200 pixels of 1 km in a
 Transverse Mercator projection centred on 42°N 12.5°E, a frame every 15 minutes
 until 2014, every 10 until 2020, every 5 after. It is published as a single
-50 GB ``.zarr.tar.zst``: unpack it once, then point :class:`SriHistory` at the
-``.zarr`` folder.
+50 GB ``.zarr.tar.zst``, served at about 0.1 MB/s: days. The same store is on
+ECMWF's object store (catalogue mlcast-datasets), anonymous, a frame in about
+0.14 s: :func:`mirror` copies it file by file in a few hours, and can stop and
+start again. Point :class:`SriHistory` at the ``.zarr`` folder, either one; with
+no folder it reads ``it_dpc_sri/`` in the library's folder, where
+``dpc_radar.local.init(history=True)`` puts the mirror.
 
 It is read here without zarr or xarray: the Blosc codec (extra ``history``,
 ``pip install "dpc-radar[history]"``) is enough to decompress a frame.
@@ -35,16 +39,24 @@ crosses 2018 compares two different instruments.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import warnings
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Final
 
+import httpx
 import numpy as np
 from rasterio.warp import transform as warp_points
 
+from dpc_radar.archive import ArchiveReport
 from dpc_radar.errors import DpcRadarError
+from dpc_radar.local import history_directory
+
+_log = logging.getLogger(__name__)
 
 #: The origin of the store's time axis ("minutes since 2010-01-01").
 EPOCH: Final = datetime(2010, 1, 1, tzinfo=UTC)
@@ -104,9 +116,13 @@ def _blosc() -> Any:
 
 
 class SriHistory:
-    """Hourly rain at lon/lat points from the IT-DPC-SRI Zarr store on disk."""
+    """Hourly rain at lon/lat points from the IT-DPC-SRI Zarr store on disk.
 
-    def __init__(self, path: Path) -> None:
+    Without ``path``, ``it_dpc_sri/`` in the library's folder.
+    """
+
+    def __init__(self, path: Path | None = None) -> None:
+        path = path if path is not None else history_directory()
         self.path = path
         self._codec = _blosc()
         try:
@@ -226,4 +242,145 @@ class SriHistory:
         return out
 
 
-__all__ = ["EPOCH", "SriHistory", "suspect"]
+#: The IT-DPC-SRI store on ECMWF's object store: the same Zarr as on Zenodo, file by file.
+SRI_STORE: Final = (
+    "https://object-store.os-api.cci2.ecmwf.int/mlcast-source-datasets/"
+    "IT-DPC-SRI/v0.1.0/italian-radar-dpc-sri.zarr"
+)
+#: The arrays besides RR: small, one chunk each.
+_COORDINATES: Final = ("crs", "lat", "lon", "x", "y", "time", "missing_times")
+_GONE: Final = frozenset({403, 404})  # a hole in the store: the object store says 403
+_RETRY_STATUS: Final = frozenset({429, 500, 502, 503, 504})
+#: How many frames are scheduled at once: a million tasks would hold a million coroutines.
+_BATCH: Final = 5000
+
+
+async def _fetch(
+    client: httpx.AsyncClient,
+    url: str,
+    retries: int,
+    backoff_s: float,
+    sleep: Callable[[float], Awaitable[Any]],
+) -> bytes | None:
+    """The body of ``url``; ``None`` if the store does not have it."""
+    for attempt in range(retries + 1):
+        try:
+            response = await client.get(url)
+        except httpx.TransportError:
+            if attempt == retries:
+                raise
+        else:
+            if response.status_code in _GONE:
+                return None
+            if response.status_code not in _RETRY_STATUS or attempt == retries:
+                response.raise_for_status()
+                return response.content
+        await sleep(backoff_s * 2**attempt)
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
+def _write(dest: Path, data: bytes) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dest.with_name(dest.name + ".part")
+    tmp.write_bytes(data)
+    tmp.rename(dest)
+
+
+async def mirror(
+    directory: Path,
+    client: httpx.AsyncClient | None = None,
+    *,
+    retries: int = 3,
+    concurrency: int = 32,
+    start: int = 0,
+    stop: int | None = None,
+    base: str = SRI_STORE,
+    backoff_s: float = 2.0,
+    sleep: Callable[[float], Awaitable[Any]] = asyncio.sleep,
+) -> ArchiveReport:
+    """Copy the IT-DPC-SRI store from ECMWF's object store into ``directory``.
+
+    The metadata and the coordinates first, then the frames ``start`` to
+    ``stop`` (indices on the time axis: 179087 is the first of 2015),
+    ``concurrency`` at a time. Safe to stop and run again: a file on disk is
+    not downloaded twice, and a frame the store does not have (a 403 or 404)
+    is written to ``missing.txt`` and not asked again. A file that fails is
+    counted, logged and retried on the next run; a disk that cannot be written
+    raises. ``client`` is used and left open; ``retries=0`` leaves the
+    retrying to the caller.
+    """
+    report = ArchiveReport()
+    own = client is None
+    http = client or httpx.AsyncClient(timeout=60, limits=httpx.Limits(max_connections=concurrency))
+    base = base.rstrip("/")
+
+    async def one(key: str, dest: Path) -> str:
+        """Download ``key`` to ``dest`` unless it is there: ``there``, ``gone`` or ``failed``."""
+        if dest.exists():
+            report.present += 1
+            return "there"
+        try:
+            data = await _fetch(http, f"{base}/{key}", retries, backoff_s, sleep)
+        except httpx.HTTPError as exc:
+            _log.warning("IT-DPC-SRI %s failed: %s", key, type(exc).__name__)
+            report.failed += 1
+            return "failed"
+        if data is None:
+            report.lost += 1
+            return "gone"
+        _write(dest, data)
+        report.downloaded += 1
+        report.bytes += len(data)
+        return "there"
+
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+        if await one(".zmetadata", directory / ".zmetadata") != "there":
+            return report
+        for key in (".zgroup", ".zattrs"):
+            await one(key, directory / key)
+        meta: dict[str, dict[str, Any]] = json.loads((directory / ".zmetadata").read_text())[
+            "metadata"
+        ]
+        for key, value in meta.items():
+            if key.endswith((".zarray", ".zattrs")) and not (directory / key).exists():
+                _write(directory / key, json.dumps(value).encode())
+        for name in _COORDINATES:
+            if f"{name}/.zarray" in meta:
+                shape = meta[f"{name}/.zarray"]["shape"]
+                chunk = ".".join("0" for _ in shape) if shape else "0"
+                await one(f"{name}/{chunk}", directory / name / chunk)
+
+        rr = directory / "RR"
+        rr.mkdir(exist_ok=True)
+        missing_file = directory / "missing.txt"
+        missing = set(missing_file.read_text().split()) if missing_file.exists() else set()
+        on_disk = {p.name for p in rr.iterdir()}
+        end = stop if stop is not None else int(meta["RR/.zarray"]["shape"][0])
+        todo = []
+        for i in range(start, end):
+            if f"{i}.0.0" in on_disk or str(i) in missing:
+                report.present += 1
+            else:
+                todo.append(i)
+        _log.info("IT-DPC-SRI frames %d-%d: %d to download", start, end, len(todo))
+        gate = asyncio.Semaphore(concurrency)
+
+        async def frame(i: int) -> None:
+            async with gate:
+                got = await one(f"RR/{i}.0.0", rr / f"{i}.0.0")
+            if got == "gone":
+                with missing_file.open("a") as f:
+                    f.write(f"{i}\n")
+
+        for k in range(0, len(todo), _BATCH):
+            await asyncio.gather(*(frame(i) for i in todo[k : k + _BATCH]))
+            done = min(k + _BATCH, len(todo))
+            _log.info("IT-DPC-SRI: %d of %d, %.1f GB", done, len(todo), report.bytes / 1e9)
+    finally:
+        if own:
+            await http.aclose()
+    return report
+
+
+__all__ = ["EPOCH", "SRI_STORE", "SriHistory", "mirror", "suspect"]

@@ -21,7 +21,9 @@ either, the hour is not measured (``None``), which is not the same as dry.
 Layout: ``<folder>/<PRODUCT>/<YYYY>/<MM>/<DD>/<PRODUCT>_<YYYYMMDDhhmm>.tif``,
 plus ``<folder>/<PRODUCT>/absent.txt`` with the frames the DPC no longer keeps.
 An archive written before this library, with ``assenti.txt`` in place of
-``absent.txt``, is read as is.
+``absent.txt``, is read as is. Without a folder, :class:`MergingArchive` reads
+``merging/`` in the library's folder (:func:`dpc_radar.local.default_directory`),
+where :func:`dpc_radar.local.init` downloads.
 
 Whatever goes wrong with one frame stays with that frame: it is counted, or read
 as not there, and the reason goes to the ``dpc_radar.archive`` logger as a
@@ -43,6 +45,7 @@ import httpx
 from dpc_radar.client import Absent, RadarClient
 from dpc_radar.errors import DpcRadarError
 from dpc_radar.grid import RainGrid
+from dpc_radar.local import merging_directory
 
 _log = logging.getLogger(__name__)
 
@@ -92,7 +95,7 @@ def _absent(folder: Path, product: str) -> set[str]:
 
 @dataclass
 class ArchiveReport:
-    """What one :func:`archive` run did."""
+    """What one :func:`archive` (or :func:`dpc_radar.history.mirror`) run did."""
 
     downloaded: int = 0
     present: int = 0
@@ -176,11 +179,12 @@ class MergingArchive:
     Frames are kept in memory, ``cache_frames`` at most (an SRT1 frame is
     about 6.7 MB as float32): the same frames are read for every region of a
     run. One instance can be shared between threads: the cache is locked, and
-    frames are decoded outside the lock.
+    frames are decoded outside the lock. Without ``folder``, ``merging/`` in the
+    library's folder.
     """
 
-    def __init__(self, folder: Path, *, cache_frames: int = 80) -> None:
-        self.folder = folder
+    def __init__(self, folder: Path | None = None, *, cache_frames: int = 80) -> None:
+        self.folder = folder if folder is not None else merging_directory()
         self._cache: OrderedDict[tuple[Path, int], RainGrid] = OrderedDict()
         self._cache_frames = cache_frames
         self._lock = threading.Lock()

@@ -5,9 +5,13 @@
 * ``dpc-radar report --bbox W,S,E,N --day YYYY-MM-DD --out folder``: the
   report of a day of rain over a box (:mod:`dpc_radar.report`). The frames
   come from the API, or from a local archive with ``--archive folder``.
-* ``dpc-radar archive folder --days 2``: save the «Merging» frames of the last
-  days that are not in the folder yet (:mod:`dpc_radar.archive`). Safe to run
-  again, and to schedule: it downloads only what is missing.
+* ``dpc-radar archive [folder] --days 2``: save the «Merging» frames of the
+  last days that are not in the folder yet (:mod:`dpc_radar.archive`). Safe to
+  run again, and to schedule: it downloads only what is missing. Without a
+  folder, ``merging/`` in the library's folder (:mod:`dpc_radar.local`).
+* ``dpc-radar init [directory] --days 2 [--history]``: download what the
+  library needs to work offline into its folder (:func:`dpc_radar.local.init`);
+  ``--history`` adds the IT-DPC-SRI store, about 51 GB.
 * ``dpc-radar sites``: which radars the DPC reports on and off, now or at
   ``--time``; ``--out sites.geojson`` saves them as GeoJSON
   (:mod:`dpc_radar.status`).
@@ -84,10 +88,27 @@ def _parser() -> argparse.ArgumentParser:
     report.add_argument("--no-images", action="store_true", help="write no image")
 
     archive = commands.add_parser("archive", help="save the «Merging» frames of the last days")
-    archive.add_argument("folder", type=Path, help="where the archive lives")
+    archive.add_argument(
+        "folder", type=Path, nargs="?", help="where the archive lives (default: the library's)"
+    )
     archive.add_argument("--days", type=_days, default=2, help="how far back to look (default 2)")
     archive.add_argument(
         "--limit", type=int, default=200, help="most requests in one run (default 200)"
+    )
+
+    init = commands.add_parser("init", help="download what the library needs to work offline")
+    init.add_argument(
+        "directory", type=Path, nargs="?", help="the library's folder (default: see the docs)"
+    )
+    init.add_argument("--days", type=_days, default=2, help="days of «Merging» (default 2)")
+    init.add_argument(
+        "--history", action="store_true", help="also the IT-DPC-SRI store, 2010-2025 (~51 GB)"
+    )
+    init.add_argument(
+        "--concurrency", type=int, default=32, help="IT-DPC-SRI files at a time (default 32)"
+    )
+    init.add_argument(
+        "--retries", type=int, default=3, help="retries of a failed request (default 3)"
     )
 
     sites = commands.add_parser("sites", help="which radars the DPC reports on and off")
@@ -136,11 +157,13 @@ def _report(args: argparse.Namespace) -> int:
 async def _save(args: argparse.Namespace) -> str:
     from dpc_radar import RadarClient
     from dpc_radar.archive import archive
+    from dpc_radar.local import merging_directory
 
+    folder = args.folder if args.folder is not None else merging_directory()
     end = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
     start = end - timedelta(days=args.days)
     async with RadarClient() as radar:
-        done = await archive(args.folder, radar, start=start, end=end, limit=args.limit)
+        done = await archive(folder, radar, start=start, end=end, limit=args.limit)
     return (
         f"{done.downloaded} frames saved ({done.bytes / 1e6:.0f} MB), "
         f"{done.present} already there, {done.lost} gone at the DPC, "
@@ -152,6 +175,30 @@ def _archive(args: argparse.Namespace) -> int:
     # Why a frame failed goes to the log; httpx would add a line for every request.
     logging.basicConfig(level=logging.WARNING, format="%(message)s")
     print(asyncio.run(_save(args)))
+    return 0
+
+
+async def _download(args: argparse.Namespace) -> str:
+    from dpc_radar.local import default_directory, init
+
+    directory = args.directory if args.directory is not None else default_directory()
+    done = await init(
+        directory,
+        days=args.days,
+        history=args.history,
+        retries=args.retries,
+        concurrency=args.concurrency,
+    )
+    return (
+        f"{directory}: {done.downloaded} files saved ({done.bytes / 1e6:.0f} MB), "
+        f"{done.present} already there, {done.lost} gone at the source, "
+        f"{done.failed} to retry next time"
+    )
+
+
+def _init(args: argparse.Namespace) -> int:
+    logging.basicConfig(level=logging.WARNING, format="%(message)s")
+    print(asyncio.run(_download(args)))
     return 0
 
 
@@ -206,6 +253,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "mcp": _mcp,
         "report": _report,
         "archive": _archive,
+        "init": _init,
         "sites": _sites,
         "check": _check,
     }[args.command]

@@ -17,6 +17,7 @@ from dpc_radar.climatology import (
 )
 from dpc_radar.errors import DpcRadarError
 from dpc_radar.grid import FrameCheck, RainGrid
+from dpc_radar.local import InitReport, default_directory, init
 from dpc_radar.nowcast import Forecast, Motion, chance, motion, nowcast, rain_ahead
 from dpc_radar.products import (
     API_BASE,
@@ -67,6 +68,7 @@ __all__ = [
     "Event",
     "Forecast",
     "FrameCheck",
+    "InitReport",
     "LastProduct",
     "Level",
     "Motion",
@@ -87,6 +89,8 @@ __all__ = [
     "chance",
     "climatology",
     "correct",
+    "default_directory",
+    "init",
     "is_expired",
     "motion",
     "nowcast",

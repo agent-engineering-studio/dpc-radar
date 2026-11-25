@@ -90,6 +90,9 @@ asyncio.run(main())
   2 orange, 3 red.
 - Hourly «Merging» rain from frames you saved: `dpc_radar.archive`
   (`archive(folder, radar)` every night, `MergingArchive(folder).hourly(...)`).
+  `await init()` (or `dpc-radar init`) fills the library's folder,
+  `$DATA_ROOT/dpc-radar` or `~/.cache/dpc-radar`, and `MergingArchive()` with
+  no folder reads it.
 - The report of a day over a box, from a shell:
   `dpc-radar report --bbox W,S,E,N --day YYYY-MM-DD --out folder` writes
   `facts.json`, `report.md` and two images. If you rewrite the text, run

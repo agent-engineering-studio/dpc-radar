@@ -6,6 +6,24 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `dpc_radar.arco` (extra `arco`): `ArcoClient` reads the radar stores of the
+  [ARCO Data Hub](https://arcodatahub.com/) (Fondazione Bruno Kessler on DPC
+  data) one frame at a time, as a `RainGrid`: `frame(name, time)`,
+  `frames(name, start, end, limit=288)`, `times(name, start, end)`,
+  `last(name)`, `store(name)`. Any frame since 2010 and the one of a few
+  minutes ago, for `SRI`, `SRT1`, `VMI`, `CAPPI2`-`CAPPI8`, `VIL`, `ETM` and
+  `OPERA` (the VMI of Europe at 2 km). Read without zarr or xarray: one
+  request for a frame of `SRI`, two for the sharded stores. With `cache`, the
+  time axis and every frame read are kept on disk and not asked again.
+- It needs a free account (`ARCODATAHUB_USERNAME`, `ARCODATAHUB_ACCESS_KEY`,
+  now in `.env.example`) and the subscription to each dataset: the only part
+  of the library that is not open without a key. Nothing else depends on it.
+- *No echo* is told from *not measured*: `-9998` in the store becomes `-inf`
+  in a reflectivity and 0 in a height or a quantity of water, `-9999` becomes
+  `NaN`.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added

@@ -38,6 +38,12 @@ Python 3.12 or newer. No account and no key: the data are open
   `data` (float array, **NaN = not measured**), `transform`, `crs`.
 - The DPC keeps frames for about **five months**. The radar-only history
   since 2010 is another dataset (IT-DPC-SRI, `dpc_radar.history`).
+- Any frame since 2010, and products the API does not serve (`VMI`, `VIL`,
+  `ETM`, `CAPPI2`-`8`, `OPERA`), come from the ARCO Data Hub:
+  `dpc_radar.arco.ArcoClient`, extra `arco`. It needs a **free account**
+  (`ARCODATAHUB_USERNAME`, `ARCODATAHUB_ACCESS_KEY`) and fair use: it is the
+  only part of the library that is not open without a key. In a reflectivity
+  `-inf` is *no echo* (measured, nothing there) and `NaN` is not measured.
 
 ## Recipes
 

@@ -625,6 +625,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+arco = [
+    { name = "numcodecs" },
+]
 bulletins = [
     { name = "shapely" },
 ]
@@ -692,6 +695,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27" },
     { name = "matplotlib", marker = "extra == 'report'", specifier = ">=3.9" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.3" },
+    { name = "numcodecs", marker = "extra == 'arco'", specifier = ">=0.13" },
     { name = "numcodecs", marker = "extra == 'history'", specifier = ">=0.13" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "rasterio", specifier = ">=1.4" },
@@ -702,7 +706,7 @@ requires-dist = [
     { name = "shapely", marker = "extra == 'mcp'", specifier = ">=2.0" },
     { name = "shapely", marker = "extra == 'report'", specifier = ">=2.0" },
 ]
-provides-extras = ["history", "bulletins", "storms", "nowcast", "mcp", "report"]
+provides-extras = ["history", "arco", "bulletins", "storms", "nowcast", "mcp", "report"]
 
 [package.metadata.requires-dev]
 bench = [

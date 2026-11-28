@@ -56,6 +56,7 @@ http://localhost:3000.
 - [Notebooks and example apps](#notebooks-and-example-apps)
 - [Quick start](#quick-start)
 - [Keep the «Merging», read fifteen years of history](#keep-the-merging-read-fifteen-years-of-history)
+- [Every frame since 2010, with an account](#every-frame-since-2010-with-an-account)
 - [Where the radar can be trusted](#where-the-radar-can-be-trusted)
 - [How far the radar alone is from the «Merging»](#how-far-the-radar-alone-is-from-the-merging)
 - [How rare is this rain, here](#how-rare-is-this-rain-here)
@@ -332,6 +333,10 @@ Two limits to know before you plan a project:
   [your archive](#keep-the-merging-read-fifteen-years-of-history) today.
 - **The fifteen-year history is radar only.** It has no gauge correction, so
   it under-estimates: use it to learn *patterns*, not to quote totals.
+
+One source is outside that rule, and optional: the
+[ARCO Data Hub](#every-frame-since-2010-with-an-account) keeps every frame of
+the mosaic since 2010, live, and asks for a free account.
 
 ## Who is it for, and what you can build
 
@@ -689,6 +694,49 @@ retrying to you. A file that fails is counted in the `InitReport` and fetched
 on the next run; only a disk that cannot be written raises. IT-DPC-SRI comes
 file by file from ECMWF's object store (`history.mirror`), the same store as on
 Zenodo, a frame in about 0.14 s instead of a single 50 GB download at 0.1 MB/s.
+
+---
+
+## Every frame since 2010, with an account
+
+The DPC API forgets after five months, and IT-DPC-SRI stops in 2025. The
+[ARCO Data Hub](https://arcodatahub.com/) of Fondazione Bruno Kessler keeps
+the mosaics as stores that grow every five minutes: the frame of any day
+since 2010, and the one of ten minutes ago. `dpc_radar.arco` reads them one
+frame at a time, as the same `RainGrid` the rest of the library works on.
+
+```python
+from datetime import UTC, datetime
+
+from dpc_radar.arco import ArcoClient  # pip install "dpc-radar[arco]"
+
+async with ArcoClient() as arco:  # ARCODATAHUB_USERNAME, ARCODATAHUB_ACCESS_KEY
+    rain = await arco.frame("SRT1", datetime(2019, 10, 21, 18, tzinfo=UTC))  # an hour of 2019
+    last = await arco.last("VMI")  # the newest frame: a few minutes old
+    echo = await arco.frame("VMI", last)  # reflectivity, dBZ
+```
+
+| Name | What it is | Since |
+|---|---|---|
+| `SRI` | rain intensity (mm/h) | 2010 |
+| `SRT1` | rain of the last hour (mm): the same frame the DPC API serves | July 2018 |
+| `VMI`, `CAPPI2`–`CAPPI8` | reflectivity (dBZ): the highest of the column, and at 2 to 8 km | 2018 to 2022 |
+| `VIL`, `ETM` | liquid water in the column (mm), height of the echo top (m) | July 2018 |
+| `OPERA` | the `VMI` of Europe at 2 km, merged with the DPC's | July 2024 |
+
+**It is not open like the DPC API.** It needs a free account and the
+subscription to each dataset, it asks for fair use (`frames` stops at 288
+frames unless you raise `limit`), and it is run by a research foundation, not
+by the DPC: nothing else in the library depends on it. The data are CC BY-SA
+4.0, credit «FBK in cooperation with Dipartimento Protezione Civile
+Nazionale».
+
+**Three states, not two.** `NaN` is not measured; *no echo* is measured, and
+nothing was there: `-inf` in a reflectivity (0 dBZ is a weak echo), 0 in a
+height. And the time axis is not regular (`SRI` every 15 minutes in 2010,
+`SRT1` hourly until 2020): ask `arco.times(name, start, end)` which frames
+exist. The other traps are in the
+[reference](https://agentengineering.it/dpc-radar/api/arco/).
 
 ---
 
@@ -1111,6 +1159,7 @@ cannot tell from light rain.
 | `archive(folder, radar, start=, end=, limit=)` | download the CUM3 and SRT1 frames the archive lacks; an `ArchiveReport` |
 | `MergingArchive(folder=None).hourly(points, start, end)` | hourly rain per point from the archive: SRT1 rescaled to the CUM3 |
 | `SriHistory(zarr=None).hourly(points, start, end)` / `history.mirror(folder)` | the same from IT-DPC-SRI, 2010–2025, radar only (extra `history`) / copy the store from ECMWF's object store |
+| `ArcoClient().frame(name, time)` / `.frames(name, start, end)` / `.times(...)` / `.last(name)` | a frame of the ARCO Data Hub since 2010 as a `RainGrid`, `None` if it has none / the frames of a span / which exist / the newest. `SRI`, `SRT1`, `VMI`, `CAPPI2`–`8`, `VIL`, `ETM`, `OPERA` (extra `arco`, a free account) |
 | `reliability(lon, lat)` / `reliability_map()` | how much to trust the radar at a point: `score`, `visibility`, `coverage`, `agreement`, `beam_height`, `reliable` / the whole map, `.like(grid)` on the pixels of a frame |
 | `SITES` | the 24 radars of the mosaic: position, altitude, band, range, DPC code |
 | `await radar.radar_status(time=None)` | which radars the DPC viewer reports as on: `.off`, `.of(site)`, `.geojson()`; `ABSENT` when not known. From an undocumented file: a hint |
@@ -1270,6 +1319,7 @@ dpc-radar/
 │   ├── client.py     # RadarClient: latest, at, download, ABSENT
 │   ├── archive.py    # archive the «Merging», hourly rain from it
 │   ├── history.py    # IT-DPC-SRI 2010-2025 (extra [history]), and its mirror
+│   ├── arco.py       # the ARCO Data Hub: any frame since 2010 (extra [arco], an account)
 │   ├── local.py      # the library's data folder ($DATA_ROOT/dpc-radar) and init()
 │   ├── bulletins.py  # the official criticality bulletin (extra [bulletins])
 │   ├── reliability.py  # where the radar can be trusted: a map and its parts
@@ -1315,6 +1365,9 @@ Questions, ideas and maps you made go in the organisation's
 - **IT-DPC-SRI** (the 2010–2025 history, read by the `history` module):
   Fondazione Bruno Kessler on DPC data, CC BY-SA 4.0,
   [doi:10.5281/zenodo.18637608](https://doi.org/10.5281/zenodo.18637608).
+- **ARCO Data Hub** (read by the `arco` module, with an account): Fondazione
+  Bruno Kessler in cooperation with the DPC, for the IT4LIA AI Factory,
+  CC BY-SA 4.0; `OPERA` also credits the European Weather Radar Network.
 - **The reliability map** (`src/dpc_radar/data/reliability.tif`) is derived
   from the DPC radar data and so is under CC BY-SA 4.0, not Apache-2.0. Its
   terrain comes from the [Terrain Tiles](https://registry.opendata.aws/terrain-tiles/)

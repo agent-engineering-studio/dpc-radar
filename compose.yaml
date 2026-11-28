@@ -48,7 +48,9 @@ services:
     depends_on:
       - api
     ports:
-      - "${DPC_RADAR_PORT:-3000}:3000"
+      # On this machine only, unless DPC_RADAR_BIND says otherwise (0.0.0.0 to
+      # serve the page to others: put a proxy with TLS in front of it).
+      - "${DPC_RADAR_BIND:-127.0.0.1}:${DPC_RADAR_PORT:-3000}:3000"
     restart: unless-stopped
 
   # One shot: the frames of the last days, for the reports of a day.

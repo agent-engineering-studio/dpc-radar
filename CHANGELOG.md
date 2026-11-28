@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- The README states an open doubt on `SRT1`: this library calls it radar only,
+  the ARCO Data Hub serves the same frames as `SRT1_adj`, adjusted with rain
+  gauges. Not checked with the DPC; what is measured is that it is not the
+  «Merging» (43 % to 118 % of `CUM3` on ten episodes of 2026).
+
 ## [0.6.0] - 2026-11-28
 
 ### Added

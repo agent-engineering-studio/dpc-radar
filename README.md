@@ -310,6 +310,15 @@ rained, everywhere» that Italy has, and it is open.
 - *How much rain fell in the last hour?* → `SRT1`.
 - *How much rain fell in the last day?* → `CUM24` (or `CUM3`–`CUM12` for shorter windows). The gauges make it the most accurate, but it arrives every 30 minutes, not every 5.
 
+**One open doubt on `SRT1`.** This page calls it radar only. The
+[ARCO Data Hub](#every-frame-since-2010-with-an-account) serves the very same
+frames (equal pixel by pixel on 30 hours of 2026) under the name `SRT1_adj`,
+«radar estimate adjusted with rain gauges». One of the two descriptions is
+imprecise, and it has not been checked with the DPC. What has been measured:
+on ten episodes of 2026, three hours of `SRT1` were between 43 % and 118 % of
+the «Merging» `CUM3` of the same hours. Whatever adjustment `SRT1` carries, it
+is not the «Merging»: for totals, use the `CUM` products.
+
 ## The open data behind it
 
 Everything this library reads is published by a public body, free, with no

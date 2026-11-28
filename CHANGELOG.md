@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `docker compose up` publishes the page on `127.0.0.1` only. Set
+  `DPC_RADAR_BIND=0.0.0.0` to serve it to other machines, as before.
+- `make help` lists the targets.
+
+### Changed
+
 - The README states an open doubt on `SRT1`: this library calls it radar only,
   the ARCO Data Hub serves the same frames as `SRT1_adj`, adjusted with rain
   gauges. Not checked with the DPC; what is measured is that it is not the

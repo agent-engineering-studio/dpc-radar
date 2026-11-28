@@ -1,4 +1,20 @@
-.PHONY: check lint format typecheck test build docs notebooks diagrams init data demo docker down
+.PHONY: help check lint format typecheck test build docs notebooks diagrams init data demo docker down
+
+help:
+	@echo "make check      lint, types and tests: the gate CI runs"
+	@echo "make lint       ruff check and format check"
+	@echo "make format     format and fix what ruff can fix"
+	@echo "make typecheck  mypy --strict"
+	@echo "make test       pytest with coverage"
+	@echo "make build      the wheel and the sdist"
+	@echo "make docs       the site, llms.txt and the agent skill"
+	@echo "make notebooks  run every notebook again and save the results (needs the network)"
+	@echo "make diagrams   draw the figures of the docs again"
+	@echo "make init       install everything and download the data of the demo (needs uv)"
+	@echo "make data       download the newest frames again, into ./data"
+	@echo "make demo       the demo, on http://localhost:3000 (needs uv and Node)"
+	@echo "make docker     the same with Docker alone: build the images, run the demo"
+	@echo "make down       stop the demo and remove its containers (the frames stay)"
 
 check: lint typecheck test
 

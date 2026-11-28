@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-28
+
 ### Added
 
 - `dpc_radar.arco` (extra `arco`): `ArcoClient` reads the radar stores of the

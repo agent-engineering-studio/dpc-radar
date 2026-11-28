@@ -40,8 +40,9 @@ SUMMARY = (
 )
 
 NOTES = """\
-- Install: `pip install dpc-radar` (extras: `history`, `bulletins`, `storms`, `nowcast`,
-  `mcp`, `report`). Python 3.12+. No account and no key: the data are open (CC BY-SA 4.0).
+- Install: `pip install dpc-radar` (extras: `history`, `arco`, `bulletins`, `storms`, `nowcast`,
+  `mcp`, `report`). Python 3.12+. No account and no key: the data are open (CC BY-SA 4.0);
+  only `dpc_radar.arco` (the ARCO Data Hub, every frame since 2010) needs a free account.
 - NaN and `None` mean "not measured", never "dry".
 - There is no `CUM1`; `SRI`/`SRT1` and `CUM*` are on two different grids; a frame that is
   gone answers HTTP 500; published frames can be corrupted. Use `RadarClient`, `sample`,

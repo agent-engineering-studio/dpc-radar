@@ -1,6 +1,6 @@
 [project]
 name = "dpc-radar"
-version = "0.5.0"
+version = "0.6.0"
 description = "Async Python client for the Italian Civil Protection (DPC) open radar data: SRI, Merging (CUM), history and criticality bulletins"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -27,6 +27,8 @@ dependencies = [
 [project.optional-dependencies]
 # IT-DPC-SRI, the 2010-2025 radar history: the Blosc codec of its Zarr store.
 history = ["numcodecs>=0.13"]
+# The radar stores of the ARCO Data Hub (2010 to now): the Blosc and Zstandard codecs.
+arco = ["numcodecs>=0.13"]
 # The DPC criticality bulletin: the shapes of its alert zones.
 bulletins = ["shapely>=2.0"]
 # Storms as objects: the labelling of the patches of a frame.
